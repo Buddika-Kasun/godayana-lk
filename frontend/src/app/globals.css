@@ -1,0 +1,463 @@
+@import url('https://fonts.googleapis.com/css2?family=Abhaya+Libre:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Yaldevi:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gemunu+Libre:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Maname&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Sinhala:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Abhaya+Libre:wght@400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Fonts */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Base Colors - Sri Lankan Theme */
+  --color-godayana-blue: oklch(0.62 0.19 260.0);
+  /* Sri Lankan ocean blue */
+  --color-godayana-gold: oklch(0.83 0.15 85.0);
+  /* Sri Lankan golden beaches */
+  --color-godayana-green: oklch(0.65 0.18 145.0);
+  /* Sri Lankan greenery */
+  --color-godayana-orange: oklch(0.75 0.16 45.0);
+  /* Sri Lankan spice */
+
+  /* Theme Colors using CSS variables */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Sidebar Colors */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  /* Chart Colors */
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+
+  /* UI Colors */
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Border Radius */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Light Mode - Godayana.lk Theme */
+  --background: oklch(0.98 0.01 100);
+  /* Warm white - like Sri Lankan sand */
+  --foreground: oklch(0.25 0.02 260);
+  /* Deep blue-gray */
+
+  /* Cards and Popovers */
+  --card: oklch(1 0 0);
+  /* Pure white */
+  --card-foreground: oklch(0.25 0.02 260);
+  /* Deep blue-gray */
+  --popover: oklch(1 0 0);
+  /* Pure white */
+  --popover-foreground: oklch(0.25 0.02 260);
+  /* Deep blue-gray */
+
+  /* Primary - Godayana Blue (Sri Lankan Ocean) */
+  --primary: oklch(50.572% 0.14305 259.454);
+  
+  /* Rich blue */
+  --primary-foreground: oklch(0.98 0 0);
+  /* White */
+
+  /* Secondary - Godayana Gold (Beaches) */
+  --secondary: oklch(0.83 0.175 95.6);
+  /* Warm gold */
+  --secondary-foreground: oklch(0.25 0.02 260);
+  /* Deep blue-gray */
+
+  /* Muted - Light backgrounds */
+  --muted: oklch(0.95 0.01 100);
+  /* Warm light gray */
+  --muted-foreground: oklch(0.55 0.02 260);
+  /* Medium blue-gray */
+
+  /* Accent - Godayana Orange (Spice) */
+  --accent: oklch(0.75 0.16 45.0);
+  /* Warm orange */
+  --accent-foreground: oklch(0.25 0.02 260);
+  /* Deep blue-gray */
+
+  /* Destructive - Error states */
+  --destructive: oklch(0.63 0.24 29.0);
+  /* Soft red */
+
+  /* Borders and Inputs */
+  --border: oklch(0.88 0.02 100);
+  /* Warm border */
+  --input: oklch(0.88 0.02 100);
+  /* Warm input border */
+  --ring: oklch(0.62 0.19 260.0 / 0.3);
+  /* Blue ring with opacity */
+
+  /* Chart Colors - Sri Lankan Inspired */
+  --chart-1: oklch(0.62 0.19 260.0);
+  /* Ocean Blue */
+  --chart-2: oklch(0.83 0.15 85.0);
+  /* Beach Gold */
+  --chart-3: oklch(0.65 0.18 145.0);
+  /* Jungle Green */
+  --chart-4: oklch(0.75 0.16 45.0);
+  /* Sunset Orange */
+  --chart-5: oklch(0.55 0.12 280.0);
+  /* Gemstone Purple */
+
+  /* Border Radius */
+  --radius: 0.75rem;
+  /* Slightly larger radius */
+
+  /* Sidebar - Light Mode */
+  --sidebar: oklch(0.98 0.01 100);
+  /* Warm white */
+  --sidebar-foreground: oklch(0.25 0.02 260);
+  /* Deep blue-gray */
+  --sidebar-primary: oklch(0.62 0.19 260.0);
+  /* Godayana Blue */
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  /* White */
+  --sidebar-accent: oklch(0.95 0.01 100);
+  /* Light warm */
+  --sidebar-accent-foreground: oklch(0.25 0.02 260);
+  /* Deep blue-gray */
+  --sidebar-border: oklch(0.88 0.02 100);
+  /* Warm border */
+  --sidebar-ring: oklch(0.62 0.19 260.0 / 0.3);
+  /* Blue ring */
+}
+
+.dark {
+  /* Dark Mode - Godayana.lk Theme */
+  --background: oklch(0.15 0.02 260);
+  /* Deep ocean */
+  --foreground: oklch(0.95 0.01 100);
+  /* Warm white */
+
+  --card: oklch(0.2 0.02 260);
+  /* Dark blue-gray */
+  --card-foreground: oklch(0.95 0.01 100);
+  /* Warm white */
+
+  --popover: oklch(0.2 0.02 260);
+  /* Dark blue-gray */
+  --popover-foreground: oklch(0.95 0.01 100);
+  /* Warm white */
+
+  /* Primary - Brighter blue for dark mode */
+  --primary: oklch(0.7 0.19 260.0);
+  /* Brighter blue */
+  --primary-foreground: oklch(0.15 0.02 260);
+  /* Deep ocean */
+
+  /* Secondary - Softer gold for dark mode */
+  --secondary: oklch(0.7 0.12 85.0);
+  /* Soft gold */
+  --secondary-foreground: oklch(0.15 0.02 260);
+  /* Deep ocean */
+
+  --muted: oklch(0.25 0.02 260);
+  /* Dark blue-gray */
+  --muted-foreground: oklch(0.7 0.01 100);
+  /* Medium warm */
+
+  /* Accent - Brighter orange for dark mode */
+  --accent: oklch(0.7 0.14 45.0);
+  /* Bright orange */
+  --accent-foreground: oklch(0.15 0.02 260);
+  /* Deep ocean */
+
+  --destructive: oklch(0.63 0.24 29.0);
+  /* Keep same red */
+
+  --border: oklch(0.3 0.02 260);
+  /* Dark border */
+  --input: oklch(0.3 0.02 260);
+  /* Dark input border */
+  --ring: oklch(0.7 0.19 260.0 / 0.4);
+  /* Bright blue ring with opacity */
+
+  /* Chart Colors - Adjusted for dark mode */
+  --chart-1: oklch(0.7 0.19 260.0);
+  /* Brighter Blue */
+  --chart-2: oklch(0.7 0.12 85.0);
+  /* Soft Gold */
+  --chart-3: oklch(0.7 0.15 145.0);
+  /* Bright Green */
+  --chart-4: oklch(0.7 0.14 45.0);
+  /* Bright Orange */
+  --chart-5: oklch(0.6 0.12 280.0);
+  /* Soft Purple */
+
+  /* Sidebar - Dark Mode */
+  --sidebar: oklch(0.2 0.02 260);
+  /* Dark blue-gray */
+  --sidebar-foreground: oklch(0.95 0.01 100);
+  /* Warm white */
+  --sidebar-primary: oklch(0.7 0.19 260.0);
+  /* Bright blue */
+  --sidebar-primary-foreground: oklch(0.15 0.02 260);
+  /* Deep ocean */
+  --sidebar-accent: oklch(0.25 0.02 260);
+  /* Dark blue-gray */
+  --sidebar-accent-foreground: oklch(0.95 0.01 100);
+  /* Warm white */
+  --sidebar-border: oklch(0.3 0.02 260);
+  /* Dark border */
+  --sidebar-ring: oklch(0.7 0.19 260.0 / 0.4);
+  /* Bright blue ring */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    @apply font-sans;
+    scrollbar-gutter: stable;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: var(--radius);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, hsl(var(--primary)) 80%, black);
+  }
+}
+
+/* ===== SIMPLE UTILITIES - NO NESTING ===== */
+@utility bg-godayana-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+}
+
+@utility bg-ocean-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, oklch(0.5 0.15 280) 100%);
+}
+
+@utility bg-sunset-gradient {
+  background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--accent)) 100%);
+}
+
+@utility text-godayana-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility badge-job-local {
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+@utility badge-job-overseas {
+  background-color: hsl(var(--secondary) / 0.2);
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--secondary) / 0.3);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+@utility badge-urgent {
+  background-color: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--destructive));
+  border: 1px solid hsl(var(--destructive) / 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+@utility badge-featured {
+  background-color: hsl(var(--accent) / 0.1);
+  color: hsl(var(--accent-foreground));
+  border: 1px solid hsl(var(--accent) / 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+@utility job-card-hover {
+  transition: all 300ms;
+}
+
+@utility border-l-kandyan {
+  border-left-width: 4px;
+  border-left-color: hsl(var(--primary));
+}
+
+@utility border-t-beach {
+  border-top-width: 4px;
+  border-top-color: hsl(var(--secondary));
+}
+
+@utility container-godayana {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@utility section-title {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 1rem;
+}
+
+@utility section-subtitle {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 2rem;
+}
+
+@utility hero-section {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+  color: white;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+/* ===== MEDIA QUERIES - OUTSIDE UTILITIES ===== */
+@media (min-width: 640px) {
+  .container-godayana {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .section-title {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+
+  .hero-section {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-godayana {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* ===== HOVER STATES ===== */
+.job-card-hover:hover {
+  transform: translateY(-0.25rem);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* ===== COMPONENTS ===== */
+.btn-godayana {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 300ms;
+}
+
+.btn-godayana:hover {
+  opacity: 0.9;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.card-job {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: all 300ms;
+}
+
+.card-job:hover {
+  transform: translateY(-0.25rem);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.font-sinhala {
+  /* font-family: 'Abhaya Libre', 'Noto Sans Sinhala', serif; */
+  font-family: 'Maname', serif;
+  font-weight: 1000; /* Adjust as needed */
+}
