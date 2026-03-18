@@ -63,7 +63,7 @@ const itemVariants: Variants = {
 
 export function SuccessStories() {
   return (
-    <section className="py-10 md:py-16 bg-muted/30 overflow-x-hidden">
+    <section className="py-10 md:py-16 bg-background-cold overflow-x-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
