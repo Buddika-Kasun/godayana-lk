@@ -53,7 +53,7 @@ const features = [
     description:
       "Detailed insights into living costs, salaries, and demand in top countries.",
     icon: Map,
-    href: "/countries",
+    href: "/gateway",
     color: "from-amber-500 to-orange-500",
     textColor: "text-amber-500/80",
     delay: 0.3,
@@ -137,80 +137,81 @@ export function Features() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8"
         >
           {features.map((feature) => (
-            <motion.div
-              key={feature.id}
-              variants={itemVariants}
-              whileHover={{ y: -6 }}
-              transition={{ type: "spring", stiffness: 500, damping: 20 }}
-              className="group relative bg-card border rounded-2xl p-6 md:p-6 hover:shadow-xl transition-all duration-200 cursor-pointer"
-            >
-              {/* Gradient Background on Hover */}
+            <Link href={feature.href} key={feature.id} className="block">
               <motion.div
-                className={`absolute inset-0 bg-linear-to-br ${feature.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-150`}
-              />
-
-              <div className="flex items-center gap-4 pb-4">
-                {/* Icon with fixed size - no margin bottom */}
-                <motion.div
-                  className={`w-16 h-16 md:w-16 md:h-16 rounded-xl bg-linear-to-br ${feature.color} bg-opacity-10 flex items-center justify-center relative overflow-hidden group-hover:scale-110 group-hover:rotate-3 transition-all duration-150 flex-shrink-0`}
-                >
-                  {/* Pulsing background */}
-                  <motion.div
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      rotate: [0, 5, -5, 0],
-                    }}
-                    transition={{
-                      duration: 5,
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                      delay: feature.delay,
-                    }}
-                    className="absolute inset-0 bg-white/20 blur-xl"
-                  />
-                  <feature.icon
-                    className={`h-8 w-8 md:h-10 md:w-10 relative z-10 transition-colors duration-150 text-background`}
-                  />
-                </motion.div>
-
-                {/* Title - takes remaining space and handles 2 lines */}
-                <div className="flex-1 min-w-0">
-                  <h3
-                    className={`text-xl md:text-2xl md:pr-8 font-bold transition-colors duration-150 leading-tight ${feature.textColor}`}
-                  >
-                    {feature.title}
-                  </h3>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="text-muted-foreground text-sm md:text-base mb-4 leading-6">
-                {feature.description}
-              </p>
-
-              {/* Learn More Link */}
-              <Link
-                href={feature.href}
-                className="inline-flex items-center text-sm font-medium text-primary hover:text-primary/80 transition-colors duration-150 group/link"
+                key={feature.id}
+                variants={itemVariants}
+                whileHover={{ y: -6 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                className="group relative bg-card border rounded-2xl p-6 md:p-6 hover:shadow-xl transition-all duration-200 cursor-pointer"
               >
-                <span>Learn More</span>
-                <motion.span
-                  animate={{ x: 0 }}
-                  className="inline-block ml-2 group-hover/link:translate-x-1 transition-transform duration-150"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </motion.span>
-              </Link>
+                {/* Gradient Background on Hover */}
+                <motion.div
+                  className={`absolute inset-0 bg-linear-to-br ${feature.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-150`}
+                />
 
-              {/* Decorative corner line */}
-              <motion.div
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: feature.delay + 0.5, duration: 0.4 }}
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-primary to-transparent origin-left"
-              />
-            </motion.div>
+                <div className="flex items-center gap-4 pb-4">
+                  {/* Icon with fixed size - no margin bottom */}
+                  <motion.div
+                    className={`w-16 h-16 md:w-16 md:h-16 rounded-xl bg-linear-to-br ${feature.color} bg-opacity-10 flex items-center justify-center relative overflow-hidden group-hover:scale-110 group-hover:rotate-3 transition-all duration-150 flex-shrink-0`}
+                  >
+                    {/* Pulsing background */}
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 5, -5, 0],
+                      }}
+                      transition={{
+                        duration: 5,
+                        repeat: Infinity,
+                        repeatType: "reverse",
+                        delay: feature.delay,
+                      }}
+                      className="absolute inset-0 bg-white/20 blur-xl"
+                    />
+                    <feature.icon
+                      className={`h-8 w-8 md:h-10 md:w-10 relative z-10 transition-colors duration-150 text-background`}
+                    />
+                  </motion.div>
+
+                  {/* Title - takes remaining space and handles 2 lines */}
+                  <div className="flex-1 min-w-0">
+                    <h3
+                      className={`text-xl md:text-2xl md:pr-8 font-bold transition-colors duration-150 leading-tight ${feature.textColor}`}
+                    >
+                      {feature.title}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-muted-foreground text-sm md:text-base mb-4 leading-6">
+                  {feature.description}
+                </p>
+
+                {/* Learn More Link */}
+                <div
+                  className="inline-flex items-center text-sm font-medium text-primary hover:text-primary/80 transition-colors duration-150 group/link"
+                >
+                  <span>Learn More</span>
+                  <motion.span
+                    animate={{ x: 0 }}
+                    className="inline-block ml-2 group-hover/link:translate-x-1 transition-transform duration-150"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.span>
+                </div>
+
+                {/* Decorative corner line */}
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: feature.delay + 0.5, duration: 0.4 }}
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-primary to-transparent origin-left"
+                />
+              </motion.div>
+            </Link>
           ))}
         </motion.div>
 
