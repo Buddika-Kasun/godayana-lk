@@ -5,6 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Maname&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Sinhala:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Abhaya+Libre:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gemunu+Libre:wght@400;500;600;700;800&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -80,9 +81,9 @@
 
 :root {
   /* Light Mode - Godayana.lk Theme */
-  --background: oklch(0.98 0.01 100);
+  --background: oklch(100% 0.00011 271.152);
   /* Warm white - like Sri Lankan sand */
-  --background-cold: oklch(97.497% 0.01212 281.002);
+  --background-cold: oklch(94.898% 0.02035 279.893);
   /* Cooler white for contrast */
   --foreground: oklch(0.25 0.02 260);
   /* Deep blue-gray */
@@ -463,6 +464,13 @@
 
 .font-sinhala {
   /* font-family: 'Abhaya Libre', 'Noto Sans Sinhala', serif; */
-  font-family: 'Maname', serif;
+  /* font-family: 'Maname', serif; */
+  font-family: 'Gemunu Libre', 'Maname', 'Noto Sans Sinhala', serif;
+  /* letter-spacing: 2em; */
+  font-feature-settings: "liga" 1;
   font-weight: 1000; /* Adjust as needed */
+}
+
+.font-fm-gamunu {
+  font-family: 'Gemunu Libre', 'Maname', 'Noto Sans Sinhala', serif;
 }

@@ -196,7 +196,7 @@ export function Header() {
                     >
                       <item.icon className="h-5 w-5 mr-2 flex-shrink-0" />
                       <div className="flex flex-col items-start leading-tight">
-                        <span className="text-[10px] opacity-100 font-bold -mb-1">
+                        <span className="text-[14px] opacity-100 font-bold -mb-1 font-fm-gamunu tracking-wider">
                           ගොඩයන
                         </span>
                         <span className="text-sm font-medium  w-full">
@@ -333,7 +333,7 @@ export function Header() {
                           >
                             <item.icon className="h-5 w-5" />
                             <span className="font-medium">
-                              <span className="text-[14px] opacity-100 font-bold">
+                              <span className="text-[18px] opacity-100 font-semibold font-fm-gamunu tracking-widest">
                                 ගොඩයන
                               </span>{" "}
                               &nbsp;
