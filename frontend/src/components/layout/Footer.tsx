@@ -296,7 +296,7 @@ export function Footer() {
             </div>
 
             {/* Newsletter Signup */}
-            <div className="bg-muted/50 rounded-lg p-4 mt-8">
+            {/* <div className="bg-muted/50 rounded-lg p-4 mt-8">
               <h4 className="font-medium mb-2 text-foreground">Stay Updated</h4>
               <p className="text-sm text-muted-foreground mb-3">
                 Get latest jobs and visa updates
@@ -317,7 +317,7 @@ export function Footer() {
                   </Button>
                 </motion.div>
               </div>
-            </div>
+            </div> */}
           </motion.div>
         </motion.div>
 
