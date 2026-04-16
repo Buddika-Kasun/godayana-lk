@@ -18,6 +18,8 @@ import {
   Globe,
   Award,
   BookOpen,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -370,6 +372,9 @@ export default function CoursesPage() {
   });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  // State for expand/collapse all filters
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+
   // Ref for the courses container to scroll to top
   const coursesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -493,7 +498,7 @@ export default function CoursesPage() {
   return (
     <div className="bg-background min-h-screen flex flex-col">
       {/* Header */}
-      <motion.div
+      {/* <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
@@ -504,6 +509,21 @@ export default function CoursesPage() {
           <span className="text-primary"> Courses</span>
         </h1>
         <p className="text-muted-foreground max-w-2xl">
+          Equip yourself with the right skills and languages to succeed in your
+          global migration journey.
+        </p>
+      </motion.div> */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeInUp}
+        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-teal-400 via-teal-500 to-teal-600 rounded-b-lg"
+      >
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90">
+          ගොඩයන
+          <span className="text-background/90"> Courses</span>
+        </h1>
+        <p className="text-background/80 relative">
           Equip yourself with the right skills and languages to succeed in your
           global migration journey.
         </p>
@@ -572,9 +592,9 @@ export default function CoursesPage() {
                     </motion.div>
                   </div>
 
-                  {/* Search Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
+                  {/* Search Filter - Always Visible */}
+                  <div className="mb-6">
+                    <label className="text-sm font-medium mb-2 block">
                       Search Courses
                     </label>
                     <div className="relative">
@@ -590,90 +610,190 @@ export default function CoursesPage() {
                     </div>
                   </div>
 
-                  {/* Category Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Category
-                    </label>
-                    <Select
-                      value={filters.category}
-                      onValueChange={(value) =>
-                        handleFilterChange("category", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {courseCategories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Destination Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Migration Path
-                    </label>
-                    <Select
-                      value={filters.destination}
-                      onValueChange={(value) =>
-                        handleFilterChange("destination", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select destination" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {migrationPaths.map((dest) => (
-                          <SelectItem key={dest} value={dest}>
-                            {dest}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Requirements Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Requirements
-                    </label>
-                    <Select
-                      value={filters.requirement}
-                      onValueChange={(value) =>
-                        handleFilterChange("requirement", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select requirement" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {requirementLevels.map((req) => (
-                          <SelectItem key={req} value={req}>
-                            {req}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Apply Filters Button */}
-                  <motion.div
+                  {/* Expand/Collapse Button */}
+                  <motion.button
+                    onClick={() => setFiltersExpanded(!filtersExpanded)}
+                    className="w-full mb-2 flex items-center justify-end rounded-lg gap-2 transition-colors text-sm text-muted-foreground hover:text-primary cursor-pointer"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Button
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                      onClick={handleApplyFilters}
+                    <span className="text-sm font-medium">
+                      {filtersExpanded ? "Collapse Filters" : "Expand Filters"}
+                    </span>
+                    <motion.div
+                      animate={{ rotate: filtersExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      Apply Filters
-                    </Button>
-                  </motion.div>
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.div>
+                  </motion.button>
+
+                  {/* Collapsible Filter Sections */}
+                  <AnimatePresence>
+                    {filtersExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        {/* Category Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Category
+                          </label>
+                          <Select
+                            value={filters.category}
+                            onValueChange={(value) =>
+                              handleFilterChange("category", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {courseCategories.map((cat) => (
+                                <SelectItem key={cat} value={cat}>
+                                  {cat}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Destination Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Migration Path
+                          </label>
+                          <Select
+                            value={filters.destination}
+                            onValueChange={(value) =>
+                              handleFilterChange("destination", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select destination" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {migrationPaths.map((dest) => (
+                                <SelectItem key={dest} value={dest}>
+                                  {dest}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Requirements Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Requirements
+                          </label>
+                          <Select
+                            value={filters.requirement}
+                            onValueChange={(value) =>
+                              handleFilterChange("requirement", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select requirement" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {requirementLevels.map((req) => (
+                                <SelectItem key={req} value={req}>
+                                  {req}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Apply Filters Button */}
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="mt-6"
+                        >
+                          <Button
+                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                            onClick={handleApplyFilters}
+                          >
+                            Apply Filters
+                          </Button>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Show Apply Filters button even when collapsed if filters are applied */}
+                  {!filtersExpanded &&
+                    (filters.category ||
+                      filters.destination ||
+                      filters.requirement) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-4"
+                      >
+                        <div className="mb-3">
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Active filters:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {filters.category &&
+                              filters.category !== "All Categories" && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {filters.category}
+                                  <button
+                                    onClick={() =>
+                                      handleFilterChange("category", "")
+                                    }
+                                    className="ml-1 hover:text-primary"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              )}
+                            {filters.destination &&
+                              filters.destination !== "All Destinations" && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {filters.destination}
+                                  <button
+                                    onClick={() =>
+                                      handleFilterChange("destination", "")
+                                    }
+                                    className="ml-1 hover:text-primary"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              )}
+                            {filters.requirement &&
+                              filters.requirement !== "All Requirements" && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {filters.requirement}
+                                  <button
+                                    onClick={() =>
+                                      handleFilterChange("requirement", "")
+                                    }
+                                    className="ml-1 hover:text-primary"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              )}
+                          </div>
+                        </div>
+                        <Button
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                          onClick={handleApplyFilters}
+                        >
+                          Apply Filters
+                        </Button>
+                      </motion.div>
+                    )}
                 </div>
               </motion.div>
             </div>
@@ -710,9 +830,9 @@ export default function CoursesPage() {
                     </motion.div>
                   </div>
 
-                  {/* Search Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
+                  {/* Search Filter - Always Visible */}
+                  <div className="mb-6">
+                    <label className="text-sm font-medium mb-2 block">
                       Search Courses
                     </label>
                     <div className="relative">
@@ -728,93 +848,196 @@ export default function CoursesPage() {
                     </div>
                   </div>
 
-                  {/* Category Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Category
-                    </label>
-                    <Select
-                      value={filters.category}
-                      onValueChange={(value) =>
-                        handleFilterChange("category", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {courseCategories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Destination Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Migration Path
-                    </label>
-                    <Select
-                      value={filters.destination}
-                      onValueChange={(value) =>
-                        handleFilterChange("destination", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select destination" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {migrationPaths.map((dest) => (
-                          <SelectItem key={dest} value={dest}>
-                            {dest}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Requirements Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Requirements
-                    </label>
-                    <Select
-                      value={filters.requirement}
-                      onValueChange={(value) =>
-                        handleFilterChange("requirement", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select requirement" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {requirementLevels.map((req) => (
-                          <SelectItem key={req} value={req}>
-                            {req}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Apply Filters Button */}
-                  <motion.div
+                  {/* Expand/Collapse Button for Mobile */}
+                  <motion.button
+                    onClick={() => setFiltersExpanded(!filtersExpanded)}
+                    className="w-full mb-4 flex items-center justify-between p-3 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Button
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                      onClick={() => {
-                        handleApplyFilters();
-                        setShowMobileFilters(false);
-                      }}
+                    <span className="text-sm font-medium">
+                      {filtersExpanded ? "Collapse Filters" : "Expand Filters"}
+                    </span>
+                    <motion.div
+                      animate={{ rotate: filtersExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      Apply Filters
-                    </Button>
-                  </motion.div>
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.div>
+                  </motion.button>
+
+                  {/* Collapsible Filter Sections for Mobile */}
+                  <AnimatePresence>
+                    {filtersExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        {/* Category Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Category
+                          </label>
+                          <Select
+                            value={filters.category}
+                            onValueChange={(value) =>
+                              handleFilterChange("category", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {courseCategories.map((cat) => (
+                                <SelectItem key={cat} value={cat}>
+                                  {cat}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Destination Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Migration Path
+                          </label>
+                          <Select
+                            value={filters.destination}
+                            onValueChange={(value) =>
+                              handleFilterChange("destination", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select destination" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {migrationPaths.map((dest) => (
+                                <SelectItem key={dest} value={dest}>
+                                  {dest}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Requirements Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Requirements
+                          </label>
+                          <Select
+                            value={filters.requirement}
+                            onValueChange={(value) =>
+                              handleFilterChange("requirement", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select requirement" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {requirementLevels.map((req) => (
+                                <SelectItem key={req} value={req}>
+                                  {req}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Apply Filters Button */}
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="mt-6"
+                        >
+                          <Button
+                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                            onClick={() => {
+                              handleApplyFilters();
+                              setShowMobileFilters(false);
+                            }}
+                          >
+                            Apply Filters
+                          </Button>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Show Apply Filters button even when collapsed if filters are applied */}
+                  {!filtersExpanded &&
+                    (filters.category ||
+                      filters.destination ||
+                      filters.requirement) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-4"
+                      >
+                        <div className="mb-3">
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Active filters:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {filters.category &&
+                              filters.category !== "All Categories" && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {filters.category}
+                                  <button
+                                    onClick={() =>
+                                      handleFilterChange("category", "")
+                                    }
+                                    className="ml-1 hover:text-primary"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              )}
+                            {filters.destination &&
+                              filters.destination !== "All Destinations" && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {filters.destination}
+                                  <button
+                                    onClick={() =>
+                                      handleFilterChange("destination", "")
+                                    }
+                                    className="ml-1 hover:text-primary"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              )}
+                            {filters.requirement &&
+                              filters.requirement !== "All Requirements" && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {filters.requirement}
+                                  <button
+                                    onClick={() =>
+                                      handleFilterChange("requirement", "")
+                                    }
+                                    className="ml-1 hover:text-primary"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              )}
+                          </div>
+                        </div>
+                        <Button
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                          onClick={() => {
+                            handleApplyFilters();
+                            setShowMobileFilters(false);
+                          }}
+                        >
+                          Apply Filters
+                        </Button>
+                      </motion.div>
+                    )}
                 </div>
               </motion.div>
             )}

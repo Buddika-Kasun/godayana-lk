@@ -63,7 +63,7 @@ const visaTypes = [
   },
 ];
 
-// Visa Guides Data (Bottom Carousel)
+// Visa Guides Data (Now as Cards)
 const visaGuides = [
   {
     id: 1,
@@ -232,82 +232,12 @@ const itemVariants = {
 };
 
 export default function VisaPage() {
-  const [currentGuideIndex, setCurrentGuideIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
-  const touchStartX = useRef<number | null>(null);
   const { isMobileNavOpen } = useMobileNav();
-  
-  // Auto-play functionality
-  useEffect(() => {
-    if (isAutoPlaying) {
-      autoPlayRef.current = setInterval(() => {
-        setCurrentGuideIndex((prev) => (prev + 1) % visaGuides.length);
-      }, 5000); // Change every 5 seconds
-    }
-
-    return () => {
-      if (autoPlayRef.current) {
-        clearInterval(autoPlayRef.current);
-      }
-    };
-  }, [isAutoPlaying]);
-
-  // Pause auto-play on user interaction
-  const pauseAutoPlay = () => {
-    setIsAutoPlaying(false);
-    // Resume after 10 seconds of inactivity
-    setTimeout(() => {
-      setIsAutoPlaying(true);
-    }, 10000);
-  };
-
-  const nextGuide = () => {
-    pauseAutoPlay();
-    setCurrentGuideIndex((prev) => (prev + 1) % visaGuides.length);
-  };
-
-  const prevGuide = () => {
-    pauseAutoPlay();
-    setCurrentGuideIndex(
-      (prev) => (prev - 1 + visaGuides.length) % visaGuides.length,
-    );
-  };
-
-  const goToGuide = (index: number) => {
-    pauseAutoPlay();
-    setCurrentGuideIndex(index);
-  };
-
-  // Touch handlers for mobile swipe
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-
-    const touchEndX = e.changedTouches[0].clientX;
-    const diffX = touchStartX.current - touchEndX;
-
-    if (Math.abs(diffX) > 50) {
-      // Swipe threshold
-      if (diffX > 0) {
-        nextGuide(); // Swipe left
-      } else {
-        prevGuide(); // Swipe right
-      }
-    }
-
-    touchStartX.current = null;
-  };
-
-  const currentGuide = visaGuides[currentGuideIndex];
 
   return (
     <div className="bg-background min-h-screen flex flex-col">
       {/* Header */}
-      <motion.div
+      {/* <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
@@ -321,15 +251,30 @@ export default function VisaPage() {
           Your comprehensive guide to global visa processes. We simplify the
           complex documentation for you.
         </p>
+      </motion.div> */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeInUp}
+        className="mb-4 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-orange-400 via-orange-500 to-orange-700 rounded-b-lg"
+      >
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90">
+          ගොඩයන
+          <span className="text-background/90"> Visa</span>
+        </h1>
+        <p className="text-background/80 relative">
+          Your comprehensive guide to global visa processes. We simplify the
+          complex documentation for you.
+        </p>
       </motion.div>
 
-      {/* Visa Types Cards - Top Section (Matching first image) */}
+      {/* Visa Types Cards - Top Section */}
       <div className="flex-1 px-4 sm:px-6 lg:px-8 pb-12">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-2"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16"
         >
           {visaTypes.map((visa) => (
             <motion.div
@@ -339,7 +284,7 @@ export default function VisaPage() {
               className="group h-full"
             >
               <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
-                <CardContent className="px-6 py-2 flex flex-col h-full">
+                <CardContent className="px-6 py-6 flex flex-col h-full">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-4 mb-4">
                     <div
@@ -391,259 +336,166 @@ export default function VisaPage() {
           ))}
         </motion.div>
 
-        {/* Visa Guides Carousel Section - Bottom Section (Matching second image) */}
+        {/* Visa Guides Cards Section - Now as Grid */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-6 text-center">
             Country Visa Guides
           </h2>
 
-          {/* Carousel Container */}
-          <div
-            className="relative"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {/* Pagination Dots */}
-            <div className="flex items-center justify-center gap-2 my-6">
-              {visaGuides.map((_, index) => (
-                <motion.button
-                  key={index}
-                  onClick={() => goToGuide(index)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === currentGuideIndex
-                      ? "w-8 bg-primary"
-                      : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                  }`}
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                  aria-label={`Go to guide ${index + 1}`}
-                />
-              ))}
-            </div>
-
-            {/* Navigation Buttons */}
-            <div className="absolute left-15 top-1/2 -translate-y-1/2 z-20 -ml-4 hidden md:block">
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={prevGuide}
-                  className="rounded-full bg-background shadow-lg cursor-pointer h-10 w-10"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-              </motion.div>
-            </div>
-
-            <div className="absolute right-15 top-1/2 -translate-y-1/2 z-20 -mr-4 hidden md:block">
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={nextGuide}
-                  className="rounded-full bg-background shadow-lg cursor-pointer h-10 w-10"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-              </motion.div>
-            </div>
-
-            {/* Main Guide Card */}
-            <AnimatePresence mode="wait">
+            {visaGuides.map((guide, index) => (
               <motion.div
-                key={currentGuideIndex}
-                initial={!isMobileNavOpen ? { opacity: 0, x: 50 } : false}
-                animate={
-                  !isMobileNavOpen ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }
-                }
-                exit={
-                  !isMobileNavOpen
-                    ? { opacity: 0, x: -50 }
-                    : { opacity: 1, x: 0 }
-                }
-                transition={
-                  !isMobileNavOpen ? { duration: 0.3 } : { duration: 0 }
-                }
-                className="w-full flex items-center justify-center"
+                key={guide.id}
+                variants={itemVariants}
+                whileHover={{ y: -6 }}
+                className="h-full"
               >
-                <Card className="overflow-hidden border-0 shadow-xl lg:w-3/4 w-full max-w-4xl mx-auto py-0">
-                  {/* Two Column Layout - Image on Right */}
-                  <div className="flex flex-col md:flex-row">
-                    {/* Left Column - Content */}
-                    <div className="flex-1 p-6">
-                      {/* Country Badge and Title */}
-                      <div className="mb-4">
-                        {/* <Badge className="bg-primary/10 text-primary border-0 mb-3">
-                          {currentGuide.flag} {currentGuide.country}
-                        </Badge> */}
-                        <h3 className="text-2xl font-bold">
-                          {currentGuide.title}
-                        </h3>
-                        <p className="text-muted-foreground mt-2">
-                          {currentGuide.description}
-                        </p>
-                      </div>
-
-                      {/* Content Grid */}
-                      <div className="grid md:grid-cols-2 gap-6">
-                        {/* Left Column - Required Documents */}
-                        <div>
-                          <h4 className="font-semibold mb-3 flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-primary" />
-                            Required Documents
-                          </h4>
-                          <ul className="space-y-2">
-                            {currentGuide.documents.map((doc, idx) => (
-                              <motion.li
-                                key={idx}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: idx * 0.1 }}
-                                className="flex items-center gap-2 text-sm"
-                              >
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                <span>{doc}</span>
-                              </motion.li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Right Column - Common Mistakes */}
-                        <div>
-                          <h4 className="font-semibold mb-3 flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 text-destructive" />
-                            Common Mistakes
-                          </h4>
-                          <ul className="space-y-2 mb-4">
-                            {currentGuide.commonMistakes.map((mistake, idx) => (
-                              <motion.li
-                                key={idx}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: idx * 0.1 + 0.3 }}
-                                className="flex items-center gap-2 text-sm"
-                              >
-                                <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                                <span>{mistake}</span>
-                              </motion.li>
-                            ))}
-                          </ul>
-
-                          {/* Additional Info */}
-                          <div className="bg-muted/30 rounded-lg p-3">
-                            <div className="flex items-center justify-between text-sm mb-1">
-                              <span className="text-muted-foreground">
-                                Est. Cost
-                              </span>
-                              <span className="font-semibold">
-                                {currentGuide.cost}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">
-                                Processing Time
-                              </span>
-                              <span className="font-semibold">
-                                {currentGuide.processingTime}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="md:w-96 h-64 md:h-auto relative">
-                      {/* Image or Gradient Background */}
-                      {currentGuide.image ? (
-                        <Image
-                          src={currentGuide.image}
-                          alt={currentGuide.country}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 384px"
-                        />
-                      ) : (
-                        <div
-                          className={`absolute inset-0 bg-gradient-to-br ${currentGuide.color} opacity-90`}
-                        >
-                          <div className="absolute inset-0 bg-black/20" />
-                        </div>
-                      )}
-
-                      {/* Dark overlay for better text readability */}
-                      <div className="absolute inset-0 bg-black/20" />
-
-                      {/* Centered Globe Icon - Only show if no image */}
-                      {!currentGuide.image && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Globe className="h-24 w-24 text-white/30" />
-                        </div>
-                      )}
-
-                      {/* Country Flag and Name - Always visible */}
-                      <div className="absolute bottom-4 right-4 text-white/80 text-sm drop-shadow-lg">
-                        {currentGuide.flag} {currentGuide.country}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="p-6 pt-0 flex flex-col sm:flex-row gap-3">
-                    <Link
-                      href={`/visa/guide/${currentGuide.id}`}
-                      className="flex-1"
-                    >
-                      <Button
-                        variant="outline"
-                        className="w-full cursor-pointer group"
+                <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col p-0">
+                  {/* Image Section */}
+                  <div className="relative h-48 w-full overflow-hidden">
+                    {guide.image ? (
+                      <Image
+                        src={guide.image}
+                        alt={guide.country}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                    ) : (
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-br ${guide.color}`}
                       >
-                        <span>View Full Guide</span>
-                        <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-                      </Button>
-                    </Link>
-                    <Link
-                      href={`/visa/consultation/${currentGuide.id}`}
-                      className="flex-1"
-                    >
-                      <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer group">
-                        <span>Book Free Consultation</span>
-                        <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-                      </Button>
-                    </Link>
+                        <div className="absolute inset-0 bg-black/20" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Globe className="h-16 w-16 text-white/30" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Country Flag Badge */}
+                    <div className="absolute top-4 right-4">
+                      <Badge className="bg-background/90 backdrop-blur-sm text-foreground border-0 text-lg">
+                        {guide.flag} {guide.country}
+                      </Badge>
+                    </div>
                   </div>
+
+                  <CardContent className="p-6 flex flex-col flex-1">
+                    {/* Title */}
+                    <h3 className="text-xl font-bold mb-2 line-clamp-2">
+                      {guide.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                      {guide.description}
+                    </p>
+
+                    <div className="flex justify-between px-1">
+                      {/* Documents Section */}
+                      <div className="mb-4">
+                        <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
+                          <FileText className="h-4 w-4 text-primary" />
+                          Required Documents
+                        </h4>
+                        <ul className="space-y-1">
+                          {guide.documents.slice(0, 3).map((doc, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-center gap-2 text-xs text-muted-foreground"
+                            >
+                              <div className="w-1 h-1 rounded-full bg-primary" />
+                              <span className="line-clamp-1">{doc}</span>
+                            </li>
+                          ))}
+                          {guide.documents.length > 3 && (
+                            <li className="text-xs text-primary">
+                              +{guide.documents.length - 3} more
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+
+                      {/* Common Mistakes Preview */}
+                      <div className="mb-4">
+                        <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
+                          <AlertCircle className="h-4 w-4 text-destructive" />
+                          Common Mistakes
+                        </h4>
+                        <ul className="space-y-1">
+                          {guide.commonMistakes
+                            .slice(0, 2)
+                            .map((mistake, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-center gap-2 text-xs text-muted-foreground"
+                              >
+                                <div className="w-1 h-1 rounded-full bg-destructive" />
+                                <span className="line-clamp-1">{mistake}</span>
+                              </li>
+                            ))}
+                          {guide.commonMistakes.length > 2 && (
+                            <li className="text-xs text-primary">
+                              +{guide.commonMistakes.length - 2} more
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Cost and Time Info */}
+                    <div className="bg-muted/30 rounded-lg p-3 mb-4">
+                      <div className="flex items-center justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Est. Cost</span>
+                        <span className="font-semibold text-sm">
+                          {guide.cost}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Processing Time
+                        </span>
+                        <span className="font-semibold text-sm">
+                          {guide.processingTime}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="mt-auto space-y-2">
+                      {/* <Link href={`/visa/guide/${guide.id}`} className="block">
+                        <Button
+                          variant="outline"
+                          className="w-full cursor-pointer group"
+                          size="sm"
+                        >
+                          <span>View Full Guide</span>
+                          <ArrowRight className="h-3 w-3 ml-2 transition-transform group-hover:translate-x-1" />
+                        </Button>
+                      </Link> */}
+                      <Link
+                        href={`/visa/consultation/${guide.id}`}
+                        className="block"
+                      >
+                        <Button
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer group"
+                          size="sm"
+                        >
+                          <span>View Full Guide</span>
+                          <ArrowRight className="h-3 w-3 ml-2 transition-transform group-hover:translate-x-1" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
                 </Card>
               </motion.div>
-            </AnimatePresence>
-
-            {/* Mobile Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8 px-8 md:hidden">
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={prevGuide}
-                  className="cursor-pointer"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </motion.div>
-
-              <span className="text-sm text-muted-foreground">
-                {currentGuideIndex + 1} / {visaGuides.length}
-              </span>
-
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={nextGuide}
-                  className="cursor-pointer"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </motion.div>
-            </div>
-          </div>
+            ))}
+          </motion.div>
         </div>
       </div>
     </div>

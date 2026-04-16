@@ -122,7 +122,7 @@ export function Hero() {
           className="grid lg:grid-cols-2 gap-8 md:gap-12 h-full"
         >
           {/* Left Column - Content */}
-          <div className="px-2 sm:px-0 flex flex-col justify-between h-[calc(100vh-80px)] text-center md:text-left">
+          <div className="px-2 sm:px-0 flex flex-col justify-between md:h-[calc(100vh-80px)] text-center md:text-left">
             {/* NEW Badge */}
             <div>
               <motion.div variants={itemVariants}>
@@ -141,7 +141,7 @@ export function Hero() {
             {/* Main Heading */}
             <div>
               <motion.h1
-                className="text-6xl sm:text-5xl md:text-6xl lg:text-[90px] xl:text-8xl text-center md:text-left font-bold font-sinhala md:pl-8"
+                className="text-7xl sm:text-5xl md:text-6xl lg:text-[90px] xl:text-8xl text-center md:text-left font-bold font-sinhala md:pl-8 pt-8 md:pt-0"
                 style={{ lineHeight: "0.85", letterSpacing: "0.04em" }}
               >
                 <span className="inline-block">ජීවිතේම</span> <br />
@@ -168,7 +168,7 @@ export function Hero() {
             </div>
 
             {/* Mobile Image - Shown only below lg breakpoint */}
-            <div className="lg:hidden w-full px-4">
+            <div className="lg:hidden w-full px-4 pt-6">
               <div className="relative aspect-square max-w-md mx-auto">
                 {/* Decorative circles */}
                 <motion.div
@@ -255,7 +255,7 @@ export function Hero() {
             <div>
               <motion.p
                 variants={itemVariants}
-                className="text-sm sm:text-base md:text-md xl:text-lg text-muted-foreground max-w-lg px-4 sm:px-0 text-center md:text-left pt-4"
+                className="text-sm sm:text-base md:text-md xl:text-lg text-muted-foreground max-w-lg px-4 sm:px-0 text-center md:text-left md:pt-4"
               >
                 The premier platform connecting Sri Lankan talent with top local
                 companies and global employers. Your career journey starts here.
@@ -304,7 +304,7 @@ export function Hero() {
               {/* Trust Indicators */}
               <motion.div
                 variants={itemVariants}
-                className="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground px-2 sm:px-0 pb-2"
+                className="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground px-2 sm:px-0 pb-2 pt-6 md:pt-0"
               >
                 <motion.div
                   whileHover={{ x: 5 }}

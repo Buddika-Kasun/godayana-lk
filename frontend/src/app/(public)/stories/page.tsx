@@ -331,19 +331,32 @@ export default function StoriesPage() {
 
   return (
     <div className="bg-background min-h-screen flex flex-col">
-      
       {/* Header */}
-      <motion.div
+      {/* <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
         className="py-8 mx-4 sm:mx-6 lg:mx-8"
       >
         <h1 className="text-3xl md:text-4xl font-bold mb-2">
-          ගොඩගිය
+          ගොඩයන
           <span className="text-primary"> Stories</span>
         </h1>
         <p className="text-muted-foreground max-w-2xl">
+          Real experiences from job seekers who found their dream careers.
+        </p>
+      </motion.div> */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeInUp}
+        className="mb-4 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-rose-500 via-rose-600 to-rose-700 rounded-b-lg"
+      >
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90">
+          ගොඩයන
+          <span className="text-background/90"> Stories</span>
+        </h1>
+        <p className="text-background/80 relative">
           Real experiences from job seekers who found their dream careers.
         </p>
       </motion.div>
@@ -379,32 +392,38 @@ export default function StoriesPage() {
                       {story.category}
                     </Badge>
                   </div>
-                  <h3 className="text-xl font-bold line-clamp-2">
-                    {story.title}
-                  </h3>
-                </div>
+                  {/* Author Info - Single row with left text and right avatar */}
+                  <div className="flex items-center justify-between gap-3 mt-4">
+                    {/* Left side - Author name and role */}
+                    <div className="flex-col min-w-0">
+                      <div className="pb-4">
+                        <p className="font-bold text-lg truncate">
+                          {story.author}
+                        </p>
+                        <p className="text-xs text-background/90 truncate">
+                          {story.authorRole}
+                        </p>
+                      </div>
+                      <div>
+                        <h5 className="text-md font-bold line-clamp-2">
+                          {story.title}
+                        </h5>
+                      </div>
+                    </div>
 
-                <CardContent className="px-5 flex flex-col flex-1">
-                  {/* Author Info - Fixed height */}
-                  <div className="flex items-center gap-3 mb-4 min-h-12.5">
-                    <Avatar className="h-10 w-10 border-2 border-primary/20 shrink-0">
-                      <AvatarFallback className="bg-primary/10 text-primary">
+                    {/* Right side - Avatar */}
+                    <Avatar className="h-30 w-30 border-2 border-background/50 shrink-0">
+                      <AvatarFallback className="bg-background/20 text-background">
                         {story.author
                           .split(" ")
                           .map((n) => n[0])
                           .join("")}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {story.author}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {story.authorRole}
-                      </p>
-                    </div>
                   </div>
+                </div>
 
+                <CardContent className="px-5 flex flex-col flex-1">
                   {/* Full Description - Fixed height with scroll if needed */}
                   <div className="min-h-20 max-h-20 overflow-y-auto mb-4 pr-1 scrollbar-thin">
                     <p className="text-muted-foreground text-sm">
@@ -431,7 +450,7 @@ export default function StoriesPage() {
                     <div className="flex items-center gap-4">
                       <motion.button
                         onClick={() => handleLike(story.id)}
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -447,21 +466,22 @@ export default function StoriesPage() {
                             (likedStories.includes(story.id) ? 1 : 0)}
                         </span>
                       </motion.button>
+                    </div>
 
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
                       <motion.button
                         onClick={() => handleShare(story)}
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
                         <Share2 className="h-4 w-4" />
                         <span>{story.shares}</span>
                       </motion.button>
-                    </div>
-
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <MessageCircle className="h-4 w-4" />
-                      <span>{story.comments}</span>
+                      {/* <div className="flex gap-1">
+                        <MessageCircle className="h-4 w-4" />
+                        <span>{story.comments}</span>
+                      </div> */}
                     </div>
                   </div>
                 </CardContent>
