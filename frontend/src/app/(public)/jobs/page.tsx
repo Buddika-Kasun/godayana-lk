@@ -546,13 +546,13 @@ export default function JobsPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="pt-8 pb-4 mx-4 sm:mx-6 lg:mx-8 border-b"
+        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-violet-500 via-violet-700 to-violet-800 rounded-b-lg"
       >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90">
           ගොඩයන
-          <span className="text-primary"> Jobs</span>
+          <span className="text-background/90"> Jobs</span>
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-background/80 relative">
           Find your dream career locally or globally.
         </p>
       </motion.div>
@@ -1240,10 +1240,10 @@ export default function JobsPage() {
                                   <Briefcase className="h-4 w-4 text-primary shrink-0" />
                                   <span>{job.category}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm">
+                                {/* <div className="flex items-center gap-2 text-sm">
                                   <Briefcase className="h-4 w-4 text-primary shrink-0" />
                                   <span>{job.experience}</span>
-                                </div>
+                                </div> */}
                               </div>
 
                               <div className="flex flex-col sm:flex-row gap-3">
@@ -1261,7 +1261,7 @@ export default function JobsPage() {
                                     </Button>
                                   </Link>
                                 </motion.div>
-                                <motion.div
+                                {/* <motion.div
                                   className="flex-1"
                                   whileHover={{ scale: 1.05 }}
                                   whileTap={{ scale: 0.95 }}
@@ -1277,7 +1277,7 @@ export default function JobsPage() {
                                       View Details
                                     </Button>
                                   </Link>
-                                </motion.div>
+                                </motion.div> */}
                               </div>
                             </div>
                           </div>

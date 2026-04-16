@@ -112,7 +112,7 @@
   /* Deep blue-gray */
 
   /* Muted - Light backgrounds */
-  --muted: oklch(0.95 0.01 100);
+  --muted: oklch(93.135% 0.01221 291.113);
   /* Warm light gray */
   --muted-foreground: oklch(0.55 0.02 260);
   /* Medium blue-gray */

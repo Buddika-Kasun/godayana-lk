@@ -224,7 +224,7 @@ export default function GatewayPage() {
   return (
     <div className="bg-background min-h-screen flex flex-col">
       {/* Header */}
-      <motion.div
+      {/* <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
@@ -235,6 +235,20 @@ export default function GatewayPage() {
           <span className="text-primary"> Countries</span>
         </h1>
         <p className="text-muted-foreground max-w-2xl">
+          Explore global destinations and find the best fit for your future.
+        </p>
+      </motion.div> */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeInUp}
+        className="mb-4 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-fuchsia-400 via-fuchsia-600 to-fuchsia-700 rounded-b-lg"
+      >
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90">
+          ගොඩයන
+          <span className="text-background/90"> Countries</span>
+        </h1>
+        <p className="text-background/80 relative">
           Explore global destinations and find the best fit for your future.
         </p>
       </motion.div>
