@@ -77,7 +77,7 @@ const floatingVariants2: Variants = {
 
 export function Hero() {
   return (
-    <section className="relative pt-0 md:pt-0 min-h-[calc(100vh-100px)] md:h-[calc(100vh-80px)] overflow-y-hidden overflow-x-hidden w-full">
+    <section className="relative pt-0 md:pt-0 min-h-[calc(100vh-100px)] md:h-[calc(100vh-80px)] overflow-y-hidden overflow-x-hidden w-full bg-gradient-to-r from-blue-800 via-blue-600/80 to-white/50 dark:from-blue-950/70 dark:via-blue-900/60 dark:to-background">
       {/* Background decorative elements with animation */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -141,13 +141,13 @@ export function Hero() {
             {/* Main Heading */}
             <div>
               <motion.h1
-                className="text-7xl sm:text-5xl md:text-6xl lg:text-[90px] xl:text-8xl text-center md:text-left font-bold font-sinhala md:pl-8 pt-8 md:pt-0"
+                className="text-7xl sm:text-5xl md:text-6xl lg:text-[90px] xl:text-8xl text-center md:text-left font-bold font-sinhala md:pl-8 pt-8 md:pt-0 pb-2"
                 style={{ lineHeight: "0.85", letterSpacing: "0.04em" }}
               >
-                <span className="inline-block">ජීවිතේම</span> <br />
-                <span className="text-primary relative whitespace-nowrap">
+                <span className="inline-block text-white">ජීවිතේම</span> <br />
+                <span className="text-secondary relative whitespace-nowrap">
                   <span className="inline-block">ගොඩයන්න</span>
-                  <motion.svg
+                  {/* <motion.svg
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     transition={{ delay: 1, duration: 0.8, ease: "easeOut" }}
@@ -161,10 +161,13 @@ export function Hero() {
                       strokeWidth="1.5"
                       fill="none"
                     />
-                  </motion.svg>
+                  </motion.svg> */}
                 </span>
                 <br />
               </motion.h1>
+              <span className="text-lg md:pl-8 text-white/80">
+                Powering Careers. Connecting Talent.
+              </span>
             </div>
 
             {/* Mobile Image - Shown only below lg breakpoint */}
@@ -255,7 +258,7 @@ export function Hero() {
             <div>
               <motion.p
                 variants={itemVariants}
-                className="text-sm sm:text-base md:text-md xl:text-lg text-muted-foreground max-w-lg px-4 sm:px-0 text-center md:text-left md:pt-4"
+                className="text-sm sm:text-base md:text-md xl:text-lg text-white/90 max-w-lg px-4 sm:px-0 text-center md:text-left md:pt-4"
               >
                 The premier platform connecting Sri Lankan talent with top local
                 companies and global employers. Your career journey starts here.
@@ -267,7 +270,7 @@ export function Hero() {
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className="bg-card border rounded-lg p-2 sm:p-1 flex flex-col sm:flex-row gap-2 shadow-sm w-full"
+                  className="bg-card/80 border rounded-lg p-2 sm:p-1 flex flex-col sm:flex-row gap-2 shadow-sm w-full"
                 >
                   <div className="flex-1 w-full">
                     <Input

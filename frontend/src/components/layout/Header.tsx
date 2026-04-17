@@ -24,6 +24,7 @@ const navigation = [
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Visa", href: "/visa", icon: Plane },
   { name: "Countries", href: "/countries", icon: Globe },
+  { name: "Gateway", href: "/gateway", icon: Users },
   { name: "Stories", href: "/stories", icon: Users },
 ];
 
@@ -165,7 +166,7 @@ export function Header() {
                   <span className="bg-gradient-to-r text-primary bg-clip-text">
                     Godayana
                   </span>
-                  <span className="text-gray-400">.lk</span>
+                  <span className="text-secondary">.lk</span>
                 </motion.div>
               </Link>
             </motion.div>
@@ -183,7 +184,7 @@ export function Header() {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="relative px-2 py-2"
+                    className="relative px-1 py-2"
                   >
                     <motion.div
                       whileHover={{ y: -2 }}
