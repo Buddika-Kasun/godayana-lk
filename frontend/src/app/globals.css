@@ -106,7 +106,7 @@
   /* White */
 
   /* Secondary - Godayana Gold (Beaches) */
-  --secondary: oklch(0.83 0.175 95.6);
+  --secondary: oklch(87.47% 0.17657 97.473);
   /* Warm gold */
   --secondary-foreground: oklch(0.25 0.02 260);
   /* Deep blue-gray */
@@ -196,7 +196,7 @@
   /* Deep ocean */
 
   /* Secondary - Softer gold for dark mode */
-  --secondary: oklch(0.7 0.12 85.0);
+  --secondary: oklch(78.947% 0.13843 93.703);
   /* Soft gold */
   --secondary-foreground: oklch(0.15 0.02 260);
   /* Deep ocean */
