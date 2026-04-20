@@ -77,7 +77,7 @@ const floatingVariants2: Variants = {
 
 export function Hero() {
   return (
-    <section className="relative pt-0 md:pt-0 min-h-[calc(100vh-100px)] md:h-[calc(100vh-80px)] overflow-y-hidden overflow-x-hidden w-full bg-gradient-to-r from-blue-800 via-blue-600/80 to-white/50 dark:from-blue-950/70 dark:via-blue-900/60 dark:to-background">
+    <section className="relative pt-0 md:pt-0 min-h-[calc(100vh-100px)] md:h-[calc(100vh-80px)] overflow-y-hidden overflow-x-hidden w-full bg-gradient-to-r from-blue-900 via-blue-700/80 to-blue-500/80 dark:from-blue-950/70 dark:via-blue-900/60 dark:to-background">
       {/* Background decorative elements with animation */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -128,9 +128,9 @@ export function Hero() {
               <motion.div variants={itemVariants}>
                 <Badge
                   variant="secondary"
-                  className="bg-blue-100 dark:bg-blue-950 text-primary border border-blue-200 dark:border-blue-900 px-3 sm:px-4 py-1.5 sm:py-2 mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
+                  className="bg-blue-100/30 dark:bg-blue-950 text-white dark:text-primary border border-blue-200 dark:border-blue-900 px-3 sm:px-4 py-1.5 sm:py-2 mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
                 >
-                  <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full mr-1 shrink-0"></span>
+                  <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-100/80 dark:bg-primary rounded-full mr-1 shrink-0"></span>
                   <span className="truncate">
                     NEW: OVERSEAS OPPORTUNITIES IN 15+ COUNTRIES
                   </span>
@@ -141,12 +141,17 @@ export function Hero() {
             {/* Main Heading */}
             <div>
               <motion.h1
-                className="text-7xl sm:text-5xl md:text-6xl lg:text-[90px] xl:text-8xl text-center md:text-left font-bold font-sinhala md:pl-8 pt-8 md:pt-0 pb-2"
-                style={{ lineHeight: "0.85", letterSpacing: "0.04em" }}
+                className="text-7xl sm:text-5xl md:text-6xl lg:text-[90px] xl:text-8xl text-center font-bold font-sinhala md:pl-8 pt-12 md:pt-0"
+                style={{ lineHeight: "0.5", letterSpacing: "0.01em" }}
               >
-                <span className="inline-block text-white">ජීවිතේම</span> <br />
+                <span className="inline-block text-white font-fm-gamunu">
+                  ජීවිතේම
+                </span>{" "}
+                <br />
                 <span className="text-secondary relative whitespace-nowrap">
-                  <span className="inline-block">ගොඩයන්න</span>
+                  <span className="inline-block font-fm-gamunu text-8xl md:text-9xl">
+                    ගොඩයන්න
+                  </span>
                   {/* <motion.svg
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
@@ -165,13 +170,13 @@ export function Hero() {
                 </span>
                 <br />
               </motion.h1>
-              <span className="text-lg md:pl-8 text-white/80">
+              <div className="text-center text-lg md:pl-8 text-white/80">
                 Powering Careers. Connecting Talent.
-              </span>
+              </div>
             </div>
 
             {/* Mobile Image - Shown only below lg breakpoint */}
-            <div className="lg:hidden w-full px-4 pt-6">
+            <div className="lg:hidden w-full px-4">
               <div className="relative aspect-square max-w-md mx-auto">
                 {/* Decorative circles */}
                 <motion.div
@@ -256,17 +261,17 @@ export function Hero() {
 
             {/* Description */}
             <div>
-              <motion.p
+              {/* <motion.p
                 variants={itemVariants}
-                className="text-sm sm:text-base md:text-md xl:text-lg text-white/90 max-w-lg px-4 sm:px-0 text-center md:text-left md:pt-4"
+                className="text-sm sm:text-base md:text-md xl:text-lg text-white/90 max-w-lg px-4 sm:px-0 text-center md:text-left"
               >
                 The premier platform connecting Sri Lankan talent with top local
                 companies and global employers. Your career journey starts here.
-              </motion.p>
+              </motion.p> */}
 
               {/* Bottom Section */}
               {/* Search Form */}
-              <motion.div variants={itemVariants} className="px-2 sm:px-0 pt-6">
+              <motion.div variants={itemVariants} className="px-2 sm:px-0">
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -317,9 +322,11 @@ export function Hero() {
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-white/80 shrink-0" />
                   </motion.div>
-                  <span className="whitespace-nowrap">Verified Companies</span>
+                  <span className="whitespace-nowrap text-white/80">
+                    Verified Companies
+                  </span>
                 </motion.div>
                 <motion.div
                   whileHover={{ x: 5 }}
@@ -329,9 +336,11 @@ export function Hero() {
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                   >
-                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0 text-white/80" />
                   </motion.div>
-                  <span className="whitespace-nowrap">Daily Updates</span>
+                  <span className="whitespace-nowrap text-white/80">
+                    Daily Updates
+                  </span>
                 </motion.div>
               </motion.div>
             </div>

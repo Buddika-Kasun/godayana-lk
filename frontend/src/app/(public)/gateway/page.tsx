@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   Sparkles,
   Brain,
@@ -15,9 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 // Animation
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 },
+  },
 };
 
 export default function GatewayPage() {
@@ -44,11 +48,11 @@ export default function GatewayPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-violet-500 via-violet-700 to-violet-800 rounded-b-lg text-center"
+        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-blue-400 via-blue-700 to-blue-900 rounded-b-lg text-center"
       >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90">
-          ගොඩයන
-          <span className="text-secondary"> Gateway</span>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90 ">
+          <span className="font-fm-gamunu text-[40px] md:text-5xl">ගොඩයන </span>
+          <span className=""> Gateway</span>
         </h1>
         <p className="text-background/80 relative">
           Your premium structured migration portal. Start your journey with a
