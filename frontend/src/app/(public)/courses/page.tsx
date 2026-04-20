@@ -517,10 +517,10 @@ export default function CoursesPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-teal-400 via-teal-500 to-teal-600 rounded-b-lg"
+        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-blue-400 via-blue-700 to-blue-900 rounded-b-lg text-center"
       >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90">
-          ගොඩයන
+        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90 ">
+          <span className="font-fm-gamunu text-[40px] md:text-5xl">ගොඩයන </span>
           <span className="text-background/90"> Courses</span>
         </h1>
         <p className="text-background/80 relative">
