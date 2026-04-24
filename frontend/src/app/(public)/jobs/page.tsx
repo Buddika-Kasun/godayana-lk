@@ -1269,7 +1269,7 @@ export default function JobsPage() {
                                   whileTap={{ scale: 0.95 }}
                                 >
                                   <Link
-                                    href={`/jobs/${job.id}/apply`}
+                                    href={`/jobs/${job.id}`}
                                     className="block"
                                   >
                                     <Button className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer px-8 group">

@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Header } from "@/components/layout/Header"
-import { Footer } from "@/components/layout/Footer"
-import { MobileNavProvider } from "@/context/MobileNavContext"
+import { Toaster } from "react-hot-toast";
+import { ReduxProvider } from "@/lib/redux/Provider";
+import { ThemeProvider } from "next-themes";
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -78,17 +78,17 @@ export default function RootLayout({
         className={`${inter.className} antialiased overflow-x-hidden w-full max-w-[100vw]`}
         suppressHydrationWarning
       >
-        <MobileNavProvider
-        //className="w-full overflow-x-hidden"
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-          <Header />
-          <main
-          //className="min-h-screen w-full overflow-x-hidden px-0"
-          >
+          <ReduxProvider>
             {children}
-          </main>
-          <Footer />
-        </MobileNavProvider>
+            <Toaster />
+          </ReduxProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
