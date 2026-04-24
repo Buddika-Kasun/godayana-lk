@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock, Phone } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -112,7 +111,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <Suspense fallback={<LoadingScreen message="Loading..." />}>
+      <Suspense fallback={<div>Loading...</div>}>
         <Toaster />
         <div className="pt-10 pb-20 bg-primary/10 flex flex-col items-center justify-center p-4 min-h-screen">
           {/* Login Card */}
