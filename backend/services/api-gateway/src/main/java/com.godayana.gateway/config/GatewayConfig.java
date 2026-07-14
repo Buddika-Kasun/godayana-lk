@@ -27,29 +27,29 @@ public class GatewayConfig {
     @Value("${USER_SERVICE_URL:http://localhost:8082}")
     private String userServiceUrl;
 
-    @Value("${NOTIFICATION_SERVICE_URL:http://localhost:8089}")
-    private String notificationServiceUrl;
+//    @Value("${NOTIFICATION_SERVICE_URL:http://localhost:8089}")
+//    private String notificationServiceUrl;
 
     @Value("${JOB_SERVICE_URL:http://localhost:8083}")
     private String jobServiceUrl;
 
-    @Value("${COURSE_SERVICE_URL:http://localhost:8085}")
-    private String courseServiceUrl;
-
-    @Value("${VISA_SERVICE_URL:http://localhost:8086}")
-    private String visaServiceUrl;
-
-    @Value("${COUNTRY_SERVICE_URL:http://localhost:8087}")
-    private String countryServiceUrl;
-
-    @Value("${STORY_SERVICE_URL:http://localhost:8088}")
-    private String storyServiceUrl;
-
-    @Value("${PAYMENT_SERVICE_URL:http://localhost:8091}")
-    private String paymentServiceUrl;
-
-    @Value("${ADMIN_SERVICE_URL:http://localhost:8090}")
-    private String adminServiceUrl;
+//    @Value("${COURSE_SERVICE_URL:http://localhost:8085}")
+//    private String courseServiceUrl;
+//
+//    @Value("${VISA_SERVICE_URL:http://localhost:8086}")
+//    private String visaServiceUrl;
+//
+//    @Value("${COUNTRY_SERVICE_URL:http://localhost:8087}")
+//    private String countryServiceUrl;
+//
+//    @Value("${STORY_SERVICE_URL:http://localhost:8088}")
+//    private String storyServiceUrl;
+//
+//    @Value("${PAYMENT_SERVICE_URL:http://localhost:8091}")
+//    private String paymentServiceUrl;
+//
+//    @Value("${ADMIN_SERVICE_URL:http://localhost:8090}")
+//    private String adminServiceUrl;
 
     @Value("${FILE_SERVICE_URL:http://localhost:8084}")
     private String fileServiceUrl;
@@ -162,30 +162,30 @@ public class GatewayConfig {
                         .uri(userServiceUrl))
 
                 // Notification Service Routes - With Retry and CircuitBreaker
-                .route("notification-service", r -> r
-                        .path("/api/v1/notifications/**")
-                        .filters(f -> f
-                                .retry(config -> {
-                                    config.setRetries(3);
-                                    config.setStatuses(
-                                            HttpStatus.SERVICE_UNAVAILABLE,
-                                            HttpStatus.INTERNAL_SERVER_ERROR,
-                                            HttpStatus.GATEWAY_TIMEOUT
-                                    );
-                                    config.setMethods(
-                                            HttpMethod.POST,
-                                            HttpMethod.GET,
-                                            HttpMethod.PUT,
-                                            HttpMethod.DELETE
-                                    );
-                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-                                })
-                                .circuitBreaker(config -> {
-                                    config.setName("notificationService");
-                                    config.setFallbackUri("forward:/fallback/notification");
-                                })
-                                .stripPrefix(0))
-                        .uri(notificationServiceUrl))
+//                .route("notification-service", r -> r
+//                        .path("/api/v1/notifications/**")
+//                        .filters(f -> f
+//                                .retry(config -> {
+//                                    config.setRetries(3);
+//                                    config.setStatuses(
+//                                            HttpStatus.SERVICE_UNAVAILABLE,
+//                                            HttpStatus.INTERNAL_SERVER_ERROR,
+//                                            HttpStatus.GATEWAY_TIMEOUT
+//                                    );
+//                                    config.setMethods(
+//                                            HttpMethod.POST,
+//                                            HttpMethod.GET,
+//                                            HttpMethod.PUT,
+//                                            HttpMethod.DELETE
+//                                    );
+//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+//                                })
+//                                .circuitBreaker(config -> {
+//                                    config.setName("notificationService");
+//                                    config.setFallbackUri("forward:/fallback/notification");
+//                                })
+//                                .stripPrefix(0))
+//                        .uri(notificationServiceUrl))
 
                 // Job Service Routes - With Retry and CircuitBreaker
                 .route("job-service-upload", r -> r
@@ -237,160 +237,160 @@ public class GatewayConfig {
                         .uri(jobServiceUrl))
 
                 // Course Service Routes - With Retry and CircuitBreaker
-                .route("course-service", r -> r
-                        .path("/api/v1/courses/**")
-                        .filters(f -> f
-                                .retry(config -> {
-                                    config.setRetries(3);
-                                    config.setStatuses(
-                                            HttpStatus.SERVICE_UNAVAILABLE,
-                                            HttpStatus.INTERNAL_SERVER_ERROR,
-                                            HttpStatus.GATEWAY_TIMEOUT
-                                    );
-                                    config.setMethods(
-                                            HttpMethod.POST,
-                                            HttpMethod.GET,
-                                            HttpMethod.PUT,
-                                            HttpMethod.DELETE
-                                    );
-                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-                                })
-                                .circuitBreaker(config -> {
-                                    config.setName("courseService");
-                                    config.setFallbackUri("forward:/fallback/course");
-                                })
-                                .stripPrefix(0))
-                        .uri(courseServiceUrl))
-
-                // Visa Service Routes - With Retry and CircuitBreaker
-                .route("visa-service", r -> r
-                        .path("/api/v1/visa/**")
-                        .filters(f -> f
-                                .retry(config -> {
-                                    config.setRetries(3);
-                                    config.setStatuses(
-                                            HttpStatus.SERVICE_UNAVAILABLE,
-                                            HttpStatus.INTERNAL_SERVER_ERROR,
-                                            HttpStatus.GATEWAY_TIMEOUT
-                                    );
-                                    config.setMethods(
-                                            HttpMethod.POST,
-                                            HttpMethod.GET,
-                                            HttpMethod.PUT,
-                                            HttpMethod.DELETE
-                                    );
-                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-                                })
-                                .circuitBreaker(config -> {
-                                    config.setName("visaService");
-                                    config.setFallbackUri("forward:/fallback/visa");
-                                })
-                                .stripPrefix(0))
-                        .uri(visaServiceUrl))
-
-                // Country Service Routes - With Retry and CircuitBreaker
-                .route("country-service", r -> r
-                        .path("/api/v1/countries/**")
-                        .filters(f -> f
-                                .retry(config -> {
-                                    config.setRetries(3);
-                                    config.setStatuses(
-                                            HttpStatus.SERVICE_UNAVAILABLE,
-                                            HttpStatus.INTERNAL_SERVER_ERROR,
-                                            HttpStatus.GATEWAY_TIMEOUT
-                                    );
-                                    config.setMethods(
-                                            HttpMethod.POST,
-                                            HttpMethod.GET,
-                                            HttpMethod.PUT,
-                                            HttpMethod.DELETE
-                                    );
-                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-                                })
-                                .circuitBreaker(config -> {
-                                    config.setName("countryService");
-                                    config.setFallbackUri("forward:/fallback/country");
-                                })
-                                .stripPrefix(0))
-                        .uri(countryServiceUrl))
-
-                // Story Service Routes - With Retry and CircuitBreaker
-                .route("story-service", r -> r
-                        .path("/api/v1/stories/**")
-                        .filters(f -> f
-                                .retry(config -> {
-                                    config.setRetries(3);
-                                    config.setStatuses(
-                                            HttpStatus.SERVICE_UNAVAILABLE,
-                                            HttpStatus.INTERNAL_SERVER_ERROR,
-                                            HttpStatus.GATEWAY_TIMEOUT
-                                    );
-                                    config.setMethods(
-                                            HttpMethod.POST,
-                                            HttpMethod.GET,
-                                            HttpMethod.PUT,
-                                            HttpMethod.DELETE
-                                    );
-                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-                                })
-                                .circuitBreaker(config -> {
-                                    config.setName("storyService");
-                                    config.setFallbackUri("forward:/fallback/story");
-                                })
-                                .stripPrefix(0))
-                        .uri(storyServiceUrl))
-
-                // Payment Service Routes - With Retry and CircuitBreaker
-                .route("payment-service", r -> r
-                        .path("/api/v1/payments/**")
-                        .filters(f -> f
-                                .retry(config -> {
-                                    config.setRetries(3);
-                                    config.setStatuses(
-                                            HttpStatus.SERVICE_UNAVAILABLE,
-                                            HttpStatus.INTERNAL_SERVER_ERROR,
-                                            HttpStatus.GATEWAY_TIMEOUT
-                                    );
-                                    config.setMethods(
-                                            HttpMethod.POST,
-                                            HttpMethod.GET,
-                                            HttpMethod.PUT,
-                                            HttpMethod.DELETE
-                                    );
-                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-                                })
-                                .circuitBreaker(config -> {
-                                    config.setName("paymentService");
-                                    config.setFallbackUri("forward:/fallback/payment");
-                                })
-                                .stripPrefix(0))
-                        .uri(paymentServiceUrl))
-
-                // Admin Service Routes - With Retry and CircuitBreaker
-                .route("admin-service", r -> r
-                        .path("/api/v1/admin/**")
-                        .filters(f -> f
-                                .retry(config -> {
-                                    config.setRetries(3);
-                                    config.setStatuses(
-                                            HttpStatus.SERVICE_UNAVAILABLE,
-                                            HttpStatus.INTERNAL_SERVER_ERROR,
-                                            HttpStatus.GATEWAY_TIMEOUT
-                                    );
-                                    config.setMethods(
-                                            HttpMethod.POST,
-                                            HttpMethod.GET,
-                                            HttpMethod.PUT,
-                                            HttpMethod.DELETE
-                                    );
-                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-                                })
-                                .circuitBreaker(config -> {
-                                    config.setName("adminService");
-                                    config.setFallbackUri("forward:/fallback/admin");
-                                })
-                                .stripPrefix(0))
-                        .uri(adminServiceUrl))
+//                .route("course-service", r -> r
+//                        .path("/api/v1/courses/**")
+//                        .filters(f -> f
+//                                .retry(config -> {
+//                                    config.setRetries(3);
+//                                    config.setStatuses(
+//                                            HttpStatus.SERVICE_UNAVAILABLE,
+//                                            HttpStatus.INTERNAL_SERVER_ERROR,
+//                                            HttpStatus.GATEWAY_TIMEOUT
+//                                    );
+//                                    config.setMethods(
+//                                            HttpMethod.POST,
+//                                            HttpMethod.GET,
+//                                            HttpMethod.PUT,
+//                                            HttpMethod.DELETE
+//                                    );
+//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+//                                })
+//                                .circuitBreaker(config -> {
+//                                    config.setName("courseService");
+//                                    config.setFallbackUri("forward:/fallback/course");
+//                                })
+//                                .stripPrefix(0))
+//                        .uri(courseServiceUrl))
+//
+//                // Visa Service Routes - With Retry and CircuitBreaker
+//                .route("visa-service", r -> r
+//                        .path("/api/v1/visa/**")
+//                        .filters(f -> f
+//                                .retry(config -> {
+//                                    config.setRetries(3);
+//                                    config.setStatuses(
+//                                            HttpStatus.SERVICE_UNAVAILABLE,
+//                                            HttpStatus.INTERNAL_SERVER_ERROR,
+//                                            HttpStatus.GATEWAY_TIMEOUT
+//                                    );
+//                                    config.setMethods(
+//                                            HttpMethod.POST,
+//                                            HttpMethod.GET,
+//                                            HttpMethod.PUT,
+//                                            HttpMethod.DELETE
+//                                    );
+//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+//                                })
+//                                .circuitBreaker(config -> {
+//                                    config.setName("visaService");
+//                                    config.setFallbackUri("forward:/fallback/visa");
+//                                })
+//                                .stripPrefix(0))
+//                        .uri(visaServiceUrl))
+//
+//                // Country Service Routes - With Retry and CircuitBreaker
+//                .route("country-service", r -> r
+//                        .path("/api/v1/countries/**")
+//                        .filters(f -> f
+//                                .retry(config -> {
+//                                    config.setRetries(3);
+//                                    config.setStatuses(
+//                                            HttpStatus.SERVICE_UNAVAILABLE,
+//                                            HttpStatus.INTERNAL_SERVER_ERROR,
+//                                            HttpStatus.GATEWAY_TIMEOUT
+//                                    );
+//                                    config.setMethods(
+//                                            HttpMethod.POST,
+//                                            HttpMethod.GET,
+//                                            HttpMethod.PUT,
+//                                            HttpMethod.DELETE
+//                                    );
+//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+//                                })
+//                                .circuitBreaker(config -> {
+//                                    config.setName("countryService");
+//                                    config.setFallbackUri("forward:/fallback/country");
+//                                })
+//                                .stripPrefix(0))
+//                        .uri(countryServiceUrl))
+//
+//                // Story Service Routes - With Retry and CircuitBreaker
+//                .route("story-service", r -> r
+//                        .path("/api/v1/stories/**")
+//                        .filters(f -> f
+//                                .retry(config -> {
+//                                    config.setRetries(3);
+//                                    config.setStatuses(
+//                                            HttpStatus.SERVICE_UNAVAILABLE,
+//                                            HttpStatus.INTERNAL_SERVER_ERROR,
+//                                            HttpStatus.GATEWAY_TIMEOUT
+//                                    );
+//                                    config.setMethods(
+//                                            HttpMethod.POST,
+//                                            HttpMethod.GET,
+//                                            HttpMethod.PUT,
+//                                            HttpMethod.DELETE
+//                                    );
+//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+//                                })
+//                                .circuitBreaker(config -> {
+//                                    config.setName("storyService");
+//                                    config.setFallbackUri("forward:/fallback/story");
+//                                })
+//                                .stripPrefix(0))
+//                        .uri(storyServiceUrl))
+//
+//                // Payment Service Routes - With Retry and CircuitBreaker
+//                .route("payment-service", r -> r
+//                        .path("/api/v1/payments/**")
+//                        .filters(f -> f
+//                                .retry(config -> {
+//                                    config.setRetries(3);
+//                                    config.setStatuses(
+//                                            HttpStatus.SERVICE_UNAVAILABLE,
+//                                            HttpStatus.INTERNAL_SERVER_ERROR,
+//                                            HttpStatus.GATEWAY_TIMEOUT
+//                                    );
+//                                    config.setMethods(
+//                                            HttpMethod.POST,
+//                                            HttpMethod.GET,
+//                                            HttpMethod.PUT,
+//                                            HttpMethod.DELETE
+//                                    );
+//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+//                                })
+//                                .circuitBreaker(config -> {
+//                                    config.setName("paymentService");
+//                                    config.setFallbackUri("forward:/fallback/payment");
+//                                })
+//                                .stripPrefix(0))
+//                        .uri(paymentServiceUrl))
+//
+//                // Admin Service Routes - With Retry and CircuitBreaker
+//                .route("admin-service", r -> r
+//                        .path("/api/v1/admin/**")
+//                        .filters(f -> f
+//                                .retry(config -> {
+//                                    config.setRetries(3);
+//                                    config.setStatuses(
+//                                            HttpStatus.SERVICE_UNAVAILABLE,
+//                                            HttpStatus.INTERNAL_SERVER_ERROR,
+//                                            HttpStatus.GATEWAY_TIMEOUT
+//                                    );
+//                                    config.setMethods(
+//                                            HttpMethod.POST,
+//                                            HttpMethod.GET,
+//                                            HttpMethod.PUT,
+//                                            HttpMethod.DELETE
+//                                    );
+//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+//                                })
+//                                .circuitBreaker(config -> {
+//                                    config.setName("adminService");
+//                                    config.setFallbackUri("forward:/fallback/admin");
+//                                })
+//                                .stripPrefix(0))
+//                        .uri(adminServiceUrl))
 
                 .route("file-service", r -> r
                         .path("/api/v1/files/**")

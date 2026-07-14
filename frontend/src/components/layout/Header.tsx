@@ -181,6 +181,15 @@ export function Header() {
     return "/seeker/dashboard";
   };
 
+  const getProfileLink = () => {
+    if (user?.role === "seeker") {
+      return "/seeker/profile";
+    } else if (user?.role === "company") {
+      return "/company/profile";
+    }
+    return "/seeker/profile";
+  };
+
   const getRole = () => {
     if (user?.role === "seeker") {
       return "Job Seeker";
@@ -404,14 +413,16 @@ export function Header() {
                           Dashboard
                         </Link>
 
-                        <Link
-                          href="/seeker/profile"
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-primary/20 rounded-md mx-2 mt-1 mb-2 transition-colors"
-                          onClick={() => setIsDropdownOpen(false)}
-                        >
-                          <User size={16} />
-                          Profile Settings
-                        </Link>
+                        {user.role != "admin" && (
+                          <Link
+                            href={getProfileLink()}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-primary/20 rounded-md mx-2 mt-1 mb-2 transition-colors"
+                            onClick={() => setIsDropdownOpen(false)}
+                          >
+                            <User size={16} />
+                            Profile Settings
+                          </Link>
+                        )}
 
                         <hr className="my-1" />
 

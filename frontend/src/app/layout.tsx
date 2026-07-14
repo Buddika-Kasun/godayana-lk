@@ -75,11 +75,22 @@ export const metadata: Metadata = {
   // },
 };
 
+// This runs on the server and WILL show in Railway logs
+console.log('🔗 SERVER - NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
+  // Debug - log the API URL
+  console.log("🔗 NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+
+  // Or show it on the page for debugging
+  if (typeof window !== "undefined") {
+    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body

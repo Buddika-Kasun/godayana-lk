@@ -54,3 +54,88 @@ CREATE TABLE IF NOT EXISTS company_profiles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO seeker_profiles (
+    id,
+    user_id,
+    full_name,
+    phone,
+    created_at,
+    updated_at
+) VALUES (
+    '11111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
+    'DEV User',
+    '+94123456789',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+) ON CONFLICT (user_id) DO NOTHING;
+
+
+INSERT INTO company_profiles (
+    id,
+    user_id,
+    company_name,
+    company_email,
+    hotline_number,
+    contact_person_name,
+    designation,
+    is_verified,
+    status,
+    created_at,
+    updated_at
+) VALUES (
+    '11111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
+    'DEV User',
+    'dev@godayana.lk',
+    '+94123456789',
+    'DEV User',
+    'Lead Developer',
+    true,
+    'APPROVED',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+) ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO seeker_profiles (
+    id,
+    user_id,
+    full_name,
+    phone,
+    created_at,
+    updated_at
+) VALUES (
+    '33333333-3333-3333-3333-333333333333',
+    '33333333-3333-3333-3333-333333333333',
+    'SEEKER',
+    '+94000000000',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+) ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO company_profiles (
+    id,
+    user_id,
+    company_name,
+    company_email,
+    hotline_number,
+    contact_person_name,
+    designation,
+    is_verified,
+    status,
+    created_at,
+    updated_at
+) VALUES (
+    '44444444-4444-4444-4444-444444444444',
+    '44444444-4444-4444-4444-444444444444',
+    'COMPANY',
+    'company@godayana.lk',
+    '+94773333333',
+    'COMPANY User',
+    'HR',
+    true,
+    'APPROVED',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+) ON CONFLICT (user_id) DO NOTHING;

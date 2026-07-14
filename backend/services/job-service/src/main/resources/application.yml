@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: ${PORT:8083}
 
 spring:
   config:
@@ -39,6 +39,10 @@ notification:
 file:
   service:
     url: ${FILE_SERVICE_URL:http://localhost:8084}
+
+user:
+  service:
+    url: ${USER_SERVICE_URL:http://localhost:8082}
 
 logging:
   level:
