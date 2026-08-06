@@ -1,10 +1,7 @@
 package com.godayana.job.service.interfaces;
 
 import com.godayana.job.dto.request.JobRequest;
-import com.godayana.job.dto.response.JobImageUploadResponse;
-import com.godayana.job.dto.response.JobCountsResponse;
-import com.godayana.job.dto.response.JobListResponse;
-import com.godayana.job.dto.response.JobResponse;
+import com.godayana.job.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,7 +14,7 @@ public interface IJobService {
 
     JobResponse updateJob(UUID jobId, UUID companyId, JobRequest request);
 
-    JobResponse getJobById(UUID jobId);
+    JobResponse getJobById(UUID jobId, Boolean isVisited);
 
     JobResponse getCompanyJobById(UUID jobId);
 
@@ -25,13 +22,20 @@ public interface IJobService {
                                      String employmentType, String category,
                                      String status, Pageable pageable);
 
+    Page<JobAdminListResponse> getAdminAllJobs(String search, String location, String type,
+                                               String employmentType, String category,
+                                               String status, Pageable pageable);
+
+    Page<JobPublicListResponse> getPublicJobs(String keyword, String location, String category,
+                                                 String employmentType, String experience, String type, Pageable pageable);
+
     Page<JobListResponse> getJobsByCompany(UUID companyId, String status, Pageable pageable);
 
     Page<JobListResponse> getPendingJobs(Pageable pageable);
 
-    JobResponse approveJob(UUID jobId, UUID adminId);
+    void approveJob(UUID jobId, UUID adminId);
 
-    JobResponse rejectJob(UUID jobId, UUID adminId, String reason);
+    void rejectJob(UUID jobId, UUID adminId, String reason);
 
     JobResponse closeJob(UUID jobId, UUID userId);
 
@@ -49,7 +53,9 @@ public interface IJobService {
 
     long countJobsByCompany(UUID companyId);
 
-    JobCountsResponse getJobCounts(UUID companyId);
+    JobCountsResponse getCompanyJobCounts(UUID companyId);
+
+    JobCountsResponse getAdminJobCounts();
 
     JobImageUploadResponse uploadJobImage(UUID companyId, MultipartFile file);
 }

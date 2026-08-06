@@ -33,11 +33,11 @@ public class GatewayConfig {
     @Value("${JOB_SERVICE_URL:http://localhost:8083}")
     private String jobServiceUrl;
 
-//    @Value("${COURSE_SERVICE_URL:http://localhost:8085}")
-//    private String courseServiceUrl;
-//
-//    @Value("${VISA_SERVICE_URL:http://localhost:8086}")
-//    private String visaServiceUrl;
+    @Value("${COURSE_SERVICE_URL:http://localhost:8092}")
+    private String courseServiceUrl;
+
+    @Value("${VISA_SERVICE_URL:http://localhost:8085}")
+    private String visaServiceUrl;
 //
 //    @Value("${COUNTRY_SERVICE_URL:http://localhost:8087}")
 //    private String countryServiceUrl;
@@ -189,8 +189,8 @@ public class GatewayConfig {
 
                 // Job Service Routes - With Retry and CircuitBreaker
                 .route("job-service-upload", r -> r
-                        .path("/api/v1/jobs/upload/**",
-                                "/api/v1/jobs/upload/job-image")
+                        .path("/api/v1/jobs/upload/job-image",
+                                "/api/v1/jobs/upload/**")
                         .filters(f -> f
                                 .retry(config -> {
                                     config.setRetries(3);
@@ -237,56 +237,81 @@ public class GatewayConfig {
                         .uri(jobServiceUrl))
 
                 // Course Service Routes - With Retry and CircuitBreaker
-//                .route("course-service", r -> r
-//                        .path("/api/v1/courses/**")
-//                        .filters(f -> f
-//                                .retry(config -> {
-//                                    config.setRetries(3);
-//                                    config.setStatuses(
-//                                            HttpStatus.SERVICE_UNAVAILABLE,
-//                                            HttpStatus.INTERNAL_SERVER_ERROR,
-//                                            HttpStatus.GATEWAY_TIMEOUT
-//                                    );
-//                                    config.setMethods(
-//                                            HttpMethod.POST,
-//                                            HttpMethod.GET,
-//                                            HttpMethod.PUT,
-//                                            HttpMethod.DELETE
-//                                    );
-//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-//                                })
-//                                .circuitBreaker(config -> {
-//                                    config.setName("courseService");
-//                                    config.setFallbackUri("forward:/fallback/course");
-//                                })
-//                                .stripPrefix(0))
-//                        .uri(courseServiceUrl))
-//
-//                // Visa Service Routes - With Retry and CircuitBreaker
-//                .route("visa-service", r -> r
-//                        .path("/api/v1/visa/**")
-//                        .filters(f -> f
-//                                .retry(config -> {
-//                                    config.setRetries(3);
-//                                    config.setStatuses(
-//                                            HttpStatus.SERVICE_UNAVAILABLE,
-//                                            HttpStatus.INTERNAL_SERVER_ERROR,
-//                                            HttpStatus.GATEWAY_TIMEOUT
-//                                    );
-//                                    config.setMethods(
-//                                            HttpMethod.POST,
-//                                            HttpMethod.GET,
-//                                            HttpMethod.PUT,
-//                                            HttpMethod.DELETE
-//                                    );
-//                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
-//                                })
-//                                .circuitBreaker(config -> {
-//                                    config.setName("visaService");
-//                                    config.setFallbackUri("forward:/fallback/visa");
-//                                })
-//                                .stripPrefix(0))
-//                        .uri(visaServiceUrl))
+                .route("course-service-upload", r -> r
+                        .path("/api/v1/courses/upload/course-image",
+                                "/api/v1/courses/upload/**")
+                        .filters(f -> f
+                                .retry(config -> {
+                                    config.setRetries(3);
+                                    config.setStatuses(
+                                            HttpStatus.SERVICE_UNAVAILABLE,
+                                            HttpStatus.INTERNAL_SERVER_ERROR,
+                                            HttpStatus.GATEWAY_TIMEOUT
+                                    );
+                                    config.setMethods(
+                                            HttpMethod.POST,
+                                            HttpMethod.PUT,
+                                            HttpMethod.PATCH,
+                                            HttpMethod.DELETE
+                                    );
+                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+                                })
+                                // NO circuit breaker
+                                .stripPrefix(0))
+                        .uri(courseServiceUrl))
+
+                .route("course-service", r -> r
+                        .path("/api/v1/courses/**", "/api/v1/enrollments/**", "/api/v1/reviews/**")
+                        .filters(f -> f
+                                .retry(config -> {
+                                    config.setRetries(3);
+                                    config.setStatuses(
+                                            HttpStatus.SERVICE_UNAVAILABLE,
+                                            HttpStatus.INTERNAL_SERVER_ERROR,
+                                            HttpStatus.GATEWAY_TIMEOUT
+                                    );
+                                    config.setMethods(
+                                            HttpMethod.POST,
+                                            HttpMethod.GET,
+                                            HttpMethod.PUT,
+                                            HttpMethod.DELETE
+                                    );
+                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+                                })
+                                .circuitBreaker(config -> {
+                                    config.setName("courseService");
+                                    config.setFallbackUri("forward:/fallback/course");
+                                })
+                                .stripPrefix(0))
+                        .uri(courseServiceUrl))
+
+                // Visa Service Routes - With Retry and CircuitBreaker
+                .route("visa-service", r -> r
+                        .path("/api/v1/visa/**",
+                                "/api/v1/visa-consultations/**",
+                                "/api/v1/gateway-consultations/**")
+                        .filters(f -> f
+                                .retry(config -> {
+                                    config.setRetries(3);
+                                    config.setStatuses(
+                                            HttpStatus.SERVICE_UNAVAILABLE,
+                                            HttpStatus.INTERNAL_SERVER_ERROR,
+                                            HttpStatus.GATEWAY_TIMEOUT
+                                    );
+                                    config.setMethods(
+                                            HttpMethod.POST,
+                                            HttpMethod.GET,
+                                            HttpMethod.PUT,
+                                            HttpMethod.DELETE
+                                    );
+                                    config.setBackoff(Duration.ofSeconds(2), Duration.ofSeconds(5), 2, true);
+                                })
+                                .circuitBreaker(config -> {
+                                    config.setName("visaService");
+                                    config.setFallbackUri("forward:/fallback/visa");
+                                })
+                                .stripPrefix(0))
+                        .uri(visaServiceUrl))
 //
 //                // Country Service Routes - With Retry and CircuitBreaker
 //                .route("country-service", r -> r

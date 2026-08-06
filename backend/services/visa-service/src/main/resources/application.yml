@@ -1,0 +1,62 @@
+server:
+  port: ${PORT:8085}
+  tomcat:
+    connection-timeout: 60000
+    max-http-form-post-size: 20971520  # 20MB in bytes
+    max-swallow-size: 20971520
+
+spring:
+  config:
+    import: classpath:application-common.yml
+  application:
+    name: visa-service
+  datasource:
+    url: jdbc:${VISA_DB_URL:postgresql://localhost:5432/visa_db}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: ${SHOW_SQL:true}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    validate-on-migrate: false  # Temporarily disable validation
+    baseline-version: 0
+    locations: classpath:db/migration
+    table: flyway_schema_history
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:5MB}     # Increase from default 1MB
+      max-request-size: ${MAX_FILE_SIZE:5MB}   # Increase from default 1MB
+      enabled: true
+      file-size-threshold: 2KB
+
+notification:
+  service:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8089}
+
+file:
+  service:
+    url: ${FILE_SERVICE_URL:http://localhost:8084}
+
+user:
+  service:
+    url: ${USER_SERVICE_URL:http://localhost:8082}
+
+logging:
+  level:
+    com.godayana: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet: DEBUG
+    org.springframework.web.filter: DEBUG
+
+eureka:
+  client:
+    enabled: false  # Disable Eureka for local development
+    register-with-eureka: false
+    fetch-registry: false

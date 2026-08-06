@@ -1,5 +1,9 @@
 server:
   port: ${PORT:8083}
+  tomcat:
+    connection-timeout: 60000
+    max-http-form-post-size: 20971520  # 20MB in bytes
+    max-swallow-size: 20971520
 
 spring:
   config:
@@ -47,6 +51,10 @@ user:
 logging:
   level:
     com.godayana: DEBUG
+    com.godayana.job.filter: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet: DEBUG
+    org.springframework.web.filter: DEBUG
 
 eureka:
   client:

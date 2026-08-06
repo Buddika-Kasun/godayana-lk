@@ -1,4 +1,4 @@
-package com.godayana.user.dto;
+package com.godayana.user.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +22,7 @@ public class SeekerProfileResponse {
     private String phone;
     private String profilePicUrl;
     private String resumeUrl;
+    private String resumeFileKey;
     private String[] skills;
     private Integer experienceYears;
     private String education;
@@ -39,6 +40,7 @@ public class SeekerProfileResponse {
     private String professionalSummary;
     private String[] preferredJobCategories;
     private Boolean shareCv;
+    private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

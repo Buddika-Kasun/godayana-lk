@@ -102,8 +102,11 @@ jwt:
 logging:
   level:
     com.godayana: DEBUG
-    org.springframework.cloud.gateway: INFO
+#    org.springframework.cloud.gateway: INFO
     reactor.netty: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: DEBUG
+    org.springframework.cloud.gateway.handler: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 

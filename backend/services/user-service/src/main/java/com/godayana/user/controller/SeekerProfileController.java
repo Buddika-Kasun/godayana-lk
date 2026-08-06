@@ -1,14 +1,20 @@
 package com.godayana.user.controller;
 
 import com.godayana.dto.ApiResponse;
-import com.godayana.user.dto.SeekerProfileRequest;
-import com.godayana.user.dto.SeekerProfileResponse;
+import com.godayana.dto.company.CompanyDetailsResponse;
+import com.godayana.dto.seeker.SeekerDetailsResponse;
+import com.godayana.user.dto.request.SeekerProfileRequest;
+import com.godayana.user.dto.response.*;
 import com.godayana.user.service.SeekerProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -60,11 +66,68 @@ public class SeekerProfileController {
         return ApiResponse.success(seekerProfileService.uploadResume(UUID.fromString(userId), file));
     }
 
+    @GetMapping("/company/application/{seekerId}")
+    public ApiResponse<SeekerProfileResponse> getCompanySeekerProfile(
+            @PathVariable UUID seekerId,
+            @RequestParam String applicationId
+    ) {
+        return ApiResponse.success(seekerProfileService.getProfileByUserIdAndApplicationId(seekerId, applicationId));
+    }
+
+    @GetMapping("/admin/approved/counts")
+    public ApiResponse<ApprovedCountResponse> getSeekerApprovedCounts() {
+        return ApiResponse.success(seekerProfileService.getSeekerApprovedCounts());
+    }
+
+    @GetMapping("/admin/status")
+    public ApiResponse<Page<AdminSeekerProfileResponse>> getSeekersByStatus(
+            @RequestParam(required = false) String status,
+            Pageable pageable) {
+        return ApiResponse.success(seekerProfileService.getSeekersByStatus(status, pageable));
+    }
+
+    @GetMapping("/admin/search")
+    public ApiResponse<Page<AdminSeekerProfileResponse>> searchSeekers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String educationLevel,
+            @RequestParam(required = false) String experience,
+            @RequestParam(required = false) String dateRange,
+            Pageable pageable) {
+        return ApiResponse.success(seekerProfileService.searchSeekers(
+                search, status, location, isActive, gender, educationLevel, experience, dateRange, pageable));
+    }
+
+    @GetMapping("/admin/{seekerId}")
+    public ApiResponse<SeekerProfileResponse> getAdminSeekerProfile(@PathVariable UUID seekerId) {
+        return ApiResponse.success(seekerProfileService.getProfileByUserId(seekerId));
+    }
+
+    @PostMapping("/admin/{seekerId}/active")
+    public ApiResponse<Void> activeSeeker(@PathVariable UUID seekerId) {
+        seekerProfileService.activeSeeker(seekerId);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/admin/{seekerId}/suspend")
+    public ApiResponse<Void> suspendSeeker(@PathVariable UUID seekerId) {
+        seekerProfileService.suspendSeeker(seekerId);
+        return ApiResponse.success(null);
+    }
+
     // Internal endpoints for auth service
     @PostMapping("/internal")
     public ApiResponse<SeekerProfileResponse> createProfileInternal(
             @RequestParam UUID userId,
             @Valid @RequestBody SeekerProfileRequest request) {
         return ApiResponse.success(seekerProfileService.createProfile(userId, request));
+    }
+
+    @PostMapping("/internal/batch")
+    public ApiResponse<Map<UUID, SeekerDetailsResponse>> getSeekerProfileBatch(@RequestBody List<UUID> seekerIds) {
+        return ApiResponse.success(seekerProfileService.getInternalProfileByUserIds(seekerIds));
     }
 }

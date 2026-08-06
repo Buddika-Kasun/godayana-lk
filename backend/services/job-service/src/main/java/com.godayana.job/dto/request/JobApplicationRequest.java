@@ -15,7 +15,7 @@ import java.util.UUID;
 public class JobApplicationRequest {
 
     @NotNull(message = "Job ID is required")
-    private UUID jobId;
+    private String jobId;
 
     private String coverLetter;
 }

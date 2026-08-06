@@ -62,4 +62,6 @@ public class JobRequest {
     private String cvDeliveryOption;
 
     private Job.MatchingCriteria matchingCriteria;
+
+    private String status;
 }

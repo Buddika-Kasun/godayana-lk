@@ -39,10 +39,13 @@ public class JobController {
         return ApiResponse.success(jobService.updateJob(jobId, UUID.fromString(userId), request));
     }
 
-    @GetMapping("/{jobId}")
-    public ApiResponse<JobResponse> getJobById(@PathVariable UUID jobId) {
+    @GetMapping("/public/{jobId}")
+    public ApiResponse<JobResponse> getJobById(
+            @PathVariable UUID jobId,
+            @RequestParam(required = false) Boolean isVisited
+    ) {
         log.info("Fetching job: {}", jobId);
-        return ApiResponse.success(jobService.getJobById(jobId));
+        return ApiResponse.success(jobService.getJobById(jobId, isVisited));
     }
 
     @GetMapping
@@ -56,6 +59,20 @@ public class JobController {
             Pageable pageable) {
         log.info("Fetching all jobs with filters");
         return ApiResponse.success(jobService.getAllJobs(search, location, type,
+                employmentType, category, status, pageable));
+    }
+
+    @GetMapping("/admin")
+    public ApiResponse<Page<JobAdminListResponse>> getAdminAllJobs(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String employmentType,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String status,
+            Pageable pageable) {
+        log.info("Fetching all jobs with filters for admin");
+        return ApiResponse.success(jobService.getAdminAllJobs(search, location, type,
                 employmentType, category, status, pageable));
     }
 
@@ -75,20 +92,22 @@ public class JobController {
     }
 
     @PostMapping("/{jobId}/approve")
-    public ApiResponse<JobResponse> approveJob(
+    public ApiResponse<Void> approveJob(
             @RequestHeader("X-User-Id") String adminId,
             @PathVariable UUID jobId) {
         log.info("Approving job: {} by admin: {}", jobId, adminId);
-        return ApiResponse.success(jobService.approveJob(jobId, UUID.fromString(adminId)));
+        jobService.approveJob(jobId, UUID.fromString(adminId));
+        return ApiResponse.success(null);
     }
 
     @PostMapping("/{jobId}/reject")
-    public ApiResponse<JobResponse> rejectJob(
+    public ApiResponse<Void> rejectJob(
             @RequestHeader("X-User-Id") String adminId,
             @PathVariable UUID jobId,
             @RequestParam String reason) {
         log.info("Rejecting job: {} by admin: {}", jobId, adminId);
-        return ApiResponse.success(jobService.rejectJob(jobId, UUID.fromString(adminId), reason));
+        jobService.rejectJob(jobId, UUID.fromString(adminId), reason);
+        return ApiResponse.success(null);
     }
 
     @PostMapping("/{jobId}/close")
@@ -116,6 +135,19 @@ public class JobController {
         return ApiResponse.success(jobService.searchJobs(keyword, pageable));
     }
 
+    @GetMapping("/public/search")
+    public ApiResponse<Page<JobPublicListResponse>> getPublicJobs(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String employmentType,
+            @RequestParam(required = false) String experience,
+            @RequestParam(required = false) String type,
+            Pageable pageable) {
+        log.info("Searching jobs with keyword: {}", keyword);
+        return ApiResponse.success(jobService.getPublicJobs(keyword, location, category, employmentType, experience, type, pageable));
+    }
+
     @GetMapping("/stats")
     public ApiResponse<JobStats> getJobStats() {
         log.info("Fetching job statistics");
@@ -140,7 +172,15 @@ public class JobController {
     public ApiResponse<JobCountsResponse> getCompanyJobCounts(
             @RequestHeader("X-User-Id") String userId) {
         log.info("Getting job counts for company: {}", userId);
-        return ApiResponse.success(jobService.getJobCounts(UUID.fromString(userId)));
+        return ApiResponse.success(jobService.getCompanyJobCounts(UUID.fromString(userId)));
+    }
+
+    @GetMapping("/admin/counts")
+    public ApiResponse<JobCountsResponse> getAdminJobCounts(
+//            @RequestHeader("X-User-Id") String userId
+    ) {
+//        log.info("Getting job counts for admin: {}", userId);
+        return ApiResponse.success(jobService.getAdminJobCounts());
     }
 
     @GetMapping("/company/{jobId}")

@@ -1,21 +1,21 @@
-package com.godayana.user.dto;
+package com.godayana.user.dto.response;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CompanyProfileRequest {
-
-    @NotBlank(message = "Company name is required")
+public class CompanyProfileResponse {
+    private UUID id;
+    private UUID userId;
     private String companyName;
-
     private String registrationNumber;
     private String website;
     private String logoUrl;
@@ -24,27 +24,18 @@ public class CompanyProfileRequest {
     private String companyType;
     private String employeeCount;
     private String location;
-
-    @Email(message = "Invalid email format")
     private String companyEmail;
-
     private String hotlineNumber;
     private String facebookUrl;
     private String linkedinUrl;
     private String instagramUrl;
-
-//    @NotBlank(message = "Contact person name is required")
     private String contactPersonName;
-
-//    @NotBlank(message = "Designation is required")
     private String designation;
-
-    @Email(message = "Invalid email format")
-//    @NotBlank(message = "CV delivery email is required")
     private String cvDeliveryEmail;
-
+    private Boolean isVerified;
     private Boolean jobPostingTerms;
-
     private Boolean cvDeliveryTerms;
-
+    private String status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

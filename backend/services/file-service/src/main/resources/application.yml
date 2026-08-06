@@ -1,5 +1,9 @@
 server:
   port: ${PORT:8084}
+  tomcat:
+    connection-timeout: 60000
+    max-http-form-post-size: 20971520
+    max-swallow-size: 20971520
 
 spring:
   config:
@@ -38,7 +42,7 @@ storage:
   access-key: ${STORAGE_ACCESS_KEY}
   secret-key: ${STORAGE_SECRET_KEY}
   presigned-url-expiry-minutes: 60
-  max-file-size: 5242880  # 5MB
+  max-file-size: 20971520 # 20MB
   allowed-image-types: image/jpeg,image/png,image/webp
   allowed-document-types: application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document
 
@@ -47,3 +51,9 @@ eureka:
     enabled: false  # Disable Eureka for local development
     register-with-eureka: false
     fetch-registry: false
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet: DEBUG
+    org.springframework.web.filter: DEBUG

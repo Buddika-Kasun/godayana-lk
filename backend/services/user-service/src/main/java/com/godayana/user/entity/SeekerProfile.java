@@ -94,6 +94,13 @@ public class SeekerProfile {
     @Column(name = "share_cv")
     private Boolean shareCv = true;
 
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private ProfileStatus status;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -101,4 +108,8 @@ public class SeekerProfile {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public enum ProfileStatus {
+        PENDING, APPROVED, REJECTED, SUSPENDED
+    }
 }

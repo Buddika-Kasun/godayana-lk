@@ -2,7 +2,10 @@ package com.godayana.job.controller;
 
 import com.godayana.dto.ApiResponse;
 import com.godayana.job.dto.request.JobApplicationRequest;
+import com.godayana.job.dto.response.JobApplicationCompanyResponse;
+import com.godayana.job.dto.response.JobApplicationCountsResponse;
 import com.godayana.job.dto.response.JobApplicationResponse;
+import com.godayana.job.dto.response.JobApplicationSeekerResponse;
 import com.godayana.job.service.interfaces.IJobApplicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,27 +27,60 @@ public class JobApplicationController {
     @PostMapping
     public ApiResponse<JobApplicationResponse> applyForJob(
             @RequestHeader("X-User-Id") String seekerId,
-            @Valid @RequestBody JobApplicationRequest request) {
+            @Valid @RequestBody JobApplicationRequest request
+//            @PathVariable(required = true) UUID jobId
+    ) {
         log.info("Applying for job: {} by seeker: {}", request.getJobId(), seekerId);
-        return ApiResponse.success(jobApplicationService.applyForJob(UUID.fromString(seekerId), request));
+//        log.info("Applying for job: {} by seeker: {}", jobId, seekerId);
+//        return ApiResponse.success(jobApplicationService.applyForJob(UUID.fromString(seekerId), request));
+        return ApiResponse.success(jobApplicationService.applyForJob(UUID.fromString(seekerId), UUID.fromString(request.getJobId())));
     }
 
     @GetMapping("/job/{jobId}")
-    public ApiResponse<Page<JobApplicationResponse>> getApplicationsByJob(
+    public ApiResponse<Page<JobApplicationCompanyResponse>> getApplicationsByJob(
             @RequestHeader("X-User-Id") String companyId,
             @PathVariable UUID jobId,
+            @RequestParam String status,
             Pageable pageable) {
         log.info("Fetching applications for job: {} by company: {}", jobId, companyId);
         return ApiResponse.success(jobApplicationService.getApplicationsByJob(jobId,
-                UUID.fromString(companyId), pageable));
+                UUID.fromString(companyId), status, pageable));
+    }
+
+    @GetMapping("/count")
+    public ApiResponse<JobApplicationCountsResponse> countJobApplications(
+            @RequestHeader("X-User-Id") String seekerId
+    ) {
+        log.info("Counting applied jobs of seeker: {}", seekerId);
+        return ApiResponse.success(jobApplicationService.countJobApplicationsBySeeker(
+                UUID.fromString(seekerId)));
+    }
+
+    @GetMapping("/company/count/{jobId}")
+    public ApiResponse<JobApplicationCountsResponse> countCompanyJobApplications(
+            @PathVariable String jobId
+    ) {
+        log.info("Counting applications of job: {}", jobId);
+        return ApiResponse.success(jobApplicationService.countJobApplicationsByJob(
+                UUID.fromString(jobId)));
     }
 
     @GetMapping("/me")
-    public ApiResponse<Page<JobApplicationResponse>> getMyApplications(
+    public ApiResponse<Page<JobApplicationSeekerResponse>> getMyApplications(
             @RequestHeader("X-User-Id") String seekerId,
+            @RequestParam String status,
             Pageable pageable) {
         log.info("Fetching applications for seeker: {}", seekerId);
-        return ApiResponse.success(jobApplicationService.getApplicationsBySeeker(
+        return ApiResponse.success(jobApplicationService.getApplicationsBySeekerAndStatus(
+                UUID.fromString(seekerId), status, pageable));
+    }
+
+    @GetMapping("/me/ids")
+    public ApiResponse<Page<UUID>> getMyApplicationJobIds(
+            @RequestHeader("X-User-Id") String seekerId,
+            Pageable pageable) {
+        log.info("Fetching application jobs for seeker: {}", seekerId);
+        return ApiResponse.success(jobApplicationService.getApplicationsJobsIdsBySeeker(
                 UUID.fromString(seekerId), pageable));
     }
 

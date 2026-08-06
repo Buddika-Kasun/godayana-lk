@@ -9,10 +9,7 @@ import com.godayana.exception.BusinessException;
 import com.godayana.exception.ErrorCode;
 import com.godayana.exception.ResourceNotFoundException;
 import com.godayana.job.dto.request.JobRequest;
-import com.godayana.job.dto.response.JobCountsResponse;
-import com.godayana.job.dto.response.JobImageUploadResponse;
-import com.godayana.job.dto.response.JobListResponse;
-import com.godayana.job.dto.response.JobResponse;
+import com.godayana.job.dto.response.*;
 import com.godayana.job.entity.Job;
 import com.godayana.job.repository.JobRepository;
 import com.godayana.job.service.interfaces.IJobService;
@@ -40,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -78,6 +74,11 @@ public class JobServiceImpl implements IJobService {
             }
         }
 
+        Job.JobStatus status = Job.JobStatus.PENDING;
+        if ("draft".equalsIgnoreCase(request.getStatus())) {
+            status = Job.JobStatus.DRAFT;
+        }
+
         Job job = Job.builder()
                 .companyId(companyId)
                 .jobTitle(request.getJobTitle())
@@ -104,7 +105,7 @@ public class JobServiceImpl implements IJobService {
                 .descriptionImageUrl(request.getDescriptionImageFileKey())
                 .cvDeliveryOption(Job.CvDeliveryOption.valueOf(request.getCvDeliveryOption()))
                 .matchingCriteria(matchingCriteriaJson)
-                .status(Job.JobStatus.PENDING)
+                .status(status)
                 .viewCount(0)
                 .applicationCount(0)
                 .createdBy(companyId)
@@ -177,12 +178,33 @@ public class JobServiceImpl implements IJobService {
     }
 
     @Override
-    @Transactional()
-    public JobResponse getJobById(UUID jobId) {
+    @Transactional
+    public JobResponse getJobById(UUID jobId, Boolean isVisited) {
+        log.debug("Fetching job by ID: {}", jobId);
+
+        // Find the job
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job", "id", jobId));
-        incrementViewCount(jobId);
-        return mapToResponse(job);
+
+        // Only allow viewing if status is APPROVED
+        if (job.getStatus() != Job.JobStatus.APPROVED) {
+            log.warn("Attempted to view non-approved job: {}, Status: {}", jobId, job.getStatus());
+            throw new BusinessException(
+                    "Job is not available for public viewing",
+                    ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                    404
+            );
+        }
+
+        if (isVisited != null && !isVisited) {
+            // Increment view count only for approved jobs
+            incrementViewCount(jobId);
+        }
+
+        // Increment view count only for approved jobs
+//        incrementViewCount(jobId);
+
+        return mapToResponse(job, true);
     }
 
     @Override
@@ -198,10 +220,64 @@ public class JobServiceImpl implements IJobService {
     public Page<JobListResponse> getAllJobs(String search, String location, String type,
                                             String employmentType, String category,
                                             String status, Pageable pageable) {
-        String effectiveStatus = status != null ? status : "APPROVED";
+        Job.JobStatus effectiveStatus = status != null ? Job.JobStatus.valueOf(status) : Job.JobStatus.APPROVED;
         return jobRepository.searchJobs(search, location, type, employmentType, category, effectiveStatus, pageable)
                 .map(this::mapToListResponse);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<JobAdminListResponse> getAdminAllJobs(String search, String location, String type,
+                                                      String employmentType, String category,
+                                                      String status, Pageable pageable) {
+//        Job.JobStatus effectiveStatus = status != null ? Job.JobStatus.valueOf(status) : Job.JobStatus.APPROVED;
+//        return jobRepository.searchJobs(search, location, type, employmentType, category, effectiveStatus, pageable)
+//                .map(this::mapToAdminListResponse);
+        String effectiveStatus = status != null ? status : "APPROVED";
+//        return jobRepository.searchJobsNative(search, location, type, employmentType, category, effectiveStatus, pageable)
+//                .map(this::mapToAdminListResponse);
+
+        Page<Job> jobPage = jobRepository.searchJobsNative(search, location, type, employmentType, category, effectiveStatus, pageable);
+
+        // Get all company IDs from the jobs
+        List<UUID> companyIds = jobPage.getContent().stream()
+                .map(Job::getCompanyId)
+                .distinct()
+                .toList();
+
+        // Batch fetch company details
+        Map<UUID, CompanyDetailsResponse> companyDetailsMap = getCompanyDetailsBatch(companyIds);
+
+        // Map to admin list response with company details
+        return jobPage.map(job -> mapToAdminListResponse(job, companyDetailsMap));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<JobPublicListResponse> getPublicJobs(String keyword, String location, String category,
+                                                     String employmentType, String experience, String type, Pageable pageable) {
+//        Job.JobStatus effectiveStatus = status != null ? Job.JobStatus.valueOf(status) : Job.JobStatus.APPROVED;
+//        return jobRepository.searchJobs(search, location, type, employmentType, category, effectiveStatus, pageable)
+//                .map(this::mapToAdminListResponse);
+        String effectiveStatus = "APPROVED";
+//        return jobRepository.searchJobsNative(search, location, type, employmentType, category, effectiveStatus, pageable)
+//                .map(this::mapToAdminListResponse);
+
+        Page<Job> jobPage = jobRepository.searchPublicJobsNative(keyword, location, category, employmentType, experience, effectiveStatus, type, pageable);
+
+        // Get all company IDs from the jobs
+        List<UUID> companyIds = jobPage.getContent().stream()
+                .map(Job::getCompanyId)
+                .distinct()
+                .toList();
+
+        // Batch fetch company details
+        Map<UUID, CompanyDetailsResponse> companyDetailsMap = getCompanyDetailsBatch(companyIds);
+
+        // Map to admin list response with company details
+        return jobPage.map(job -> mapToPublicListResponse(job, companyDetailsMap));
+    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -209,8 +285,13 @@ public class JobServiceImpl implements IJobService {
 //        Job.JobStatus jobStatus = status != null ? Job.JobStatus.valueOf(status) : null;
         if (status == null || status.isEmpty()) {
             return jobRepository.findByCompanyId(companyId, pageable).map(this::mapToListResponse);
-        }
-        else {
+        } else if (status.equalsIgnoreCase("closed")) {
+            return jobRepository.findByCompanyIdAndStatusIn(
+                    companyId,
+                    List.of(Job.JobStatus.CLOSED, Job.JobStatus.REJECTED),
+                    pageable
+            ).map(this::mapToListResponse);
+        } else {
             return jobRepository.findByCompanyIdAndStatus(companyId, Job.JobStatus.valueOf(status), pageable)
                     .map(this::mapToListResponse);
         }
@@ -225,12 +306,12 @@ public class JobServiceImpl implements IJobService {
 
     @Override
     @Transactional
-    public JobResponse approveJob(UUID jobId, UUID adminId) {
+    public void approveJob(UUID jobId, UUID adminId) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job", "id", jobId));
 
-        if (job.getStatus() != Job.JobStatus.PENDING) {
-            throw new BusinessException("Job is not in pending state",
+        if (!(job.getStatus() == Job.JobStatus.PENDING | job.getStatus() == Job.JobStatus.REJECTED)) {
+            throw new BusinessException("Job is not in pending or rejected state",
                     ErrorCode.INVALID_STATUS_TRANSITION.getCode(), 400);
         }
 
@@ -239,17 +320,17 @@ public class JobServiceImpl implements IJobService {
         job.setApprovedAt(LocalDateTime.now());
         job = jobRepository.save(job);
 
-        return mapToResponse(job);
+//        return mapToResponse(job);
     }
 
     @Override
     @Transactional
-    public JobResponse rejectJob(UUID jobId, UUID adminId, String reason) {
+    public void rejectJob(UUID jobId, UUID adminId, String reason) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job", "id", jobId));
 
-        if (job.getStatus() != Job.JobStatus.PENDING) {
-            throw new BusinessException("Job is not in pending state",
+        if (!(job.getStatus() == Job.JobStatus.PENDING | job.getStatus() == Job.JobStatus.APPROVED)) {
+            throw new BusinessException("Job is not in pending or approved state",
                     ErrorCode.INVALID_STATUS_TRANSITION.getCode(), 400);
         }
 
@@ -258,7 +339,7 @@ public class JobServiceImpl implements IJobService {
         job.setApprovedAt(LocalDateTime.now());
         job = jobRepository.save(job);
 
-        return mapToResponse(job);
+//        return mapToResponse(job);
     }
 
     @Override
@@ -332,7 +413,7 @@ public class JobServiceImpl implements IJobService {
 
     @Override
     @Transactional(readOnly = true)
-    public JobCountsResponse getJobCounts(UUID companyId) {
+    public JobCountsResponse getCompanyJobCounts(UUID companyId) {
         log.debug("Getting job counts for company: {}", companyId);
 
         long total = jobRepository.countByCompanyId(companyId);
@@ -351,6 +432,29 @@ public class JobServiceImpl implements IJobService {
                 .draft(draft)
                 .build();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public JobCountsResponse getAdminJobCounts() {
+        log.debug("Getting job counts for admin");
+
+        long total = jobRepository.count();
+        long pending = jobRepository.countByStatus(Job.JobStatus.PENDING);
+        long approved = jobRepository.countByStatus(Job.JobStatus.APPROVED);
+        long rejected = jobRepository.countByStatus(Job.JobStatus.REJECTED);
+        long closed = jobRepository.countByStatus(Job.JobStatus.CLOSED);
+        long draft = jobRepository.countByStatus(Job.JobStatus.DRAFT);
+
+        return JobCountsResponse.builder()
+                .all(total)
+                .pending(pending)
+                .approved(approved)
+                .rejected(rejected)
+                .closed(closed)
+                .draft(draft)
+                .build();
+    }
+
 
     /**
      * Safely calculate hours between two times, handling null values
@@ -550,43 +654,29 @@ public class JobServiceImpl implements IJobService {
     private Map<UUID, CompanyDetailsResponse> getCompanyDetailsBatch(List<UUID> companyIds) {
         Map<UUID, CompanyDetailsResponse> result = new HashMap<>();
 
-        // Filter out already cached IDs
-//        List<UUID> uncachedIds = companyIds.stream()
-//                .filter(id -> !companyDetailsCache.containsKey(id))
-//                .distinct()
-//                .collect(Collectors.toList());
+        if (companyIds == null || companyIds.isEmpty()) {
+            return result;
+        }
 
-//        if (!uncachedIds.isEmpty()) {
-            try {
-                // Call User Service with list of company IDs
-                ApiResponse<Map<UUID, CompanyDetailsResponse>> response = webClientBuilder.build()
-                        .post()
-                        .uri(userServiceUrl + "/api/v1/company/profiles/batch")
-                        .contentType(MediaType.APPLICATION_JSON)
-//                        .bodyValue(uncachedIds)
-                        .bodyValue(companyIds)
-                        .retrieve()
-                        .bodyToMono(new ParameterizedTypeReference<ApiResponse<Map<UUID, CompanyDetailsResponse>>>() {})
-                        .block();
+        try {
+            ApiResponse<Map<UUID, CompanyDetailsResponse>> response = webClientBuilder.build()
+                    .post()
+                    .uri(userServiceUrl + "/api/v1/company/profiles/internal/batch")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(companyIds)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<ApiResponse<Map<UUID, CompanyDetailsResponse>>>() {})
+                    .block();
 
-                if (response != null && response.isSuccess() && response.getData() != null) {
-                    // Cache the results
-//                    companyDetailsCache.putAll(response.getData());
-                    result.putAll(response.getData());
-                }
-            } catch (Exception e) {
-                log.error("Failed to fetch company details in batch", e);
+            if (response != null && response.isSuccess() && response.getData() != null) {
+                result.putAll(response.getData());
             }
-//        }
-
-        // Build result map from cache
-//        for (UUID id : companyIds) {
-//            result.put(id, companyDetailsCache.getOrDefault(id, null));
-//        }
+        } catch (Exception e) {
+            log.error("Failed to fetch company details in batch", e);
+        }
 
         return result;
     }
-
 
     /**
      * Clear cache when needed (e.g., when company name is updated)
@@ -698,4 +788,79 @@ public class JobServiceImpl implements IJobService {
                 .createdAt(job.getCreatedAt())
                 .build();
     }
+
+    private JobAdminListResponse mapToAdminListResponse(Job job, Map<UUID, CompanyDetailsResponse> companyDetailsMap) {
+        if (job == null) {
+            throw new BusinessException("Job cannot be null", ErrorCode.INVALID_INPUT.getCode(), 400);
+        }
+
+        // Get company details from the map
+        CompanyDetailsResponse company = null;
+        String companyName = "Company";
+
+        if (companyDetailsMap != null && companyDetailsMap.containsKey(job.getCompanyId())) {
+            company = companyDetailsMap.get(job.getCompanyId());
+            if (company != null && company.getCompanyName() != null) {
+                companyName = company.getCompanyName();
+            }
+        }
+
+        // Safely calculate hours ago
+        long hoursAgo = calculateHoursAgo(job.getCreatedAt());
+
+        return JobAdminListResponse.builder()
+                .id(job.getId())
+                .companyId(job.getCompanyId())
+                .companyName(companyName)
+                .logoUrl(company.getLogoUrl())
+                .jobTitle(job.getJobTitle())
+                .jobType(job.getType() != null ? job.getType().toString() : null)
+                .location(job.getLocation())
+                .status(job.getStatus() != null ? job.getStatus().toString() : null)
+                .applications(job.getApplicationCount() != null ? job.getApplicationCount() : 0)
+                .views(job.getViewCount() != null ? job.getViewCount() : 0)
+                .createdAt(job.getCreatedAt())
+                .build();
+    }
+
+    private JobPublicListResponse mapToPublicListResponse(Job job, Map<UUID, CompanyDetailsResponse> companyDetailsMap) {
+        if (job == null) {
+            throw new BusinessException("Job cannot be null", ErrorCode.INVALID_INPUT.getCode(), 400);
+        }
+
+        // Get company details from the map
+        CompanyDetailsResponse company = null;
+        String companyName = "Company";
+        String companyLogo = null;
+
+        if (companyDetailsMap != null && companyDetailsMap.containsKey(job.getCompanyId())) {
+            company = companyDetailsMap.get(job.getCompanyId());
+            if (company != null && company.getCompanyName() != null) {
+                companyName = company.getCompanyName();
+                companyLogo = company.getLogoUrl();
+            }
+        }
+
+        // Safely calculate hours ago
+        long hoursAgo = calculateHoursAgo(job.getCreatedAt());
+
+        return JobPublicListResponse.builder()
+                .id(job.getId())
+                .companyId(job.getCompanyId())
+                .companyName(companyName)
+                .logoUrl(companyLogo)
+                .jobTitle(job.getJobTitle())
+                .category(job.getCategory() != null ? job.getCategory().toString() : null)
+                .location(job.getLocation())
+                .employmentType(job.getEmploymentType() != null ? job.getEmploymentType().toString() : null)
+                .status(job.getStatus() != null ? job.getStatus().toString() : null)
+                .type(job.getType() != null ? job.getType().toString() : null)
+                .minSalary(job.getSalaryMin())
+                .maxSalary(job.getSalaryMax())
+                .applications(job.getApplicationCount() != null ? job.getApplicationCount() : 0)
+                .views(job.getViewCount() != null ? job.getViewCount() : 0)
+                .createdAt(job.getCreatedAt())
+                .build();
+    }
+
 }

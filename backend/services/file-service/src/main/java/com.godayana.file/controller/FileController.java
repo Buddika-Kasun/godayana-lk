@@ -4,12 +4,16 @@ package com.godayana.file.controller;
 import com.godayana.dto.ApiResponse;
 import com.godayana.file.dto.FileUploadResponse;
 import com.godayana.file.service.FileService;
-import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -88,6 +92,14 @@ public class FileController {
         return ApiResponse.success(fileService.getFilesByUploaderId(userId));
     }
 
+    @GetMapping("/download")
+    public ResponseEntity<InputStreamResource> downloadFile(
+            @RequestParam String fileKey,
+            HttpServletResponse response) throws Exception {
+
+        return fileService.downloadFileByKey(fileKey, response);
+    }
+
     // Internal endpoints for other services
     @PostMapping("/internal/upload")
     public ApiResponse<FileUploadResponse> internalUploadFile(
@@ -122,6 +134,19 @@ public class FileController {
             return ApiResponse.error("File key is required");
         }
         return ApiResponse.success(fileService.getPresignedUrl(fileKey));
+    }
+
+    @PostMapping("/internal/presigned-urls/batch")
+    public ApiResponse<Map<String, String>> getPresignedUrlsBatch(
+            @RequestBody List<String> fileKeys
+    ) {
+        log.info("Getting batch presigned URLs for {} files", fileKeys != null ? fileKeys.size() : 0);
+
+        if (fileKeys == null || fileKeys.isEmpty()) {
+            return ApiResponse.success(new HashMap<>());
+        }
+
+        return ApiResponse.success(fileService.getPresignedUrlsBatch(fileKeys));
     }
 
     @GetMapping("/internal/presigned-url/{userId}")

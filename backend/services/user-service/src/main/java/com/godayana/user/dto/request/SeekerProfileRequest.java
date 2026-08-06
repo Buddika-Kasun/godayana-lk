@@ -1,4 +1,4 @@
-package com.godayana.user.dto;
+package com.godayana.user.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
