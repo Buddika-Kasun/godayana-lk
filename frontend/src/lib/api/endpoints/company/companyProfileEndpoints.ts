@@ -1,6 +1,6 @@
 // src/lib/api/companyEndpoints.ts
 import { ApiResponse } from "@/types/apiResponse";
-import { api } from "../axios";
+import { api } from "../../axios";
 
 export interface CompanyProfileData {
   id?: string;
@@ -30,8 +30,16 @@ export interface CompanyProfileData {
   updatedAt?: string;
 }
 
-export const companyAPI = {
+export interface CompanyCountsResponse {
+  all: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+export const companyProfileAPI = {
   // Core profile operations
+
   getCompanyProfile: () =>
     api.get<ApiResponse<CompanyProfileData>>("/company/profiles/me"),
 
@@ -56,5 +64,4 @@ export const companyAPI = {
       },
     );
   },
-
 };

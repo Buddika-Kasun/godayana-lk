@@ -1,240 +1,154 @@
 // src/app/admin/visa-gateway/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Calendar, Building2, Globe, Users, Book } from "lucide-react";
 import Link from "next/link";
-
-interface VisaGatewayPost {
-  id: number;
-  title: string;
-  company: string;
-  companyId: number;
-  type: "visa" | "gateway";
-  country: string;
-  postedDate: string;
-  applications: number;
-  views: number;
-}
-
-// Mock data - replace with API call
-const allPosts: VisaGatewayPost[] = [
-  // UK Visa
-  {
-    id: 1,
-    title: "UK Visa Services",
-    company: "Visa Solutions",
-    companyId: 1,
-    type: "visa",
-    country: "United Kingdom",
-    postedDate: "2024-04-21",
-    applications: 45,
-    views: 320,
-  },
-  // UK Gateway
-  {
-    id: 1,
-    title: "UK Immigration Gateway",
-    company: "Gateway Global",
-    companyId: 2,
-    type: "gateway",
-    country: "United Kingdom",
-    postedDate: "2024-04-20",
-    applications: 28,
-    views: 190,
-  },
-  // Australia Visa
-  {
-    id: 3,
-    title: "Australia Visa Services",
-    company: "Global Visa Services",
-    companyId: 3,
-    type: "visa",
-    country: "Australia",
-    postedDate: "2024-04-22",
-    applications: 0,
-    views: 0,
-  },
-  // Australia Gateway
-  {
-    id: 4,
-    title: "Australia Migration Gateway",
-    company: "Migration Experts",
-    companyId: 4,
-    type: "gateway",
-    country: "Australia",
-    postedDate: "2024-04-19",
-    applications: 15,
-    views: 120,
-  },
-  // Canada Visa
-  {
-    id: 5,
-    title: "Canada Visa Services",
-    company: "Travel Visas",
-    companyId: 5,
-    type: "visa",
-    country: "Canada",
-    postedDate: "2024-04-19",
-    applications: 12,
-    views: 89,
-  },
-  // Canada Gateway
-  {
-    id: 6,
-    title: "Canada Immigration Gateway",
-    company: "Gateway Global",
-    companyId: 6,
-    type: "gateway",
-    country: "Canada",
-    postedDate: "2024-04-18",
-    applications: 20,
-    views: 150,
-  },
-  // USA Visa
-  {
-    id: 7,
-    title: "USA Visa Services",
-    company: "US Visa Experts",
-    companyId: 7,
-    type: "visa",
-    country: "USA",
-    postedDate: "2024-04-15",
-    applications: 28,
-    views: 210,
-  },
-  // USA Gateway
-  {
-    id: 8,
-    title: "USA Immigration Gateway",
-    company: "Immigration Pro",
-    companyId: 8,
-    type: "gateway",
-    country: "USA",
-    postedDate: "2024-04-16",
-    applications: 22,
-    views: 180,
-  },
-  // Germany Visa
-  {
-    id: 9,
-    title: "Germany Visa Services",
-    company: "Europe Visas",
-    companyId: 9,
-    type: "visa",
-    country: "Germany",
-    postedDate: "2024-04-14",
-    applications: 8,
-    views: 45,
-  },
-  // Japan Visa
-  {
-    id: 10,
-    title: "Japan Visa Services",
-    company: "Asia Visas",
-    companyId: 10,
-    type: "visa",
-    country: "Japan",
-    postedDate: "2024-04-13",
-    applications: 5,
-    views: 30,
-  },
-  // France Visa
-  {
-    id: 11,
-    title: "France Visa Services",
-    company: "Europe Visas",
-    companyId: 11,
-    type: "visa",
-    country: "France",
-    postedDate: "2024-04-12",
-    applications: 3,
-    views: 25,
-  },
-  // Other Visa
-  {
-    id: 12,
-    title: "Other Countries Visa Services",
-    company: "Global Visas",
-    companyId: 12,
-    type: "visa",
-    country: "Other",
-    postedDate: "2024-04-11",
-    applications: 10,
-    views: 60,
-  },
-  // Other Gateway
-  {
-    id: 13,
-    title: "Other Countries Gateway",
-    company: "Global Gateway",
-    companyId: 13,
-    type: "gateway",
-    country: "Other",
-    postedDate: "2024-04-10",
-    applications: 7,
-    views: 40,
-  },
-];
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 1) return "Posted 1 day ago";
-  if (diffDays <= 7) return `Posted ${diffDays} days ago`;
-  if (diffDays <= 30) return `Posted ${Math.floor(diffDays / 7)} weeks ago`;
-  return `Posted ${Math.floor(diffDays / 30)} months ago`;
-};
+import {
+  VisaConsultationParams,
+  VisaGatewayCountResponse,
+} from "@/lib/api/endpoints/seeker/seekerVisaGatewayEndpoints";
+import adminVisaGatewayEndpoints, {
+  CountryCountResponse,
+} from "@/lib/api/endpoints/admin/adminVisaGatewayEndpoints";
+import toast from "react-hot-toast";
+import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
 
 export default function AdminVisaGateway() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [typeFilter, setTypeFilter] = useState<"all" | "visa" | "gateway">(
-    "visa",
-  );
+  const [activeFilter, setActiveFilter] = useState<"visa" | "gateway">("visa");
+  const [applications, setApplications] = useState<CountryCountResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [applicationCounts, setApplicationCounts] =
+    useState<VisaGatewayCountResponse>({
+      visaCount: 0,
+      gatewayCount: 0,
+    });
   const itemsPerPage = 10;
 
-  const getFilteredPosts = () => {
-    let filtered = allPosts;
+  // Fetch application counts
+  const fetchCounts = async () => {
+    try {
+      const appCountRes =
+        await adminVisaGatewayEndpoints.visa.countAdminConsultations();
 
-    // Filter by type only
-    if (typeFilter === "visa") {
-      filtered = filtered.filter((post) => post.type === "visa");
-    } else if (typeFilter === "gateway") {
-      filtered = filtered.filter((post) => post.type === "gateway");
+      if (appCountRes.data.success && appCountRes.data.data) {
+        setApplicationCounts(appCountRes.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching counts:", error);
     }
-
-    return filtered;
   };
 
-  const filteredPosts = getFilteredPosts();
-  const totalItems = filteredPosts.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentPosts = filteredPosts.slice(startIndex, endIndex);
+  // Fetch visa consultations with pagination and filter
+  const fetchVisaConsultations = useCallback(
+    async (page: number = 1) => {
+      setIsLoading(true);
+      try {
+        const params: VisaConsultationParams = {
+          page: page - 1,
+          size: itemsPerPage,
+        };
 
-  // Get counts for filters
-  const allCount = allPosts.length;
-  const visaCount = allPosts.filter((p) => p.type === "visa").length;
-  const gatewayCount = allPosts.filter((p) => p.type === "gateway").length;
+        const response =
+          await adminVisaGatewayEndpoints.visa.getAdminConsultations(params);
+        const apiResponse = response.data;
+
+        if (apiResponse.success && apiResponse.data) {
+          setApplications(apiResponse.data.content || []);
+          setTotalItems(apiResponse.data.totalElements || 0);
+          setTotalPages(apiResponse.data.totalPages || 0);
+        } else {
+          toast.error(apiResponse.message || "Failed to load enrollments");
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to load enrollments";
+        console.error("Error fetching enrollments:", errorMessage);
+        toast.error(
+          errorMessage || "Failed to load enrollments. Please try again.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [itemsPerPage],
+  );
+
+  const fetchGatewayConsultations = useCallback(
+    async (page: number = 1) => {
+      setIsLoading(true);
+      try {
+        const params: VisaConsultationParams = {
+          page: page - 1,
+          size: itemsPerPage,
+        };
+
+        const response =
+          await adminVisaGatewayEndpoints.gateway.getAdminConsultations(params);
+        const apiResponse = response.data;
+
+        if (apiResponse.success && apiResponse.data) {
+          setApplications(apiResponse.data.content || []);
+          setTotalItems(apiResponse.data.totalElements || 0);
+          setTotalPages(apiResponse.data.totalPages || 0);
+        } else {
+          toast.error(apiResponse.message || "Failed to load enrollments");
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to load enrollments";
+        console.error("Error fetching enrollments:", errorMessage);
+        toast.error(
+          errorMessage || "Failed to load enrollments. Please try again.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [itemsPerPage],
+  );
+
+  // Initial load and refetch
+  useEffect(() => {
+    fetchCounts();
+    if (activeFilter === "visa") {
+      fetchVisaConsultations(currentPage);
+    } else if (activeFilter === "gateway") {
+      fetchGatewayConsultations(currentPage);
+    }
+  }, [
+    activeFilter,
+    currentPage,
+    fetchVisaConsultations,
+    fetchGatewayConsultations,
+  ]);
+
+  useEffect(() => {
+    setTotalItems(0);
+  }, [activeFilter]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleFilterChange = (filter: typeof activeFilter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  };
+
   // Get navigation link based on post type
-  const getNavigationLink = (post: VisaGatewayPost) => {
-    if (post.type === "visa") {
-      return `/admin/visa-gateway/visa/${post.id}`;
+  const getNavigationLink = (country: string) => {
+    if (activeFilter === "visa") {
+      return `/admin/visa-gateway/visa/${country}`;
     } else {
-      return `/admin/visa-gateway/gateway/${post.id}`;
+      return `/admin/visa-gateway/gateway/${country}`;
     }
   };
 
@@ -250,7 +164,7 @@ export default function AdminVisaGateway() {
           </div>
 
           {/* Type Filter Tabs */}
-          <div className="flex gap-4 mb-6">
+          <div className="flex gap-4 mb-4 border-b pb-3">
             <div className="bg-primary/10 p-1 rounded-lg w-full lg:w-fit flex items-center gap-1 flex-wrap">
               {/* <button
                 onClick={() => {
@@ -266,109 +180,122 @@ export default function AdminVisaGateway() {
                 All <span className="hidden md:inline-block">({allCount})</span>
               </button> */}
               <button
-                onClick={() => {
-                  setTypeFilter("visa");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("visa")}
                 className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold flex items-center gap-1 ${
-                  typeFilter === "visa"
+                  activeFilter === "visa"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
                 {/* <Book size={14} /> */}
                 Visa{" "}
-                <span className="hidden md:inline-block">({visaCount})</span>
+                <span className="hidden md:inline-block">
+                  ({applicationCounts.visaCount})
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setTypeFilter("gateway");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("gateway")}
                 className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold flex items-center gap-1 ${
-                  typeFilter === "gateway"
+                  activeFilter === "gateway"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
                 {/* <Globe size={14} /> */}
                 Gateway{" "}
-                <span className="hidden md:inline-block">({gatewayCount})</span>
+                <span className="hidden md:inline-block">
+                  ({applicationCounts.gatewayCount})
+                </span>
               </button>
             </div>
           </div>
 
           {/* Posts List - Country Cards */}
           <div className="flex-1 space-y-4">
-            {currentPosts.map((post) => (
-              <div
-                key={post.id}
-                className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-card"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                  {/* Left Section */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="outline" className="gap-1">
-                        {post.type === "visa" ? (
-                          <Book size={14} />
-                        ) : (
-                          <Globe size={14} />
-                        )}
-                        {post.type === "visa"
-                          ? "Visa Service"
-                          : "Gateway Service"}
-                      </Badge>
-                    </div>
-
-                    <h3 className="font-semibold text-xl mb-1">
-                      {post.country} {post.type === "visa" ? "Visa" : "Gateway"}
-                    </h3>
-
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {post.company}
-                    </p>
-
-                    {/* Post Stats */}
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Users size={14} /> {post.applications} applications
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Eye size={14} /> {post.views} views
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} /> {formatDate(post.postedDate)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* View Applications Button with different navigation */}
-                  <div className="flex items-center">
-                    <Link href={getNavigationLink(post)}>
-                      <Button
-                        variant="default"
-                        size="default"
-                        className="gap-2 cursor-pointer bg-primary hover:bg-primary/90"
-                      >
-                        <Eye size={16} />
-                        View Applications
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
+            {isLoading ? (
+              <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
+                <SubLoadingScreen
+                  message="Loading consultations..."
+                  fullScreen={false}
+                />
               </div>
-            ))}
-
-            {/* Empty State */}
-            {currentPosts.length === 0 && (
+            ) : applications.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
-                  {typeFilter === "visa"
-                    ? "No visa posts found"
-                    : typeFilter === "gateway"
-                      ? "No gateway posts found"
-                      : "No posts found"}
+                  {activeFilter === "visa"
+                    ? `No visa consultations found`
+                    : activeFilter === "gateway"
+                      ? `No gateway consultations found`
+                      : "No consultations received yet"}
+                </p>
+              </div>
+            ) : (
+              applications.map((post) => (
+                <div
+                  key={post.country}
+                  className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-card"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                    {/* Left Section */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="gap-1">
+                          {activeFilter === "visa" ? (
+                            <Book size={14} />
+                          ) : (
+                            <Globe size={14} />
+                          )}
+                          {activeFilter === "visa"
+                            ? "Visa Service"
+                            : "Gateway Service"}
+                        </Badge>
+                      </div>
+
+                      <h3 className="font-semibold text-xl mb-1">
+                        {post.country}{" "}
+                        {activeFilter === "visa" ? "Visa" : "Gateway"}
+                      </h3>
+
+                      {/* Post Stats */}
+                      {/* <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Users size={14} /> {post.count} applications
+                      </span>
+                    </div> */}
+                    </div>
+
+                    {/* View Applications Button with different navigation */}
+                    <div className="flex flex-col gap-2 items-center md:items-end">
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Users size={14} /> {post.count} applications
+                        </span>
+                      </div>
+                      <Link href={getNavigationLink(post.country)}>
+                        <Button
+                          variant="default"
+                          size="default"
+                          className="gap-2 cursor-pointer bg-primary hover:bg-primary/90"
+                        >
+                          <Eye size={16} />
+                          View Applications
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+
+            {/* Empty State */}
+            {applications.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  {activeFilter === "visa"
+                    ? "No visa applications found"
+                    : activeFilter === "gateway"
+                      ? "No gateway applications found"
+                      : "No applications found"}
                 </p>
               </div>
             )}
@@ -437,15 +364,19 @@ export default function AdminVisaGateway() {
               </div>
 
               <div className="text-center text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{" "}
-                {totalItems} posts
+                Showing{" "}
+                {applications.length > 0
+                  ? (currentPage - 1) * itemsPerPage + 1
+                  : 0}{" "}
+                to {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                {totalItems} enrollments
               </div>
             </div>
           )}
 
           {totalPages <= 1 && totalItems > 0 && (
             <div className="text-center text-sm text-muted-foreground mt-8 pt-4 border-t">
-              Showing all {totalItems} posts
+              Showing all {totalItems} applications
             </div>
           )}
         </CardContent>

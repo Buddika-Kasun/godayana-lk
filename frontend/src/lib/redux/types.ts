@@ -6,6 +6,8 @@ export interface User {
   phone: string;
   role: "seeker" | "company" | "admin" | "dev";
   avatar?: string;
+  status?: string;
+  isActive?: boolean;
 }
 
 export interface LoginCredentials {

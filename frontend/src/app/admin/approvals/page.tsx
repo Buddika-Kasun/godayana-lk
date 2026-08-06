@@ -1,7 +1,7 @@
 // src/app/admin/approvals/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,110 +30,38 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
+import { formatDate } from "@/lib/utils/dateUtils";
+import {
+  CompanyCountsResponse,
+} from "@/lib/api/endpoints/company/companyProfileEndpoints";
+import { formatCategory } from "@/lib/utils/companyUtils";
+import { OptimizedAvatar } from "@/components/ui/OptimizedAvatar";
+import { adminCompanyProfileAPI, AdminCompanyParams, AdminCompanyProfileData } from "@/lib/api/endpoints/admin/adminCompanyProfileEndpoint";
 
-interface CompanyRegistration {
-  id: number;
-  companyName: string;
-  industry: string;
-  email: string;
-  contactPerson: string;
-  phone: string;
-  location: string;
-  registeredDate: string;
-  status: "pending" | "approved" | "rejected";
-  description?: string;
-  website?: string;
-}
+// Status mapping: Frontend filter -> Backend status
+const STATUS_MAP = {
+  pending: "PENDING",
+  approved: "APPROVED",
+  rejected: "REJECTED",
+} as const;
 
-// Mock data - replace with API call
-const allCompanies: CompanyRegistration[] = [
-  {
-    id: 1,
-    companyName: "Tech Innovations Ltd",
-    industry: "IT & Software",
-    email: "info@techinnovations.com",
-    contactPerson: "Sarah Johnson",
-    phone: "+94 77 123 4567",
-    location: "Colombo",
-    registeredDate: "2024-04-22",
-    status: "pending",
+// Backend status -> Frontend display
+const STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
+  PENDING: {
+    label: "Pending",
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
   },
-  {
-    id: 2,
-    companyName: "Global Construction Co",
-    industry: "Construction",
-    email: "hr@globalconstruction.com",
-    contactPerson: "Mike Wilson",
-    phone: "+94 77 234 5678",
-    location: "Kandy",
-    registeredDate: "2024-04-23",
-    status: "pending",
+  APPROVED: {
+    label: "Approved",
+    color:
+      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
   },
-  {
-    id: 3,
-    companyName: "Creative Solutions",
-    industry: "Marketing",
-    email: "hello@creativesolutions.com",
-    contactPerson: "Emma Davis",
-    phone: "+94 77 345 6789",
-    location: "Colombo",
-    registeredDate: "2024-04-20",
-    status: "approved",
+  REJECTED: {
+    label: "Rejected",
+    color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   },
-  {
-    id: 4,
-    companyName: "Finance Hub Ltd",
-    industry: "Finance",
-    email: "contact@financehub.com",
-    contactPerson: "John Smith",
-    phone: "+94 77 456 7890",
-    location: "Galle",
-    registeredDate: "2024-04-18",
-    status: "rejected",
-  },
-  {
-    id: 5,
-    companyName: "Digital Agency",
-    industry: "Digital Marketing",
-    email: "info@digitalagency.com",
-    contactPerson: "Lisa Brown",
-    phone: "+94 77 567 8901",
-    location: "Colombo",
-    registeredDate: "2024-04-21",
-    status: "pending",
-  },
-];
-
-const getStatusConfig = (status: CompanyRegistration["status"]) => {
-  const config = {
-    pending: {
-      label: "Pending",
-      color:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    },
-    approved: {
-      label: "Approved",
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    },
-    rejected: {
-      label: "Rejected",
-      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-    },
-  };
-  return config[status];
-};
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 1) return "Registered 1 day ago";
-  if (diffDays <= 7) return `Registered ${diffDays} days ago`;
-  if (diffDays <= 30) return `Registered ${Math.floor(diffDays / 7)} weeks ago`;
-  return `Registered ${Math.floor(diffDays / 30)} months ago`;
 };
 
 export default function AdminApprovals() {
@@ -141,64 +69,129 @@ export default function AdminApprovals() {
   const [activeFilter, setActiveFilter] = useState<
     "pending" | "approved" | "rejected"
   >("pending");
-  const [companies, setCompanies] =
-    useState<CompanyRegistration[]>(allCompanies);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(
-    null,
-  );
+  const [companies, setCompanies] = useState<AdminCompanyProfileData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedCompanyUserId, setSelectedCompanyUserId] = useState<
+    string | null
+  >(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(
     null,
   );
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [companyCounts, setCompanyCounts] = useState<CompanyCountsResponse>({
+    all: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
   const itemsPerPage = 10;
 
-  const getFilteredCompanies = () => {
-    return companies.filter((company) => company.status === activeFilter);
+  // Fetch company counts
+  const fetchCompanyCounts = async () => {
+    try {
+      const response = await adminCompanyProfileAPI.getAdminCompanyCounts();
+      const apiResponse = response.data;
+
+      if (apiResponse.success && apiResponse.data) {
+        setCompanyCounts(apiResponse.data);
+      }
+    } catch (error) {
+      console.error("Error fetching company counts:", error);
+    }
   };
 
-  const filteredCompanies = getFilteredCompanies();
-  const totalItems = filteredCompanies.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentCompanies = filteredCompanies.slice(startIndex, endIndex);
+  // Fetch companies with pagination and filter
+  const fetchCompanies = async (
+    filter: typeof activeFilter,
+    page: number = 1,
+  ) => {
+    setIsLoading(true);
+    try {
+      const backendStatus = STATUS_MAP[filter];
+      const params: AdminCompanyParams = {
+        page: page - 1,
+        size: itemsPerPage,
+        status: backendStatus,
+      };
 
-  // Get counts for filters
-  const pendingCount = companies.filter((c) => c.status === "pending").length;
-  const approvedCount = companies.filter((c) => c.status === "approved").length;
-  const rejectedCount = companies.filter((c) => c.status === "rejected").length;
+      const response = await adminCompanyProfileAPI.getAdminCompanies(params);
+      const apiResponse = response.data;
+
+      if (apiResponse.success && apiResponse.data) {
+        setCompanies(apiResponse.data.content);
+        setTotalItems(apiResponse.data.totalElements);
+        setTotalPages(apiResponse.data.totalPages);
+      } else {
+        toast.error(apiResponse.message || "Failed to load companies");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load companies";
+      console.error("Error fetching companies:", errorMessage);
+      toast.error(
+        errorMessage || "Failed to load companies. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Refetch when filter or page changes
+  useEffect(() => {
+    fetchCompanyCounts();
+    fetchCompanies(activeFilter, currentPage);
+  }, [activeFilter, currentPage]);
+
+  useEffect(() => {
+    setTotalItems(0);
+  }, [activeFilter]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleApprove = () => {
-    if (selectedCompanyId) {
-      setCompanies(
-        companies.map((company) =>
-          company.id === selectedCompanyId
-            ? { ...company, status: "approved" }
-            : company,
-        ),
-      );
+  const handleFilterChange = (filter: typeof activeFilter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  };
+
+  const handleApprove = async () => {
+    if (!selectedCompanyUserId) return;
+
+    try {
+      await adminCompanyProfileAPI.approveCompany(selectedCompanyUserId);
+
       toast.success("Company approved successfully");
-      setSelectedCompanyId(null);
+      setSelectedCompanyUserId(null);
       setActionType(null);
+      fetchCompanyCounts();
+      fetchCompanies(activeFilter, currentPage);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to approve company";
+      console.error("Error approving company:", errorMessage);
+      toast.error(errorMessage || "Failed to approve company");
     }
   };
 
-  const handleReject = () => {
-    if (selectedCompanyId) {
-      setCompanies(
-        companies.map((company) =>
-          company.id === selectedCompanyId
-            ? { ...company, status: "rejected" }
-            : company,
-        ),
-      );
+  const handleReject = async () => {
+    if (!selectedCompanyUserId) return;
+
+    try {
+      await adminCompanyProfileAPI.rejectCompany(selectedCompanyUserId);
+
       toast.success("Company rejected");
-      setSelectedCompanyId(null);
+      setSelectedCompanyUserId(null);
       setActionType(null);
+      fetchCompanyCounts();
+      fetchCompanies(activeFilter, currentPage);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reject company";
+      console.error("Error rejecting company:", errorMessage);
+      toast.error(errorMessage || "Failed to reject company");
     }
   };
 
@@ -214,174 +207,60 @@ export default function AdminApprovals() {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex gap-4 mb-6 border-b pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b pb-3">
             <div className="bg-primary/10 p-1 rounded-lg w-full lg:w-fit flex items-center justify-between gap-1 flex-wrap">
               <button
-                onClick={() => {
-                  setActiveFilter("pending");
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
+                onClick={() => handleFilterChange("pending")}
+                className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   activeFilter === "pending"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
                 Pending{" "}
-                <span className="hidden md:inline-block">({pendingCount})</span>
+                <span className="hidden md:inline-block">
+                  ({companyCounts.pending})
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setActiveFilter("approved");
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
+                onClick={() => handleFilterChange("approved")}
+                className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   activeFilter === "approved"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                Approved <span className="hidden md:inline-block">({approvedCount})</span>
+                Approved{" "}
+                <span className="hidden md:inline-block">
+                  ({companyCounts.approved})
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setActiveFilter("rejected");
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
+                onClick={() => handleFilterChange("rejected")}
+                className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   activeFilter === "rejected"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                Rejected <span className="hidden md:inline-block">({rejectedCount})</span>
+                Rejected{" "}
+                <span className="hidden md:inline-block">
+                  ({companyCounts.rejected})
+                </span>
               </button>
             </div>
           </div>
 
           {/* Companies List */}
           <div className="flex-1 space-y-4">
-            {currentCompanies.map((company) => {
-              const statusConfig = getStatusConfig(company.status);
-              return (
-                <div
-                  key={company.id}
-                  className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    {/* Left Section - Company Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="w-12 h-12">
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            <Building2 className="w-6 h-6" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                              <h3 className="font-semibold text-lg">
-                                {company.companyName}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {company.industry}
-                              </p>
-                            </div>
-                            <Badge className={statusConfig.color}>
-                              {statusConfig.label}
-                            </Badge>
-                          </div>
-
-                          {/* Contact Details */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mt-3 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Mail
-                                size={14}
-                                className="text-muted-foreground shrink-0"
-                              />
-                              <span className="text-muted-foreground truncate">
-                                {company.email}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <User
-                                size={14}
-                                className="text-muted-foreground shrink-0"
-                              />
-                              <span className="text-muted-foreground">
-                                Contact: {company.contactPerson}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Phone
-                                size={14}
-                                className="text-muted-foreground shrink-0"
-                              />
-                              <span className="text-muted-foreground">
-                                {company.phone}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Calendar
-                                size={14}
-                                className="text-muted-foreground shrink-0"
-                              />
-                              <span className="text-muted-foreground">
-                                {formatDate(company.registeredDate)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Section - Action Buttons */}
-                    <div className="flex flex-wrap gap-2">
-                      <Link href={`/admin/approvals/${company.id}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1 cursor-pointer"
-                        >
-                          <Eye size={14} />
-                          View Details
-                        </Button>
-                      </Link>
-                      {company.status === "pending" && (
-                        <>
-                          <Button
-                            size="sm"
-                            className="gap-1 bg-green-600 hover:bg-green-700 cursor-pointer"
-                            onClick={() => {
-                              setSelectedCompanyId(company.id);
-                              setActionType("approve");
-                            }}
-                          >
-                            <CheckCircle size={14} />
-                            Approve
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="gap-1 cursor-pointer"
-                            onClick={() => {
-                              setSelectedCompanyId(company.id);
-                              setActionType("reject");
-                            }}
-                          >
-                            <XCircle size={14} />
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Empty State */}
-            {currentCompanies.length === 0 && (
+            {isLoading ? (
+              <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
+                <SubLoadingScreen
+                  message="Loading companies..."
+                  fullScreen={false}
+                />
+              </div>
+            ) : companies.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   {activeFilter === "pending"
@@ -391,6 +270,144 @@ export default function AdminApprovals() {
                       : "No rejected companies"}
                 </p>
               </div>
+            ) : (
+              companies.map((company) => {
+                const statusDisplay =
+                  STATUS_DISPLAY[company.status || "PENDING"] ||
+                  STATUS_DISPLAY.PENDING;
+
+                return (
+                  <div
+                    key={company.userId}
+                    className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                      {/* Left Section - Company Info */}
+                      <div className="flex-1">
+                        <div className="flex items-start gap-4">
+                          <OptimizedAvatar
+                            src={company.logoUrl}
+                            alt={company.companyName || "Company"}
+                            height={60}
+                            width={60}
+                            fallback={
+                              company.companyName
+                                ? company.companyName.charAt(0)
+                                : "C"
+                            }
+                          />
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <h3 className="font-semibold text-lg">
+                                  {company.companyName || "Unnamed Company"}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {formatCategory(company.industry) ||
+                                    "Industry not specified"}
+                                </p>
+                              </div>
+                              <Badge className={statusDisplay.color}>
+                                {statusDisplay.label}
+                              </Badge>
+                            </div>
+
+                            {/* Contact Details */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mt-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Mail
+                                  size={14}
+                                  className="text-muted-foreground shrink-0"
+                                />
+                                <span className="text-muted-foreground truncate">
+                                  {company.companyEmail || "N/A"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <User
+                                  size={14}
+                                  className="text-muted-foreground shrink-0"
+                                />
+                                <span className="text-muted-foreground">
+                                  {company.contactPersonName || "N/A"}{" "}
+                                  {company.designation
+                                    ? `(${company.designation})`
+                                    : ""}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone
+                                  size={14}
+                                  className="text-muted-foreground shrink-0"
+                                />
+                                <span className="text-muted-foreground">
+                                  {company.hotlineNumber || "N/A"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Calendar
+                                  size={14}
+                                  className="text-muted-foreground shrink-0"
+                                />
+                                <span className="text-muted-foreground">
+                                  {formatDate(company.createdAt)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Section - Action Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        <Link href={`/admin/approvals/${company.userId}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1 cursor-pointer"
+                          >
+                            <Eye size={14} />
+                            View Details
+                          </Button>
+                        </Link>
+                        {(company.status === "PENDING" ||
+                          company.status === "REJECTED") && (
+                            <Button
+                              size="sm"
+                              className="gap-1 bg-green-600 hover:bg-green-700 cursor-pointer"
+                              onClick={() => {
+                                setSelectedCompanyUserId(
+                                  company.userId || null,
+                                );
+                                setActionType("approve");
+                              }}
+                            >
+                              <CheckCircle size={14} />
+                              Approve
+                            </Button>
+                          )}
+                        {(company.status === "PENDING" ||
+                          company.status === "APPROVED") && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="gap-1 cursor-pointer"
+                              onClick={() => {
+                                setSelectedCompanyUserId(
+                                  company.userId || null,
+                                );
+                                setActionType("reject");
+                              }}
+                            >
+                              <XCircle size={14} />
+                              Reject
+                            </Button>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -457,7 +474,11 @@ export default function AdminApprovals() {
               </div>
 
               <div className="text-center text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{" "}
+                Showing{" "}
+                {companies.length > 0
+                  ? (currentPage - 1) * itemsPerPage + 1
+                  : 0}{" "}
+                to {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
                 {totalItems} companies
               </div>
             </div>

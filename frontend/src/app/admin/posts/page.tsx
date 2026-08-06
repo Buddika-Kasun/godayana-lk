@@ -1,22 +1,17 @@
 // src/app/admin/posts/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Eye,
   CheckCircle,
-  AlertTriangle,
   Trash2,
-  Calendar,
-  Building2,
   MapPin,
   Briefcase,
-  Flag,
   Clock,
-  XCircle,
   GraduationCap,
   DollarSign,
   Users,
@@ -34,212 +29,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { STATUS_DISPLAY } from "@/types/statusDisplay";
+import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
+import {
+  adminCompanyJobAPI,
+  AdminCompanyJobData,
+  CompanyJobCountsResponse,
+} from "@/lib/api/endpoints/admin/adminCompanyJobEndpoint";
+import {
+  adminCompanyCourseAPI,
+  AdminCompanyCourseData,
+  CompanyCourseCountsResponse,
+} from "@/lib/api/endpoints/admin/adminCompanyCourseEndpoint";
+import { OptimizedAvatar } from "@/components/ui/OptimizedAvatar";
 
-interface BasePost {
-  id: number;
-  title: string;
-  company: string;
-  companyId: number;
-  status: "active" | "pending" | "flagged" | "suspended";
-  postedDate: string;
-  views: number;
-  reportedBy?: number;
-  reportReason?: string;
-}
-
-interface JobPost extends BasePost {
-  type: "job";
-  jobType: "local" | "overseas";
-  location: string;
-  applications: number;
-}
-
-interface CoursePost extends BasePost {
-  type: "course";
-  enrollType: "online" | "physical";
-  location?: string;
-  price: string;
-  enrolledStudents: number;
-  maxStudents: number;
-}
-
-type Post = JobPost | CoursePost;
-
-// Mock data - replace with API call
-const allPosts: Post[] = [
-  // Job Posts
-  {
-    id: 1,
-    title: "Senior Software Engineer",
-    company: "Tech Corp",
-    companyId: 1,
-    type: "job",
-    jobType: "local",
-    location: "Colombo",
-    status: "active",
-    postedDate: "2024-04-21",
-    applications: 45,
-    views: 320,
-  },
-  {
-    id: 2,
-    title: "Construction Worker",
-    company: "Build Masters",
-    companyId: 2,
-    type: "job",
-    jobType: "overseas",
-    location: "Dubai UAE",
-    status: "pending",
-    postedDate: "2024-04-22",
-    applications: 0,
-    views: 0,
-  },
-  {
-    id: 3,
-    title: "Marketing Manager",
-    company: "Creative Agency",
-    companyId: 3,
-    type: "job",
-    jobType: "local",
-    location: "Kandy",
-    status: "flagged",
-    postedDate: "2024-04-19",
-    applications: 12,
-    views: 89,
-    reportedBy: 5,
-    reportReason: "Inappropriate content",
-  },
-  {
-    id: 4,
-    title: "Digital Marketing Manager",
-    company: "Digital Hub",
-    companyId: 4,
-    type: "job",
-    jobType: "local",
-    location: "Colombo",
-    status: "suspended",
-    postedDate: "2024-04-15",
-    applications: 28,
-    views: 210,
-  },
-  {
-    id: 5,
-    title: "Frontend Developer",
-    company: "WebTech",
-    companyId: 5,
-    type: "job",
-    jobType: "local",
-    location: "Remote",
-    status: "pending",
-    postedDate: "2024-04-23",
-    applications: 0,
-    views: 15,
-  },
-  // Course Posts
-  {
-    id: 6,
-    title: "Advanced Web Development Bootcamp",
-    company: "Tech Academy",
-    companyId: 6,
-    type: "course",
-    enrollType: "physical",
-    location: "Colombo",
-    status: "active",
-    postedDate: "2024-04-20",
-    price: "45000",
-    enrolledStudents: 45,
-    maxStudents: 60,
-    views: 320,
-  },
-  {
-    id: 7,
-    title: "Digital Marketing Masterclass",
-    company: "Marketing Pro",
-    companyId: 7,
-    type: "course",
-    enrollType: "online",
-    status: "pending",
-    postedDate: "2024-04-22",
-    price: "25000",
-    enrolledStudents: 0,
-    maxStudents: 100,
-    views: 0,
-  },
-  {
-    id: 8,
-    title: "Data Science Course",
-    company: "Data Institute",
-    companyId: 8,
-    type: "course",
-    enrollType: "online",
-    status: "flagged",
-    postedDate: "2024-04-18",
-    price: "55000",
-    enrolledStudents: 28,
-    maxStudents: 50,
-    views: 156,
-    reportedBy: 3,
-    reportReason: "Misleading information",
-  },
-  {
-    id: 9,
-    title: "UI/UX Design Course",
-    company: "Design Hub",
-    companyId: 9,
-    type: "course",
-    enrollType: "physical",
-    location: "Kandy",
-    status: "suspended",
-    postedDate: "2024-04-14",
-    price: "35000",
-    enrolledStudents: 12,
-    maxStudents: 30,
-    views: 89,
-  },
-  {
-    id: 10,
-    title: "Business English Course",
-    company: "Language Center",
-    companyId: 10,
-    type: "course",
-    enrollType: "online",
-    status: "pending",
-    postedDate: "2024-04-23",
-    price: "15000",
-    enrolledStudents: 0,
-    maxStudents: 200,
-    views: 45,
-  },
-];
-
-const getStatusConfig = (status: Post["status"]) => {
-  const config = {
-    active: {
-      label: "Active",
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-      icon: CheckCircle,
-    },
-    pending: {
-      label: "Pending Review",
-      color:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-      icon: Clock,
-    },
-    flagged: {
-      label: "Flagged",
-      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-      icon: Flag,
-    },
-    suspended: {
-      label: "Suspended",
-      color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-      icon: AlertTriangle,
-    },
-  };
-  return config[status];
-};
-
+// Helper functions
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   const now = new Date();
@@ -252,130 +56,319 @@ const formatDate = (dateString: string) => {
   return `Posted ${Math.floor(diffDays / 30)} months ago`;
 };
 
-const formatPrice = (price: string) => {
+const formatPrice = (price?: string) => {
+  if (!price) return "Free";
   const numPrice = parseInt(price);
   if (numPrice === 0) return "Free";
   return `LKR ${numPrice.toLocaleString()}`;
 };
 
+const formatLocation = (location?: string) => {
+  if (!location) return "N/A";
+  const parts = location.split(",").map((part) => part.trim());
+  const lastTwo = parts.slice(-2);
+  return lastTwo.join(", ");
+};
+
 export default function AdminPosts() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [postTypeFilter, setPostTypeFilter] = useState<
-    "all" | "jobs" | "courses"
-  >("jobs");
+  const [postTypeFilter, setPostTypeFilter] = useState<"jobs" | "courses">(
+    "jobs",
+  );
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "pending" | "flagged" | "suspended"
+    "pending" | "approved" | "rejected"
   >("pending");
-  const [posts, setPosts] = useState<Post[]>(allPosts);
+  const [jobs, setJobs] = useState<AdminCompanyJobData[]>([]);
+  const [courses, setCourses] = useState<AdminCompanyCourseData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
-  const [actionType, setActionType] = useState<
-    "approve" | "suspend" | "remove" | null
-  >(null);
+  const [actionType, setActionType] = useState<"approve" | "reject" | null>(
+    null,
+  );
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [jobCounts, setJobCounts] = useState<CompanyJobCountsResponse>({
+    all: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
+  const [courseCounts, setCourseCounts] = useState<CompanyCourseCountsResponse>(
+    {
+      all: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+    },
+  );
   const itemsPerPage = 10;
 
-  const getFilteredPosts = () => {
-    let filtered = posts;
+  // Fetch counts
+  const fetchCounts = useCallback(async () => {
+    try {
+      const [jobCountRes, courseCountRes] = await Promise.all([
+        adminCompanyJobAPI.getAdminCompanyJobCounts(),
+        adminCompanyCourseAPI.getAdminCompanyCourseCounts(),
+      ]);
 
-    // Filter by post type
-    if (postTypeFilter === "jobs") {
-      filtered = filtered.filter((post) => post.type === "job");
-    } else if (postTypeFilter === "courses") {
-      filtered = filtered.filter((post) => post.type === "course");
+      if (jobCountRes.data.success && jobCountRes.data.data) {
+        setJobCounts(jobCountRes.data.data);
+      }
+      if (courseCountRes.data.success && courseCountRes.data.data) {
+        setCourseCounts(courseCountRes.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching counts:", error);
     }
+  }, []);
 
-    // Filter by status
-    if (statusFilter === "pending") {
-      filtered = filtered.filter((post) => post.status === "pending");
-    } else if (statusFilter === "flagged") {
-      filtered = filtered.filter((post) => post.status === "flagged");
-    } else if (statusFilter === "suspended") {
-      filtered = filtered.filter((post) => post.status === "suspended");
+  // Fetch posts based on type and filter
+  const fetchPosts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const statusMap: Record<string, string> = {
+        pending: "PENDING",
+        approved: "APPROVED",
+        rejected: "REJECTED",
+      };
+
+      const params = {
+        page: currentPage - 1,
+        size: itemsPerPage,
+        status: statusMap[statusFilter],
+      };
+
+      if (postTypeFilter === "jobs") {
+        const response = await adminCompanyJobAPI.getAdminCompaniesJobs(params);
+        if (response.data.success && response.data.data) {
+          setJobs(response.data.data.content || []);
+          setTotalItems(response.data.data.totalElements || 0);
+          setTotalPages(response.data.data.totalPages || 0);
+        } else {
+          toast.error(response.data.message || "Failed to load jobs");
+        }
+      } else {
+        const response =
+          await adminCompanyCourseAPI.getAdminCompaniesCourses(params);
+        if (response.data.success && response.data.data) {
+          setCourses(response.data.data.content || []);
+          setTotalItems(response.data.data.totalElements || 0);
+          setTotalPages(response.data.data.totalPages || 0);
+        } else {
+          toast.error(response.data.message || "Failed to load courses");
+        }
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load posts";
+      console.error("Error fetching posts:", errorMessage);
+      toast.error(errorMessage || "Failed to load posts. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
+  }, [postTypeFilter, statusFilter, currentPage, itemsPerPage]);
 
-    return filtered;
-  };
-
-  const filteredPosts = getFilteredPosts();
-  const totalItems = filteredPosts.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentPosts = filteredPosts.slice(startIndex, endIndex);
-
-  // Get counts for filters
-  const allCount = posts.length;
-  const jobsCount = posts.filter((p) => p.type === "job").length;
-  const coursesCount = posts.filter((p) => p.type === "course").length;
-
-  const pendingCount = posts.filter((p) => p.status === "pending").length;
-  const flaggedCount = posts.filter((p) => p.status === "flagged").length;
-  const suspendedCount = posts.filter((p) => p.status === "suspended").length;
+  // Initial load and refetch
+  useEffect(() => {
+    fetchCounts();
+    fetchPosts();
+  }, [fetchCounts, fetchPosts]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleApprove = () => {
-    if (selectedPostId) {
-      setPosts(
-        posts.map((post) =>
-          post.id === selectedPostId ? { ...post, status: "active" } : post,
-        ),
-      );
-      toast.success("Post approved and published");
-      setSelectedPostId(null);
-      setActionType(null);
+  const handleFilterChange = (
+    type: "jobs" | "courses",
+    status: "pending" | "approved" | "rejected",
+  ) => {
+    setPostTypeFilter(type);
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
+
+  const handleApprove = async () => {
+    if (!selectedPostId) return;
+
+    try {
+      let response;
+      if (postTypeFilter === "jobs") {
+        response = await adminCompanyJobAPI.approveCompanyJob(
+          selectedPostId.toString(),
+        );
+      } else {
+        response = await adminCompanyCourseAPI.approveCompanyCourse(
+          selectedPostId.toString(),
+        );
+      }
+
+      if (response.data.success) {
+        toast.success("Post approved and published");
+        setSelectedPostId(null);
+        setActionType(null);
+        fetchCounts();
+        fetchPosts();
+      } else {
+        toast.error(response.data.message || "Failed to approve post");
+      }
+    } catch (error) {
+      console.error("Error approving post:", error);
+      toast.error("Failed to approve post");
     }
   };
 
-  const handleSuspend = () => {
-    if (selectedPostId) {
-      setPosts(
-        posts.map((post) =>
-          post.id === selectedPostId ? { ...post, status: "suspended" } : post,
-        ),
-      );
-      toast.success("Post suspended");
-      setSelectedPostId(null);
-      setActionType(null);
+  const handleReject = async () => {
+    if (!selectedPostId) return;
+
+    try {
+      let response;
+      if (postTypeFilter === "jobs") {
+        response = await adminCompanyJobAPI.rejectCompanyJob(
+          selectedPostId.toString(),
+          "Rejected by admin",
+        );
+      } else {
+        response = await adminCompanyCourseAPI.rejectCompanyCourse(
+          selectedPostId.toString(),
+          "Rejected by admin",
+        );
+      }
+
+      if (response.data.success) {
+        toast.success("Post rejected");
+        setSelectedPostId(null);
+        setActionType(null);
+        fetchCounts();
+        fetchPosts();
+      } else {
+        toast.error(response.data.message || "Failed to reject post");
+      }
+    } catch (error) {
+      console.error("Error rejecting post:", error);
+      toast.error("Failed to reject post");
     }
   };
 
-  const handleRemove = () => {
-    if (selectedPostId) {
-      setPosts(posts.filter((post) => post.id !== selectedPostId));
-      toast.success("Post removed");
-      setSelectedPostId(null);
-      setActionType(null);
+  const getCurrentItems = () => {
+    return postTypeFilter === "jobs" ? jobs : courses;
+  };
+
+  const currentItems = getCurrentItems();
+
+  const getStatusCount = (status: string) => {
+    if (postTypeFilter === "jobs") {
+      switch (status) {
+        case "pending":
+          return jobCounts.pending;
+        case "approved":
+          return jobCounts.approved;
+        case "rejected":
+          return jobCounts.rejected;
+        default:
+          return 0;
+      }
+    } else {
+      switch (status) {
+        case "pending":
+          return courseCounts.pending;
+        case "approved":
+          return courseCounts.approved;
+        case "rejected":
+          return courseCounts.rejected;
+        default:
+          return 0;
+      }
     }
   };
 
-  const getActionButtons = (post: Post) => {
+  // const getActionButtons = (
+  //   post: AdminCompanyJobData | AdminCompanyCourseData,
+  // ) => {
+  //   const buttons = [];
+
+  //   const viewLink =
+  //     postTypeFilter === "jobs"
+  //       ? `/admin/jobs/${post.id}`
+  //       : `/admin/courses/${post.id}`;
+
+  //   buttons.push(
+  //     <Link key="view" href={viewLink}>
+  //       <Button
+  //         variant="outline"
+  //         size="sm"
+  //         className="gap-1 cursor-pointer w-full"
+  //       >
+  //         <Eye size={14} />
+  //         View
+  //       </Button>
+  //     </Link>,
+  //   );
+
+  //   if (post.status === "PENDING" || post.status === "REJECTED") {
+  //     buttons.push(
+  //       <Button
+  //         key="approve"
+  //         size="sm"
+  //         className="gap-1 bg-green-600 hover:bg-green-700 cursor-pointer flex-1 py-1"
+  //         onClick={() => {
+  //           setSelectedPostId(post.id);
+  //           setActionType("approve");
+  //         }}
+  //       >
+  //         <CheckCircle size={14} />
+  //         Approve
+  //       </Button>,
+  //     );
+  //   }
+
+  //   if (post.status === "PENDING" || post.status === "APPROVED") {
+  //     buttons.push(
+  //       <Button
+  //         key="reject"
+  //         variant="destructive"
+  //         size="sm"
+  //         className="gap-1 cursor-pointer flex-1"
+  //         onClick={() => {
+  //           setSelectedPostId(post.id);
+  //           setActionType("reject");
+  //         }}
+  //       >
+  //         <Trash2 size={14} />
+  //         Reject
+  //       </Button>,
+  //     );
+  //   }
+
+  //   return buttons;
+  // };,
+  const getActionButtons = (
+    post: AdminCompanyCourseData | AdminCompanyJobData,
+  ) => {
     const buttons = [];
 
     // View button for all
-    const viewLink =
-      post.type === "job"
-        ? `/admin/jobs/${post.id}`
-        : `/admin/courses/${post.id}`;
+    // const viewLink =
+    //   post.type === "job"
+    //     ? `/admin/jobs/${post.id}`
+    //     : `/admin/courses/${post.id}`;
 
-    buttons.push(
-      <Link key="view" href={viewLink}>
-        <Button variant="outline" size="sm" className="gap-1 cursor-pointer">
-          <Eye size={14} />
-          View
-        </Button>
-      </Link>,
-    );
+    // buttons.push(
+    //   <Link key="view" href={viewLink}>
+    //     <Button variant="outline" size="sm" className="gap-1 cursor-pointer">
+    //       <Eye size={14} />
+    //       View
+    //     </Button>
+    //   </Link>,
+    // );
 
     // Approve button for pending posts
-    if (post.status === "pending") {
+    if (post.status === "PENDING" || post.status === "REJECTED") {
       buttons.push(
         <Button
           key="approve"
           size="sm"
-          className="gap-1 bg-green-600 hover:bg-green-700 cursor-pointer"
+          className="gap-1 bg-green-600 hover:bg-green-700 cursor-pointer flex-1"
           onClick={() => {
             setSelectedPostId(post.id);
             setActionType("approve");
@@ -387,106 +380,143 @@ export default function AdminPosts() {
       );
     }
 
-    // Suspend button for non-suspended posts
-    if (post.status !== "suspended") {
+    // Reject button for all
+    if (post.status === "PENDING" || post.status === "APPROVED") {
       buttons.push(
         <Button
-          key="suspend"
+          key="rejected"
+          variant="destructive"
           size="sm"
-          variant="outline"
-          className="gap-1 text-yellow-600 border-yellow-600 hover:bg-yellow-50 cursor-pointer"
+          className="gap-1 cursor-pointer flex-1"
           onClick={() => {
             setSelectedPostId(post.id);
-            setActionType("suspend");
+            setActionType("reject");
           }}
         >
-          <AlertTriangle size={14} />
-          Suspend
+          <Trash2 size={14} />
+          Reject
         </Button>,
       );
     }
 
-    // Remove button for all
-    buttons.push(
-      <Button
-        key="remove"
-        variant="destructive"
-        size="sm"
-        className="gap-1 cursor-pointer"
-        onClick={() => {
-          setSelectedPostId(post.id);
-          setActionType("remove");
-        }}
-      >
-        <Trash2 size={14} />
-        Remove
-      </Button>,
-    );
-
     return buttons;
   };
 
-  const renderPostDetails = (post: Post) => {
-    if (post.type === "job") {
+  const renderPostDetails = (
+    post: AdminCompanyJobData | AdminCompanyCourseData,
+  ) => {
+    const statusDisplay = STATUS_DISPLAY[post.status] || STATUS_DISPLAY.DRAFT;
+
+    if (postTypeFilter === "jobs") {
+      const job = post as AdminCompanyJobData;
       return (
-        <>
+        <div className="flex-1">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex gap-2 items-center">
+                <Badge
+                  variant="outline"
+                  className="text-xs px-1 absolute top-1 left-1"
+                >
+                  <Briefcase size={12} />
+                </Badge>
+                <OptimizedAvatar
+                  src={job.logoUrl}
+                  alt={job.companyName || "Company"}
+                  height={60}
+                  width={60}
+                  fallback={job.companyName ? job.companyName.charAt(0) : "C"}
+                />
+                <div>
+                  <h3 className="font-semibold text-lg">{job.jobTitle}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {job.companyName}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Badge className={statusDisplay.color}>{statusDisplay.label}</Badge>
+          </div>
+
           <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Building2 size={14} /> {post.company}
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin size={14} /> {post.location}
+              <MapPin size={14} /> {formatLocation(job.location) || "N/A"}
             </span>
             <span className="flex items-center gap-1">
               <Briefcase size={14} />{" "}
-              {post.jobType === "local" ? "Local Job" : "Overseas Job"}
+              {job.jobType === "local" ? "Local Job" : "Overseas Job"}
             </span>
             <span className="flex items-center gap-1">
-              <Calendar size={14} /> {formatDate(post.postedDate)}
+              <Clock size={14} /> {formatDate(job.createdAt)}
             </span>
-            {post.applications > 0 && (
-              <span className="flex items-center gap-1">
-                <Users size={14} /> {post.applications} applications
-              </span>
-            )}
             <span className="flex items-center gap-1">
-              <Eye size={14} /> {post.views} views
+              <Users size={14} /> {job.applications || 0} applications
+            </span>
+            <span className="flex items-center gap-1">
+              <Eye size={14} /> {job.views || 0} views
             </span>
           </div>
-        </>
+        </div>
       );
     } else {
+      const course = post as AdminCompanyCourseData;
       return (
-        <>
+        <div className="flex-1">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex gap-2 items-center">
+                <Badge
+                  variant="outline"
+                  className="text-xs px-1 absolute top-1 left-1"
+                >
+                  <GraduationCap size={12} />
+                </Badge>
+                <OptimizedAvatar
+                  src={course.logoUrl}
+                  alt={course.companyName || "Company"}
+                  height={60}
+                  width={60}
+                  fallback={
+                    course.companyName ? course.companyName.charAt(0) : "C"
+                  }
+                />
+                <div>
+                  <h3 className="font-semibold text-lg">{course.courseTitle}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {course.companyName}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Badge className={statusDisplay.color}>{statusDisplay.label}</Badge>
+          </div>
+
           <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Building2 size={14} /> {post.company}
-            </span>
-            <span className="flex items-center gap-1">
-              {post.enrollType === "online" ? (
+              {course.enrollType === "online" ? (
                 <Globe size={14} />
               ) : (
                 <MapPin size={14} />
               )}
-              {post.enrollType === "online" ? "Online Course" : post.location}
+              {course.enrollType === "online"
+                ? "Online Course"
+                : formatLocation(course.location) || "N/A"}
             </span>
             <span className="flex items-center gap-1">
-              <DollarSign size={14} /> {formatPrice(post.price)}
+              <DollarSign size={14} /> {formatPrice(course.price)}
             </span>
             <span className="flex items-center gap-1">
-              <Calendar size={14} /> {formatDate(post.postedDate)}
+              <Clock size={14} /> {formatDate(course.createdAt)}
             </span>
-            {post.enrolledStudents > 0 && (
-              <span className="flex items-center gap-1">
-                <Users size={14} /> {post.enrolledStudents}/{post.maxStudents}{" "}
-                enrolled
-              </span>
-            )}
             <span className="flex items-center gap-1">
-              <Eye size={14} /> {post.views} views
+              <Users size={14} /> {course.enrolledStudents || 0}/
+              {course.maxStudents || 0} enrolled
+            </span>
+            <span className="flex items-center gap-1">
+              <Eye size={14} /> {course.views || 0} views
             </span>
           </div>
-        </>
+        </div>
       );
     }
   };
@@ -502,76 +532,48 @@ export default function AdminPosts() {
             </p>
           </div>
 
-          {/* Post Type Filter Tabs */}
-          <div className="flex gap-4 mb-4">
+          {/* Post Type & Status Filter Tabs */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3">
             <div className="bg-primary/10 p-1 rounded-lg w-full lg:w-fit flex items-center justify-between gap-1 flex-wrap">
-              {/* <button
-                onClick={() => {
-                  setPostTypeFilter("all");
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
-                  postTypeFilter === "all"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-black dark:hover:text-white"
-                }`}
-              >
-                All <span className="hidden md:inline-block">({allCount})</span>
-              </button> */}
               <button
-                onClick={() => {
-                  setPostTypeFilter("jobs");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("jobs", "pending")}
                 className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold flex items-center gap-1 ${
                   postTypeFilter === "jobs"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                {/* <Briefcase size={14} /> */}
                 Jobs{" "}
-                <span className="hidden md:inline-block">({jobsCount})</span>
+                <span className="hidden md:inline-block">
+                  ({jobCounts.pending + jobCounts.approved + jobCounts.rejected}
+                  )
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setPostTypeFilter("courses");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("courses", "pending")}
                 className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold flex items-center gap-1 ${
                   postTypeFilter === "courses"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                {/* <GraduationCap size={14} /> */}
                 Courses{" "}
-                <span className="hidden md:inline-block">({coursesCount})</span>
+                <span className="hidden md:inline-block">
+                  (
+                  {courseCounts.pending +
+                    courseCounts.approved +
+                    courseCounts.rejected}
+                  )
+                </span>
               </button>
             </div>
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex gap-4 mb-6 border-b pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b pb-3">
             <div className="bg-primary/10 p-1 rounded-lg w-full lg:w-fit flex items-center justify-between gap-1 flex-wrap">
-              {/* <button
-                onClick={() => {
-                  setStatusFilter("all");
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
-                  statusFilter === "all"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-black dark:hover:text-white"
-                }`}
-              >
-                All Status
-              </button> */}
               <button
-                onClick={() => {
-                  setStatusFilter("pending");
-                  setCurrentPage(1);
-                }}
+                onClick={() => setStatusFilter("pending")}
                 className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   statusFilter === "pending"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -579,36 +581,34 @@ export default function AdminPosts() {
                 }`}
               >
                 Pending{" "}
-                <span className="hidden md:inline-block">({pendingCount})</span>
-              </button>
-              <button
-                onClick={() => {
-                  setStatusFilter("flagged");
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
-                  statusFilter === "flagged"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-black dark:hover:text-white"
-                }`}
-              >
-                Flagged{" "}
-                <span className="hidden md:inline-block">({flaggedCount})</span>
-              </button>
-              <button
-                onClick={() => {
-                  setStatusFilter("suspended");
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
-                  statusFilter === "suspended"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-black dark:hover:text-white"
-                }`}
-              >
-                Suspended{" "}
                 <span className="hidden md:inline-block">
-                  ({suspendedCount})
+                  ({getStatusCount("pending")})
+                </span>
+              </button>
+              <button
+                onClick={() => setStatusFilter("approved")}
+                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
+                  statusFilter === "approved"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-black dark:hover:text-white"
+                }`}
+              >
+                Active{" "}
+                <span className="hidden md:inline-block">
+                  ({getStatusCount("approved") || 0})
+                </span>
+              </button>
+              <button
+                onClick={() => setStatusFilter("rejected")}
+                className={`px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
+                  statusFilter === "rejected"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-black dark:hover:text-white"
+                }`}
+              >
+                Rejected{" "}
+                <span className="hidden md:inline-block">
+                  ({getStatusCount("rejected")})
                 </span>
               </button>
             </div>
@@ -616,75 +616,56 @@ export default function AdminPosts() {
 
           {/* Posts List */}
           <div className="flex-1 space-y-4">
-            {currentPosts.map((post) => {
-              const statusConfig = getStatusConfig(post.status);
-              const StatusIcon = statusConfig.icon;
-              return (
-                <div
-                  key={post.id}
-                  className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    {/* Left Section - Post Info */}
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className="text-xs gap-1">
-                              {post.type === "job" ? (
-                                <Briefcase size={12} />
-                              ) : (
-                                <GraduationCap size={12} />
-                              )}
-                              {post.type === "job" ? "Job" : "Course"}
-                            </Badge>
-                            <Badge
-                              className={`${statusConfig.color} flex items-center gap-1 px-2 py-0.5`}
-                            >
-                              <StatusIcon size={12} />
-                              {statusConfig.label}
-                            </Badge>
-                          </div>
-                          <h3 className="font-semibold text-lg">
-                            {post.title}
-                          </h3>
-                        </div>
-                      </div>
-
-                      {/* Post Details */}
-                      {renderPostDetails(post)}
-
-                      {/* Report Reason for Flagged Posts */}
-                      {post.status === "flagged" && post.reportReason && (
-                        <div className="mt-2 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                          <AlertTriangle size={12} />
-                          Reported: {post.reportReason}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Section - Action Buttons */}
-                    <div className="flex flex-wrap gap-2">
-                      {getActionButtons(post)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Empty State */}
-            {currentPosts.length === 0 && (
+            {isLoading ? (
+              <div className="pt-15 flex flex-col justify-center">
+                <SubLoadingScreen
+                  message="Loading posts..."
+                  fullScreen={false}
+                />
+              </div>
+            ) : currentItems.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
-                  {statusFilter === "pending"
-                    ? "No pending posts"
-                    : statusFilter === "flagged"
-                      ? "No flagged posts"
-                      : statusFilter === "suspended"
-                        ? "No suspended posts"
-                        : `No ${postTypeFilter === "jobs" ? "job" : postTypeFilter === "courses" ? "course" : ""} posts found`}
+                  No {statusFilter}{" "}
+                  {postTypeFilter === "jobs" ? "jobs" : "courses"} found
                 </p>
               </div>
+            ) : (
+              currentItems.map((post) => {
+                const viewLink =
+                  postTypeFilter === "jobs"
+                    ? `/admin/posts/job/${post.id}`
+                    : `/admin/posts/course/${post.id}`;
+
+                return (
+                  <div
+                    key={post.id}
+                    className="p-4 border rounded-lg hover:shadow-md transition-shadow relative"
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                      {/* Left Section - Post Info */}
+                      {renderPostDetails(post)}
+
+                      {/* Right Section - Action Buttons */}
+                      <div className="flex flex-col flex-wrap gap-2">
+                        <Link key="view" href={viewLink}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1 cursor-pointer w-full"
+                          >
+                            <Eye size={14} />
+                            View
+                          </Button>
+                        </Link>
+                        <div className="flex gap-1">
+                          {getActionButtons(post)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -751,15 +732,20 @@ export default function AdminPosts() {
               </div>
 
               <div className="text-center text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{" "}
-                {totalItems} posts
+                Showing{" "}
+                {currentItems.length > 0
+                  ? (currentPage - 1) * itemsPerPage + 1
+                  : 0}{" "}
+                to {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                {totalItems} {postTypeFilter === "jobs" ? "jobs" : "courses"}
               </div>
             </div>
           )}
 
           {totalPages <= 1 && totalItems > 0 && (
             <div className="text-center text-sm text-muted-foreground mt-8 pt-4 border-t">
-              Showing all {totalItems} posts
+              Showing all {totalItems}{" "}
+              {postTypeFilter === "jobs" ? "jobs" : "courses"}
             </div>
           )}
         </CardContent>
@@ -774,8 +760,9 @@ export default function AdminPosts() {
           <AlertDialogHeader>
             <AlertDialogTitle>Approve Post</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to approve this post? It will become visible
-              to users.
+              Are you sure you want to approve this{" "}
+              {postTypeFilter === "jobs" ? "job" : "course"}? It will become
+              visible to users.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -792,17 +779,17 @@ export default function AdminPosts() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Suspend Confirmation Dialog */}
+      {/* Reject Confirmation Dialog */}
       <AlertDialog
-        open={actionType === "suspend"}
+        open={actionType === "reject"}
         onOpenChange={() => setActionType(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Suspend Post</AlertDialogTitle>
+            <AlertDialogTitle>Reject Post</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to suspend this post? It will be hidden from
-              users until reactivated.
+              Are you sure you want to reject this{" "}
+              {postTypeFilter === "jobs" ? "job" : "course"}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -810,37 +797,10 @@ export default function AdminPosts() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleSuspend}
-              className="bg-yellow-600 hover:bg-yellow-700 cursor-pointer"
-            >
-              Suspend
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Remove Confirmation Dialog */}
-      <AlertDialog
-        open={actionType === "remove"}
-        onOpenChange={() => setActionType(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Post</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently remove this post? This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRemove}
+              onClick={handleReject}
               className="bg-red-600 hover:bg-red-700 cursor-pointer"
             >
-              Remove
+              Reject
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

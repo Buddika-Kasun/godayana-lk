@@ -17,6 +17,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMobileNav } from "@/context/MobileNavContext";
+import toast from "react-hot-toast";
+import seekerVisaGatewayEndpoints, {
+  VisaConsultationRequest,
+} from "@/lib/api/endpoints/seeker/seekerVisaGatewayEndpoints";
 
 // Types
 interface VisaType {
@@ -335,38 +339,83 @@ export default function VisaPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Validation
+    if (!formData.hasPassport) {
+      toast.error("Please select if you have a passport");
+      return;
+    }
+    if (!formData.countryPlanning) {
+      toast.error("Please select a country");
+      return;
+    }
+    if (formData.countryPlanning === "Other" && !formData.otherCountry.trim()) {
+      toast.error("Please specify your country");
+      return;
+    }
+    if (!formData.previousRejection) {
+      toast.error("Please select if you have had a previous visa rejection");
+      return;
+    }
+    if (!formData.targetTravelMonth) {
+      toast.error("Please select your target travel month");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Prepare final country value
-    const finalCountry =
-      formData.countryPlanning === "Other"
-        ? formData.otherCountry
-        : formData.countryPlanning;
+    try {
+      // Prepare final country value
+      const finalCountry =
+        formData.countryPlanning === "Other"
+          ? `other_${formData.otherCountry}`
+          : formData.countryPlanning;
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Map visa type to enum
+      let visaType = "VISIT";
+      if (selectedVisa) {
+        const title = selectedVisa.title;
+        if (title.includes("Student")) visaType = "STUDENT";
+        else if (title.includes("Work")) visaType = "WORK";
+        else if (title.includes("Visit")) visaType = "VISIT";
+      }
 
-    console.log("Consultation Request:", {
-      visaType: selectedVisa?.title,
-      country:
-        "country" in (selectedVisa || {})
-          ? selectedVisa?.country
-          : selectedVisa?.title,
-      selectedCountry: finalCountry,
-      hasPassport: formData.hasPassport,
-      previousRejection: formData.previousRejection,
-      targetTravelMonth: formData.targetTravelMonth,
-      targetTravelYear: formData.targetTravelYear,
-      additionalNotes: formData.additionalNotes,
-    });
+      // Construct travel date
+      const travelDate = new Date(
+        `${formData.targetTravelMonth} 1, ${formData.targetTravelYear}`,
+      );
 
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
+      const requestData: VisaConsultationRequest = {
+        type: visaType,
+        country: finalCountry,
+        visaRejection: formData.previousRejection === "yes",
+        hasPassport: formData.hasPassport === "yes",
+        travelDate: travelDate.toISOString(),
+        note: formData.additionalNotes || undefined,
+      };
 
-    // Close popup after 2 seconds on success
-    setTimeout(() => {
-      closePopup();
-    }, 2000);
+      const response =
+        await seekerVisaGatewayEndpoints.visa.createConsultation(requestData);
+
+      if (response.data.success) {
+        setSubmitSuccess(true);
+        toast.success("Consultation request sent successfully!");
+
+        // Close popup after 10 seconds on success
+        setTimeout(() => {
+          closePopup();
+        }, 10000);
+      } else {
+        toast.error(response.data.message || "Failed to submit consultation");
+      }
+    } 
+    catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to submit consultation";
+      toast.error(errorMessage);
+      console.error("Failed to submit consultation:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Helper function to get display text for selected visa

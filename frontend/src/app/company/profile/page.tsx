@@ -9,7 +9,7 @@ import { CompanyContactDetailsTab } from "@/components/company/profile/CompanyCo
 import { CompanyAgreementsTab } from "@/components/company/profile/CompanyAgreementsTab";
 import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
 import toast from "react-hot-toast";
-import { companyAPI, CompanyProfileData } from "@/lib/api/endpoints/companyEndpoints";
+import { companyProfileAPI, CompanyProfileData } from "@/lib/api/endpoints/company/companyProfileEndpoints";
 
 export default function CompanyProfile() {
   const [activeTab, setActiveTab] = useState("basic");
@@ -24,7 +24,7 @@ export default function CompanyProfile() {
     setError(null);
 
     try {
-      const response = await companyAPI.getCompanyProfile();
+      const response = await companyProfileAPI.getCompanyProfile();
       const apiResponse = response.data;
 
       if (apiResponse.success && apiResponse.data) {

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
 import toast from "react-hot-toast";
-import jobEndpoints from "@/lib/api/endpoints/jobEndpoints";
+import companyJobEndpoints from "@/lib/api/endpoints/company/companyJobEndpoints";
 
 interface EditJobPageProps {
   params: Promise<{ id: string }>;

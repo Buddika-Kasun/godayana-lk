@@ -3,13 +3,19 @@ import { configureStore } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import authReducer from "./slices/authSlice";
 import userReducer from "./slices/userSlice";
-import jobReducer from "./slices/jobSlice";
+import savedJobsReducer from "./slices/savedJobsSlice";
+import appliedJobsReducer from "./slices/appliedJobsSlice";
+import savedCoursesReducer from "./slices/savedCoursesSlice";
+import appliedCoursesReducer from "./slices/appliedCoursesSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     user: userReducer,
-    jobs: jobReducer,
+    savedJobs: savedJobsReducer,
+    appliedJobs: appliedJobsReducer,
+    savedCourses: savedCoursesReducer,
+    appliedCourses: appliedCoursesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

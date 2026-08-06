@@ -18,6 +18,7 @@ import {
   Briefcase,
   Heart,
   Users,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,10 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import seekerVisaGatewayEndpoints, {
+  GatewayConsultationRequest,
+} from "@/lib/api/endpoints/seeker/seekerVisaGatewayEndpoints";
+import toast from "react-hot-toast";
 
 // Animation
 const fadeInUp: Variants = {
@@ -115,27 +120,30 @@ export default function GatewayPage() {
   const [showForm, setShowForm] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   // Form Data
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<GatewayConsultationRequest>({
     // Study Preferences
-    preferredCountry: "",
+    country: "",
     otherCountry: "",
-    preferredStudyField: "",
-    preferredStudyLevel: "",
-    preferredIntake: "",
-    preferredUniversityType: "",
+    studyField: "",
+    otherStudyField: "",
+    studyLevel: "",
+    intake: "",
+    universityType: "",
     languageTestStatus: "",
 
     // Financial Planning
-    budget: "",
+    budget: undefined,
     familySponsorship: "",
-    educationLoanInterest: "",
+    educationLoan: "",
 
     // Readiness
-    passportAvailable: "",
-    previousVisaRejection: "",
-    readyToApplyWithin: "",
+    hasPassport: "",
+    visaRejection: "",
+    applyWithin: "",
   });
 
   const handleChange = (field: string, value: string) => {
@@ -150,45 +158,104 @@ export default function GatewayPage() {
     setCurrentStep((prev) => prev - 1);
   };
 
+  const openPopup = () => {
+    setIsPopupOpen(true);
+    // Reset form when opening
+    setFormData({
+      // Study Preferences
+      country: "",
+      otherCountry: "",
+      studyField: "",
+      otherStudyField: "",
+      studyLevel: "",
+      intake: "",
+      universityType: "",
+      languageTestStatus: "",
+
+      // Financial Planning
+      budget: undefined,
+      familySponsorship: "",
+      educationLoan: "",
+
+      // Readiness
+      hasPassport: "",
+      visaRejection: "",
+      applyWithin: "",
+    });
+    // setSubmitSuccess(false);
+  };
+
+  const closePopup = () => {
+    setIsPopupOpen(false);
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log("Form Data Submitted:", formData);
-    setIsSubmitting(false);
-    alert(
-      "Application submitted successfully! Our counselor will contact you soon.",
-    );
+
+    try {
+
+      const response =
+        await seekerVisaGatewayEndpoints.gateway.createConsultation(formData);
+
+      if (response.data.success) {
+        setSubmitSuccess(true);
+        toast.success("Consultation request sent successfully!");
+
+        setShowForm(false);
+        setCurrentStep(1);
+        
+        openPopup();
+
+        // Close popup after 10 seconds on success
+        setTimeout(() => {
+          closePopup();
+        }, 10000);
+      } else {
+        toast.error(response.data.message || "Failed to submit consultation");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to submit consultation";
+      toast.error(errorMessage);
+      console.error("Failed to submit consultation:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isStepValid = () => {
     if (currentStep === 1) {
       return (
-        formData.preferredCountry &&
-        formData.preferredStudyField &&
-        formData.preferredStudyLevel &&
-        formData.preferredIntake
+        formData.country &&
+        formData.studyField &&
+        formData.studyLevel &&
+        formData.intake &&
+        formData.languageTestStatus &&
+        (formData.country !== "Other" || formData.otherCountry) &&
+        (formData.studyField !== "Other" || formData.otherStudyField)
       );
     }
     if (currentStep === 2) {
       return (
         formData.budget &&
         formData.familySponsorship &&
-        formData.educationLoanInterest
+        formData.educationLoan
       );
     }
     if (currentStep === 3) {
       return (
-        formData.passportAvailable &&
-        formData.previousVisaRejection &&
-        formData.readyToApplyWithin
+        formData.hasPassport &&
+        formData.visaRejection &&
+        formData.applyWithin
       );
     }
     return true;
   };
 
   return (
-    <div className="bg-background min-h-screen flex flex-col">
+    <div className="bg-background flex flex-col">
       {/* Header */}
       <motion.div
         initial="hidden"
@@ -216,7 +283,7 @@ export default function GatewayPage() {
             exit={{ opacity: 0, y: -20 }}
             className="flex flex-col items-center justify-center px-4 py-10"
           >
-            <div className="text-center max-w-2xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto pt-8 pb-16">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -360,173 +427,313 @@ export default function GatewayPage() {
                             Study Preferences
                           </h2>
 
-                          {/* Preferred Country */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Preferred Country{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <Select
-                              value={formData.preferredCountry}
-                              onValueChange={(value) =>
-                                handleChange("preferredCountry", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a country" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {countries.map((country) => (
-                                  <SelectItem key={country} value={country}>
-                                    {country}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Other Country Input */}
-                          {formData.preferredCountry === "Other" && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                            >
+                          <div className="hidden md:flex flex-col md:flex-row gap-8">
+                            {/* Preferred Country */}
+                            <div className="flex-1">
                               <Label className="text-sm mb-1 block">
-                                Please specify country{" "}
+                                Preferred Country{" "}
                                 <span className="text-red-500">*</span>
                               </Label>
+                              <Select
+                                value={formData.country}
+                                onValueChange={(value) =>
+                                  handleChange("country", value)
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select a country" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {countries.map((country) => (
+                                    <SelectItem key={country} value={country}>
+                                      {country}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Preferred Study Field */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Preferred Study Field{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <Select
+                                value={formData.studyField}
+                                onValueChange={(value) =>
+                                  handleChange("studyField", value)
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select study field" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {studyFields.map((field) => (
+                                    <SelectItem key={field} value={field}>
+                                      {field}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div className="flex md:hidden flex-col gap-4">
+                            {/* Preferred Country */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Preferred Country{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <Select
+                                value={formData.country}
+                                onValueChange={(value) =>
+                                  handleChange("country", value)
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select a country" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {countries.map((country) => (
+                                    <SelectItem key={country} value={country}>
+                                      {country}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Other Country Input */}
+                            {formData.country === "Other" && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                className="flex-1"
+                              >
+                                <Label className="text-sm mb-1 block">
+                                  Please specify country{" "}
+                                  <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  placeholder="Enter country name"
+                                  value={formData.otherCountry}
+                                  onChange={(e) =>
+                                    handleChange("otherCountry", e.target.value)
+                                  }
+                                />
+                              </motion.div>
+                            )}
+
+                            {/* Preferred Study Field */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Preferred Study Field{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <Select
+                                value={formData.studyField}
+                                onValueChange={(value) =>
+                                  handleChange("studyField", value)
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select study field" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {studyFields.map((field) => (
+                                    <SelectItem key={field} value={field}>
+                                      {field}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Other Study Field Input */}
+                            {formData.studyField === "Other" && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                className="flex-1"
+                              >
+                                <Label className="text-sm mb-1 block">
+                                  Please specify study field{" "}
+                                  <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  placeholder="Enter study field name"
+                                  value={formData.otherStudyField}
+                                  onChange={(e) =>
+                                    handleChange(
+                                      "otherStudyField",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </motion.div>
+                            )}
+                          </div>
+
+                          <div
+                            className={`hidden flex-col md:flex-row gap-4 md:gap-8 ${formData.country !== "Other" && formData.studyField === "Other" ? "justify-end" : ""} ${formData.country === "Other" || formData.studyField === "Other" ? "md:flex" : ""}`}
+                          >
+                            {/* Other Country Input */}
+                            {formData.country === "Other" && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                className={`${formData.studyField === "Other" ? "flex-1" : "w-[calc(50%-16px)]"}`}
+                              >
+                                <Label className="text-sm mb-1 block">
+                                  Please specify country{" "}
+                                  <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  placeholder="Enter country name"
+                                  value={formData.otherCountry}
+                                  onChange={(e) =>
+                                    handleChange("otherCountry", e.target.value)
+                                  }
+                                />
+                              </motion.div>
+                            )}
+
+                            {/* Other Study Field Input */}
+                            {formData.studyField === "Other" && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                className={`${formData.country === "Other" ? "flex-1" : "w-[calc(50%-16px)]"}`}
+                              >
+                                <Label className="text-sm mb-1 block">
+                                  Please specify study field{" "}
+                                  <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  placeholder="Enter study field name"
+                                  value={formData.otherStudyField}
+                                  onChange={(e) =>
+                                    handleChange(
+                                      "otherStudyField",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </motion.div>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+                            {/* Preferred Study Level */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Preferred Study Level{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <Select
+                                value={formData.studyLevel}
+                                onValueChange={(value) =>
+                                  handleChange("studyLevel", value)
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select study level" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {studyLevels.map((level) => (
+                                    <SelectItem key={level} value={level}>
+                                      {level}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Preferred Intake */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Preferred Intake{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <Select
+                                value={formData.intake}
+                                onValueChange={(value) =>
+                                  handleChange("intake", value)
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select intake month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {intakes.map((intake) => (
+                                    <SelectItem key={intake} value={intake}>
+                                      {intake}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+                            {/* Preferred University Type (Optional) */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Preferred University Type (If available)
+                              </Label>
                               <Input
-                                placeholder="Enter country name"
-                                value={formData.otherCountry}
+                                placeholder="e.g., Public University, Private University, etc."
+                                value={formData.universityType}
                                 onChange={(e) =>
-                                  handleChange("otherCountry", e.target.value)
+                                  handleChange(
+                                    "universityType",
+                                    e.target.value,
+                                  )
                                 }
                               />
-                            </motion.div>
-                          )}
+                            </div>
 
-                          {/* Preferred Study Field */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Preferred Study Field{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <Select
-                              value={formData.preferredStudyField}
-                              onValueChange={(value) =>
-                                handleChange("preferredStudyField", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select study field" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {studyFields.map((field) => (
-                                  <SelectItem key={field} value={field}>
-                                    {field}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Preferred Study Level */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Preferred Study Level{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <Select
-                              value={formData.preferredStudyLevel}
-                              onValueChange={(value) =>
-                                handleChange("preferredStudyLevel", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select study level" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {studyLevels.map((level) => (
-                                  <SelectItem key={level} value={level}>
-                                    {level}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Preferred Intake */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Preferred Intake{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <Select
-                              value={formData.preferredIntake}
-                              onValueChange={(value) =>
-                                handleChange("preferredIntake", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select intake month" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {intakes.map((intake) => (
-                                  <SelectItem key={intake} value={intake}>
-                                    {intake}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Preferred University Type (Optional) */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Preferred University Type (If available)
-                            </Label>
-                            <Input
-                              placeholder="e.g., Public University, Private University, etc."
-                              value={formData.preferredUniversityType}
-                              onChange={(e) =>
-                                handleChange(
-                                  "preferredUniversityType",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </div>
-
-                          {/* Language Test Status */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Language Test Status{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <RadioGroup
-                              value={formData.languageTestStatus}
-                              onValueChange={(value) =>
-                                handleChange("languageTestStatus", value)
-                              }
-                              className="flex gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem
-                                  value="completed"
-                                  id="completed"
-                                />
-                                <Label htmlFor="completed">Completed</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem
-                                  value="planning"
-                                  id="planning"
-                                />
-                                <Label htmlFor="planning">
-                                  Planning to do soon
-                                </Label>
-                              </div>
-                            </RadioGroup>
+                            {/* Language Test Status */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Language Test Status{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <RadioGroup
+                                value={formData.languageTestStatus}
+                                onValueChange={(value) =>
+                                  handleChange("languageTestStatus", value)
+                                }
+                                className="flex justify-between items-center py-2 md:p-2"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem
+                                    value="completed"
+                                    id="completed"
+                                  />
+                                  <Label
+                                    htmlFor="completed"
+                                    className="text-gray-500"
+                                  >
+                                    Completed
+                                  </Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem
+                                    value="planning"
+                                    id="planning"
+                                  />
+                                  <Label
+                                    htmlFor="planning"
+                                    className="text-gray-500"
+                                  >
+                                    Planning to do soon
+                                  </Label>
+                                </div>
+                              </RadioGroup>
+                            </div>
                           </div>
 
                           <div className="flex justify-end pt-4">
@@ -559,67 +766,73 @@ export default function GatewayPage() {
                           {/* Budget */}
                           <div>
                             <Label className="text-sm mb-1 block">
-                              Budget (Annual - in USD/LKR){" "}
+                              Budget (Annual - in LKR){" "}
                               <span className="text-red-500">*</span>
                             </Label>
                             <Input
-                              placeholder="e.g., $25,000 or LKR 7.5M"
+                              placeholder="e.g., 7500000"
                               value={formData.budget}
                               onChange={(e) =>
                                 handleChange("budget", e.target.value)
                               }
+                              type="number"
                             />
                           </div>
 
-                          {/* Family Sponsorship */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Family Sponsorship Available?{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <RadioGroup
-                              value={formData.familySponsorship}
-                              onValueChange={(value) =>
-                                handleChange("familySponsorship", value)
-                              }
-                              className="flex gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem
-                                  value="yes"
-                                  id="sponsorshipYes"
-                                />
-                                <Label htmlFor="sponsorshipYes">Yes</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="no" id="sponsorshipNo" />
-                                <Label htmlFor="sponsorshipNo">No</Label>
-                              </div>
-                            </RadioGroup>
-                          </div>
+                          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+                            {/* Family Sponsorship */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Family Sponsorship Available?{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <RadioGroup
+                                value={formData.familySponsorship}
+                                onValueChange={(value) =>
+                                  handleChange("familySponsorship", value)
+                                }
+                                className="flex gap-8 py-2 md:p-2 text-gray-500 justify-around"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem
+                                    value="yes"
+                                    id="sponsorshipYes"
+                                  />
+                                  <Label htmlFor="sponsorshipYes">Yes</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem
+                                    value="no"
+                                    id="sponsorshipNo"
+                                  />
+                                  <Label htmlFor="sponsorshipNo">No</Label>
+                                </div>
+                              </RadioGroup>
+                            </div>
 
-                          {/* Education Loan Interest */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Education Loan Interest?{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <RadioGroup
-                              value={formData.educationLoanInterest}
-                              onValueChange={(value) =>
-                                handleChange("educationLoanInterest", value)
-                              }
-                              className="flex gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="yes" id="loanYes" />
-                                <Label htmlFor="loanYes">Yes</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="no" id="loanNo" />
-                                <Label htmlFor="loanNo">No</Label>
-                              </div>
-                            </RadioGroup>
+                            {/* Education Loan Interest */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Education Loan Interest?{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <RadioGroup
+                                value={formData.educationLoan}
+                                onValueChange={(value) =>
+                                  handleChange("educationLoan", value)
+                                }
+                                className="flex gap-8 py-2 md:p-2 text-gray-500 justify-around"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="yes" id="loanYes" />
+                                  <Label htmlFor="loanYes">Yes</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="no" id="loanNo" />
+                                  <Label htmlFor="loanNo">No</Label>
+                                </div>
+                              </RadioGroup>
+                            </div>
                           </div>
 
                           <div className="flex justify-between pt-4">
@@ -653,84 +866,117 @@ export default function GatewayPage() {
                             Readiness Check
                           </h2>
 
-                          {/* Passport Available */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Passport Available?{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <RadioGroup
-                              value={formData.passportAvailable}
-                              onValueChange={(value) =>
-                                handleChange("passportAvailable", value)
-                              }
-                              className="flex gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="yes" id="passportYes" />
-                                <Label htmlFor="passportYes">Yes</Label>
+                          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+                            <div className="flex-1 flex flex-col gap-4">
+                              {/* Passport Available */}
+                              <div className="w-full">
+                                <Label className="text-sm mb-1 block">
+                                  Passport Available?{" "}
+                                  <span className="text-red-500">*</span>
+                                </Label>
+                                <RadioGroup
+                                  value={formData.hasPassport}
+                                  onValueChange={(value) =>
+                                    handleChange("hasPassport", value)
+                                  }
+                                  className="flex justify-around py-1"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                      value="yes"
+                                      id="passportYes"
+                                    />
+                                    <Label htmlFor="passportYes">Yes</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                      value="no"
+                                      id="passportNo"
+                                    />
+                                    <Label htmlFor="passportNo">No</Label>
+                                  </div>
+                                </RadioGroup>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="no" id="passportNo" />
-                                <Label htmlFor="passportNo">No</Label>
-                              </div>
-                            </RadioGroup>
-                          </div>
 
-                          {/* Previous Visa Rejection */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Previous Visa Rejection?{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <RadioGroup
-                              value={formData.previousVisaRejection}
-                              onValueChange={(value) =>
-                                handleChange("previousVisaRejection", value)
-                              }
-                              className="flex gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="yes" id="rejectionYes" />
-                                <Label htmlFor="rejectionYes">Yes</Label>
+                              {/* Previous Visa Rejection */}
+                              <div className="w-full">
+                                <Label className="text-sm mb-1 block">
+                                  Previous Visa Rejection?{" "}
+                                  <span className="text-red-500">*</span>
+                                </Label>
+                                <RadioGroup
+                                  value={formData.visaRejection}
+                                  onValueChange={(value) =>
+                                    handleChange("visaRejection", value)
+                                  }
+                                  className="flex justify-around py-1"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                      value="yes"
+                                      id="rejectionYes"
+                                    />
+                                    <Label htmlFor="rejectionYes">Yes</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                      value="no"
+                                      id="rejectionNo"
+                                    />
+                                    <Label htmlFor="rejectionNo">No</Label>
+                                  </div>
+                                </RadioGroup>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="no" id="rejectionNo" />
-                                <Label htmlFor="rejectionNo">No</Label>
-                              </div>
-                            </RadioGroup>
-                          </div>
+                            </div>
 
-                          {/* Ready to Apply Within */}
-                          <div>
-                            <Label className="text-sm mb-1 block">
-                              Ready to Apply Within?{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <RadioGroup
-                              value={formData.readyToApplyWithin}
-                              onValueChange={(value) =>
-                                handleChange("readyToApplyWithin", value)
-                              }
-                              className="flex flex-col gap-2"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="1month" id="1month" />
-                                <Label htmlFor="1month">1 Month</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="3months" id="3months" />
-                                <Label htmlFor="3months">3 Months</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="6months" id="6months" />
-                                <Label htmlFor="6months">6 Months</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="other" id="other" />
-                                <Label htmlFor="other">Other</Label>
-                              </div>
-                            </RadioGroup>
+                            {/* Ready to Apply Within */}
+                            <div className="flex-1">
+                              <Label className="text-sm mb-1 block">
+                                Ready to Apply Within?{" "}
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <RadioGroup
+                                value={formData.applyWithin}
+                                onValueChange={(value) =>
+                                  handleChange("applyWithin", value)
+                                }
+                                className="flex flex-col gap-4 py-1"
+                              >
+                                <div className="flex justify-around">
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                      value="1month"
+                                      id="1month"
+                                    />
+                                    <Label htmlFor="1month">
+                                      1 Month&nbsp;&nbsp;
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                      value="3months"
+                                      id="3months"
+                                    />
+                                    <Label htmlFor="3months">3 Months</Label>
+                                  </div>
+                                </div>
+                                <div className="flex justify-around">
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                      value="6months"
+                                      id="6months"
+                                    />
+                                    <Label htmlFor="6months">6 Months</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="other" id="other" />
+                                    <Label htmlFor="other">
+                                      Other &nbsp; &nbsp; &nbsp; &nbsp;
+                                    </Label>
+                                  </div>
+                                </div>
+                              </RadioGroup>
+                            </div>
                           </div>
 
                           <div className="flex justify-between pt-4">
@@ -764,6 +1010,72 @@ export default function GatewayPage() {
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Consultation Popup Modal */}
+      <AnimatePresence>
+        {isPopupOpen && (
+          <>
+            {/* Backdrop with blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closePopup}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-background rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="sticky top-0 bg-background border-b px-6 py-4 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-xl font-bold">Book Consultation</h2>
+                  </div>
+                  <button
+                    onClick={closePopup}
+                    className="p-1 rounded-full hover:bg-muted transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Form */}
+                {submitSuccess && 
+                  <div className="p-6 text-center">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="w-8 h-8 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Request Sent!
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Our gateway expert will contact you within 24 hours.
+                    </p>
+                  </div>
+                }
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

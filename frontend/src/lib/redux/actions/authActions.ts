@@ -2,7 +2,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { setUser, setLoading, setError, logout } from "../slices/authSlice";
 import { clearUserData } from "../slices/userSlice";
-import { authAPI } from "@/lib/api/endpoints/authEndpoints";
+import { authAPI } from "@/lib/api/endpoints/public/authEndpoints";
 import { axiosClient } from "@/lib/api/axios";
 import { LoginCredentials, User } from "../types";
 import { AxiosError } from "axios";
@@ -86,6 +86,8 @@ export const loginUser = createAsyncThunk(
             | "admin"
             | "dev",
           avatar: user.avatar,
+          status: user.status,
+          isActive: user.isActive,
         };
 
         // console.log("User: ", mappedUser);
@@ -138,6 +140,8 @@ export const fetchCurrentUser = createAsyncThunk(
             | "admin"
             | "dev",
           avatar: user.avatar,
+          status: user.status,
+          isActive: user.isActive,
         };
 
         dispatch(setUser(mappedUser));

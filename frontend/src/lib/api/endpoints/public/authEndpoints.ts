@@ -1,6 +1,6 @@
 // src/lib/api/authEndpoints.ts
 import { ApiResponse } from "@/types/apiResponse";
-import { api } from "../axios";
+import { api } from "../../axios";
 
 export interface RegisterRequest {
   role?: "seeker" | "company" | "admin";
@@ -26,6 +26,8 @@ export interface UserData {
   email: string;
   role: string;
   avatar?: string;
+  status?: string;
+  isActive?: boolean;
 }
 
 // Login data interface
@@ -48,6 +50,8 @@ export interface User {
   phone: string;
   role: "seeker" | "company" | "admin" | "dev";
   avatar?: string;
+  status?: string;
+  isActive?: boolean;
 }
 
 // Mock user data for development

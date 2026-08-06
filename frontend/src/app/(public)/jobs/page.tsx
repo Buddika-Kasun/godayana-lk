@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, Variants, Variant } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Search,
   MapPin,
@@ -17,6 +16,11 @@ import {
   Globe,
   Home,
   Bookmark,
+  ChevronDown,
+  Building2,
+  Eye,
+  Users,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,318 +33,25 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-
-// Mock Jobs Data (expanded to 20 items for demonstration)
-const jobsData = [
-  {
-    id: 1,
-    title: "Senior Software Engineer",
-    company: "Tech Corp Ltd",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 150,000 - 200,000",
-    posted: "2 days ago",
-    category: "IT & Software",
-    experience: "3-5 years",
-    isOverseas: false,
-    logo: "/images/company-1.jpg",
-  },
-  {
-    id: 2,
-    title: "Construction Worker",
-    company: "Build Masters",
-    location: "Dubai, UAE",
-    type: "Contract",
-    salary: "AED 2,500 - 3,500",
-    posted: "1 day ago",
-    category: "Construction",
-    experience: "2-4 years",
-    isOverseas: true,
-    logo: "/images/company-2.jpg",
-  },
-  {
-    id: 3,
-    title: "Registered Nurse",
-    company: "Healthcare International",
-    location: "London, UK",
-    type: "Full-time",
-    salary: "£28,000 - 35,000",
-    posted: "3 days ago",
-    category: "Healthcare",
-    experience: "2-5 years",
-    isOverseas: true,
-    logo: "/images/company-3.jpg",
-  },
-  {
-    id: 4,
-    title: "Marketing Manager",
-    company: "Global Brands Ltd",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 200,000 - 250,000",
-    posted: "5 days ago",
-    category: "Marketing",
-    experience: "5-7 years",
-    isOverseas: false,
-    logo: "/images/company-4.jpg",
-  },
-  {
-    id: 5,
-    title: "Electrician",
-    company: "Power Solutions",
-    location: "Qatar",
-    type: "Contract",
-    salary: "QAR 3,000 - 4,000",
-    posted: "2 days ago",
-    category: "Construction",
-    experience: "3-5 years",
-    isOverseas: true,
-    logo: "/images/company-5.jpg",
-  },
-  {
-    id: 6,
-    title: "Accountant",
-    company: "Finance Hub",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 120,000 - 150,000",
-    posted: "1 week ago",
-    category: "Finance",
-    experience: "2-4 years",
-    isOverseas: false,
-    logo: "/images/company-6.jpg",
-  },
-  {
-    id: 7,
-    title: "Software Developer",
-    company: "Innovate Solutions",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 180,000 - 220,000",
-    posted: "3 days ago",
-    category: "IT & Software",
-    experience: "2-4 years",
-    isOverseas: false,
-    logo: "/images/company-7.jpg",
-  },
-  {
-    id: 8,
-    title: "Civil Engineer",
-    company: "BuildCon",
-    location: "Dubai, UAE",
-    type: "Full-time",
-    salary: "AED 8,000 - 10,000",
-    posted: "4 days ago",
-    category: "Engineering",
-    experience: "5-8 years",
-    isOverseas: true,
-    logo: "/images/company-8.jpg",
-  },
-  {
-    id: 9,
-    title: "Sales Executive",
-    company: "Retail International",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 80,000 - 100,000",
-    posted: "2 days ago",
-    category: "Sales",
-    experience: "1-3 years",
-    isOverseas: false,
-    logo: "/images/company-9.jpg",
-  },
-  {
-    id: 10,
-    title: "Graphic Designer",
-    company: "Creative Studio",
-    location: "Kandy, Sri Lanka",
-    type: "Remote",
-    salary: "LKR 90,000 - 120,000",
-    posted: "1 week ago",
-    category: "Design",
-    experience: "2-4 years",
-    isOverseas: false,
-    logo: "/images/company-10.jpg",
-  },
-  {
-    id: 11,
-    title: "HR Manager",
-    company: "People First",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 180,000 - 220,000",
-    posted: "3 days ago",
-    category: "HR",
-    experience: "5-7 years",
-    isOverseas: false,
-    logo: "/images/company-11.jpg",
-  },
-  {
-    id: 12,
-    title: "Waiter/Waitress",
-    company: "Luxury Hotels",
-    location: "Dubai, UAE",
-    type: "Full-time",
-    salary: "AED 2,000 - 2,500",
-    posted: "2 days ago",
-    category: "Hospitality",
-    experience: "1-2 years",
-    isOverseas: true,
-    logo: "/images/company-12.jpg",
-  },
-  {
-    id: 13,
-    title: "Data Analyst",
-    company: "DataWorks",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 130,000 - 160,000",
-    posted: "4 days ago",
-    category: "IT & Software",
-    experience: "2-4 years",
-    isOverseas: false,
-    logo: "/images/company-13.jpg",
-  },
-  {
-    id: 14,
-    title: "Project Manager",
-    company: "Global Projects",
-    location: "Singapore",
-    type: "Full-time",
-    salary: "SGD 4,000 - 5,500",
-    posted: "1 week ago",
-    category: "Management",
-    experience: "5-8 years",
-    isOverseas: true,
-    logo: "/images/company-14.jpg",
-  },
-  {
-    id: 15,
-    title: "Chef",
-    company: "Fine Dining",
-    location: "London, UK",
-    type: "Full-time",
-    salary: "£24,000 - 28,000",
-    posted: "3 days ago",
-    category: "Hospitality",
-    experience: "3-5 years",
-    isOverseas: true,
-    logo: "/images/company-15.jpg",
-  },
-  {
-    id: 16,
-    title: "Driver",
-    company: "Transport Co",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 60,000 - 70,000",
-    posted: "2 days ago",
-    category: "Transport",
-    experience: "2-4 years",
-    isOverseas: false,
-    logo: "/images/company-16.jpg",
-  },
-  {
-    id: 17,
-    title: "Security Guard",
-    company: "Secure Solutions",
-    location: "Qatar",
-    type: "Contract",
-    salary: "QAR 2,000 - 2,500",
-    posted: "5 days ago",
-    category: "Security",
-    experience: "1-3 years",
-    isOverseas: true,
-    logo: "/images/company-17.jpg",
-  },
-  {
-    id: 18,
-    title: "Teacher",
-    company: "International School",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 100,000 - 130,000",
-    posted: "1 week ago",
-    category: "Education",
-    experience: "3-5 years",
-    isOverseas: false,
-    logo: "/images/company-18.jpg",
-  },
-  {
-    id: 19,
-    title: "Pharmacist",
-    company: "HealthPlus",
-    location: "Dubai, UAE",
-    type: "Full-time",
-    salary: "AED 8,000 - 10,000",
-    posted: "3 days ago",
-    category: "Healthcare",
-    experience: "3-5 years",
-    isOverseas: true,
-    logo: "/images/company-19.jpg",
-  },
-  {
-    id: 20,
-    title: "Customer Service",
-    company: "Call Center",
-    location: "Colombo, Sri Lanka",
-    type: "Full-time",
-    salary: "LKR 70,000 - 85,000",
-    posted: "2 days ago",
-    category: "Customer Service",
-    experience: "1-2 years",
-    isOverseas: false,
-    logo: "/images/company-20.jpg",
-  },
-];
-
-// Job Categories
-const categories = [
-  "IT & Software",
-  "Healthcare",
-  "Construction",
-  "Marketing",
-  "Finance",
-  "Education",
-  "Hospitality",
-  "Engineering",
-  "Sales",
-  "Design",
-  "HR",
-  "Management",
-  "Transport",
-  "Security",
-  "Customer Service",
-];
-
-// Employment Types
-const employmentTypes = [
-  "Full-time",
-  "Part-time",
-  "Contract",
-  "Remote",
-  "Freelance",
-];
-
-// Experience Levels
-const experienceLevels = [
-  "Entry Level (0-2 years)",
-  "Mid Level (3-5 years)",
-  "Senior Level (5-8 years)",
-  "Expert (8+ years)",
-];
-
-// Locations
-const locations = [
-  "Colombo, Sri Lanka",
-  "Kandy, Sri Lanka",
-  "Galle, Sri Lanka",
-  "Dubai, UAE",
-  "London, UK",
-  "Qatar",
-  "Singapore",
-  "Australia",
-];
+import {
+  publicJobEndpoints,
+  JobListResponse,
+  PublicJobsParams,
+} from "@/lib/api/endpoints/public/publicJobEndpoints";
+import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
+import toast from "react-hot-toast";
+import { formatLocation } from "@/lib/utils/locationUtils";
+import { formatCategory } from "@/lib/utils/companyUtils";
+import { SquareAvatar } from "@/components/ui/SquareAvatar";
+import { useVisitedJobs } from "@/lib/hooks/useVisitedJobs";
+import { useSavedJobs } from "@/lib/hooks/useSavedJobs";
+import { useAppliedJobs } from "@/lib/hooks/useAppliedJobs";
+import {
+  employmentTypes,
+  experienceLevels,
+  jobCategories,
+  locations,
+} from "@/types/job";
 
 // Animation Variants
 const fadeInUp: Variants = {
@@ -387,16 +98,6 @@ const slideInRight: Variants = {
   },
 };
 
-const buttonTapAnimation: Variant = {
-  scale: 0.95,
-  transition: { duration: 0.1 },
-};
-
-const buttonHoverAnimation: Variant = {
-  scale: 1.05,
-  transition: { type: "spring", stiffness: 400, damping: 17 },
-};
-
 type JobType = "all" | "local" | "overseas";
 
 export default function JobsPage() {
@@ -410,66 +111,94 @@ export default function JobsPage() {
     experience: "",
   });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [jobs, setJobs] = useState<JobListResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const { appliedJobIds } = useAppliedJobs();
+
+  // Visited jobs hook
+  const { isJobVisited } = useVisitedJobs();
+
+  // Saved jobs hook - using Redux
+  const { savedJobIds, toggleSaveJob, isToggling } = useSavedJobs();
 
   // Ref for the jobs container to scroll to top
   const jobsContainerRef = useRef<HTMLDivElement>(null);
 
   const jobsPerPage = 10;
 
-  // Filter jobs based on type and filters
-  const filteredJobs = jobsData.filter((job) => {
-    // Filter by job type (all/local/overseas)
-    if (jobType === "local" && job.isOverseas) return false;
-    if (jobType === "overseas" && !job.isOverseas) return false;
-
-    // Filter by keyword
-    if (
-      filters.keyword &&
-      !job.title.toLowerCase().includes(filters.keyword.toLowerCase()) &&
-      !job.company.toLowerCase().includes(filters.keyword.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Filter by location
-    if (filters.location && job.location !== filters.location) return false;
-
-    // Filter by category
-    if (filters.category && job.category !== filters.category) return false;
-
-    // Filter by employment type
-    if (filters.type && job.type !== filters.type) return false;
-
-    // Filter by experience
-    if (filters.experience) {
-      // Simple mapping - in real app you'd have more sophisticated logic
-      const expMap: { [key: string]: string[] } = {
-        "Entry Level (0-2 years)": ["0-2 years", "1-2 years", "1-3 years"],
-        "Mid Level (3-5 years)": ["2-4 years", "3-5 years"],
-        "Senior Level (5-8 years)": ["5-7 years", "5-8 years"],
-        "Expert (8+ years)": ["8+ years"],
+  // Fetch jobs from API
+  const fetchJobs = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params: PublicJobsParams = {
+        page: currentPage - 1,
+        size: jobsPerPage,
       };
-      if (
-        !expMap[filters.experience]?.some((e) => job.experience.includes(e))
-      ) {
-        return false;
+
+      if (filters.keyword) {
+        params.keyword = filters.keyword;
       }
+
+      if (filters.location && filters.location !== "All Locations") {
+        params.location = filters.location;
+      }
+
+      if (filters.category && filters.category !== "All Categories") {
+        params.category = filters.category;
+      }
+
+      if (filters.type && filters.type !== "All Types") {
+        params.employmentType = filters.type;
+      }
+
+      if (filters.experience && filters.experience !== "All Levels") {
+        params.experience = filters.experience;
+      }
+
+      if (jobType !== "all") {
+        params.type = jobType;
+      }
+
+      const response = await publicJobEndpoints.getPublicJobs(params);
+      const apiResponse = response.data;
+
+      if (apiResponse.success && apiResponse.data) {
+        setJobs(apiResponse.data.content || []);
+        setTotalItems(apiResponse.data.totalElements || 0);
+        setTotalPages(apiResponse.data.totalPages || 0);
+      } else {
+        setError(apiResponse.message || "Failed to load jobs");
+        toast.error(apiResponse.message || "Failed to load jobs");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load jobs";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      console.error("Error fetching jobs:", error);
+    } finally {
+      setIsLoading(false);
     }
+  }, [currentPage, filters, jobType, jobsPerPage]);
 
-    return true;
-  });
+  // Fetch jobs when filters or page changes
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
-  const totalJobs = filteredJobs.length;
-  const totalPages = Math.ceil(totalJobs / jobsPerPage);
-
-  // Get current jobs
-  const indexOfLastJob = currentPage * jobsPerPage;
-  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
-  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, jobType]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -489,15 +218,12 @@ export default function JobsPage() {
     scrollToTop();
   };
 
-  // Smooth scroll to top function
   const scrollToTop = () => {
-    // Scroll the main window to top
     window.scrollTo({
       top: 120,
       behavior: "smooth",
     });
 
-    // Also try to scroll the jobs container if it exists
     if (jobsContainerRef.current) {
       jobsContainerRef.current.scrollTo({
         top: 0,
@@ -506,16 +232,19 @@ export default function JobsPage() {
     }
   };
 
+  const handleShare = (jobId: string) => {
+    navigator.clipboard.writeText(window.location.href + `/${jobId}`);
+    toast.success("Link copied to clipboard");
+  };
+
   const handleApplyFilters = () => {
     setCurrentPage(1);
-    // Small delay to ensure state update before scroll
     setTimeout(scrollToTop, 100);
   };
 
   const goToPage = (page: number) => {
     const newPage = Math.min(Math.max(page, 1), totalPages);
     setCurrentPage(newPage);
-    // Small delay to ensure state update before scroll
     setTimeout(scrollToTop, 100);
   };
 
@@ -540,6 +269,48 @@ export default function JobsPage() {
     },
   };
 
+  const hasActiveFilters = () => {
+    return (
+      filters.keyword !== "" ||
+      (filters.location && filters.location !== "All Locations") ||
+      (filters.category && filters.category !== "All Categories") ||
+      (filters.type && filters.type !== "All Types") ||
+      (filters.experience && filters.experience !== "All Levels")
+    );
+  };
+
+  const formatSalary = (min?: number, max?: number) => {
+    if (min && max) {
+      return `LKR ${min.toLocaleString()} - ${max.toLocaleString()}`;
+    }
+    if (min) {
+      return `From LKR ${min.toLocaleString()}`;
+    }
+    if (max) {
+      return `Up to LKR ${max.toLocaleString()}`;
+    }
+    return "Salary not specified";
+  };
+
+  const formatPostedDate = (dateString?: string) => {
+    if (!dateString) return "Recently";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return "1 day ago";
+    if (diffDays <= 7) return `${diffDays} days ago`;
+    if (diffDays <= 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays <= 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return `${Math.floor(diffDays / 365)} years ago`;
+  };
+
+  // Handle save/unsave for a specific job
+  const handleToggleSave = async (jobId: string, currentStatus: boolean) => {
+    await toggleSaveJob(jobId, currentStatus);
+  };
+
   return (
     <div className="bg-background min-h-screen flex flex-col">
       {/* Header */}
@@ -558,7 +329,7 @@ export default function JobsPage() {
         </p>
       </motion.div>
 
-      {/* Mobile Filter Button */}
+      {/* Mobile Filter Button - keep as is */}
       <motion.div
         initial="hidden"
         animate="visible"
@@ -667,10 +438,10 @@ export default function JobsPage() {
         </div>
       </motion.div>
 
-      {/* Main Content Area */}
+      {/* Main Content Area - Filters Sidebar and Jobs List */}
       <div className="flex-1 pt-2 md:pt-0 px-4 sm:px-6 lg:px-8 pb-8 min-h-0">
         <div className="flex flex-col lg:flex-row gap-8 h-full">
-          {/* Filters Sidebar - Desktop */}
+          {/* Filters Sidebar - Desktop (keep as is) */}
           <motion.div
             initial="hidden"
             animate="visible"
@@ -704,15 +475,15 @@ export default function JobsPage() {
                     </motion.div>
                   </div>
 
-                  {/* Keyword Filter */}
-                  <div className="mb-4">
+                  {/* Keyword Filter - Always Visible */}
+                  <div className="mb-3">
                     <label className="text-sm font-medium mb-1 block">
                       Keyword
                     </label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Job title..."
+                        placeholder="Job title or company..."
                         value={filters.keyword}
                         onChange={(e) =>
                           handleFilterChange("keyword", e.target.value)
@@ -722,120 +493,240 @@ export default function JobsPage() {
                     </div>
                   </div>
 
-                  {/* Location Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Location
-                    </label>
-                    <Select
-                      value={filters.location}
-                      onValueChange={(value) =>
-                        handleFilterChange("location", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {locations.map((loc) => (
-                          <SelectItem key={loc} value={loc}>
-                            {loc}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Category Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Category
-                    </label>
-                    <Select
-                      value={filters.category}
-                      onValueChange={(value) =>
-                        handleFilterChange("category", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Employment Type Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Employment Type
-                    </label>
-                    <Select
-                      value={filters.type}
-                      onValueChange={(value) =>
-                        handleFilterChange("type", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employmentTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Experience Level Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Experience Level
-                    </label>
-                    <Select
-                      value={filters.experience}
-                      onValueChange={(value) =>
-                        handleFilterChange("experience", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select experience" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {experienceLevels.map((exp) => (
-                          <SelectItem key={exp} value={exp}>
-                            {exp}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Apply Filters Button */}
-                  <motion.div
+                  {/* Expand/Collapse Button */}
+                  <motion.button
+                    onClick={() => setFiltersExpanded(!filtersExpanded)}
+                    className="w-full flex items-center justify-end rounded-lg gap-2 transition-colors text-sm text-muted-foreground hover:text-primary cursor-pointer"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Button
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                      onClick={handleApplyFilters}
+                    <span className="text-sm font-medium">
+                      {filtersExpanded ? "Collapse Filters" : "Expand Filters"}
+                    </span>
+                    <motion.div
+                      animate={{ rotate: filtersExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      Apply Filters
-                    </Button>
-                  </motion.div>
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.div>
+                  </motion.button>
+
+                  {/* Collapsible Filter Sections */}
+                  <AnimatePresence>
+                    {filtersExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        {/* Location Filter */}
+                        <div className="mb-3">
+                          <label className="text-sm font-medium mb-0 block">
+                            Location
+                          </label>
+                          <Select
+                            value={filters.location}
+                            onValueChange={(value) =>
+                              handleFilterChange("location", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((level) => (
+                                <SelectItem
+                                  key={level.value}
+                                  value={level.value}
+                                >
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Category Filter */}
+                        <div className="mb-3">
+                          <label className="text-sm font-medium mb-0 block">
+                            Category
+                          </label>
+                          <Select
+                            value={filters.category}
+                            onValueChange={(value) =>
+                              handleFilterChange("category", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {jobCategories.map((level) => (
+                                <SelectItem
+                                  key={level.value}
+                                  value={level.value}
+                                >
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Employment Type Filter */}
+                        <div className="mb-3">
+                          <label className="text-sm font-medium mb-0 block">
+                            Employment Type
+                          </label>
+                          <Select
+                            value={filters.type}
+                            onValueChange={(value) =>
+                              handleFilterChange("type", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {employmentTypes.map((level) => (
+                                <SelectItem
+                                  key={level.value}
+                                  value={level.value}
+                                >
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Experience Level Filter */}
+                        <div className="mb-3">
+                          <label className="text-sm font-medium mb-0 block">
+                            Experience Level
+                          </label>
+                          <Select
+                            value={filters.experience}
+                            onValueChange={(value) =>
+                              handleFilterChange("experience", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select experience" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {experienceLevels.map((level) => (
+                                <SelectItem
+                                  key={level.value}
+                                  value={level.value}
+                                >
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Apply Filters Button */}
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="mt-6"
+                        >
+                          <Button
+                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                            onClick={handleApplyFilters}
+                          >
+                            Apply Filters
+                          </Button>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Show Apply Filters button when collapsed if filters are applied */}
+                  {!filtersExpanded && hasActiveFilters() && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4"
+                    >
+                      <div className="mb-3">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Active filters:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {filters.location &&
+                            filters.location !== "All Locations" && (
+                              <Badge variant="secondary" className="text-xs">
+                                {filters.location}
+                                <button
+                                  onClick={() =>
+                                    handleFilterChange("location", "")
+                                  }
+                                  className="ml-1 hover:text-primary"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            )}
+                          {filters.category &&
+                            filters.category !== "All Categories" && (
+                              <Badge variant="secondary" className="text-xs">
+                                {filters.category}
+                                <button
+                                  onClick={() =>
+                                    handleFilterChange("category", "")
+                                  }
+                                  className="ml-1 hover:text-primary"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            )}
+                          {filters.type && filters.type !== "All Types" && (
+                            <Badge variant="secondary" className="text-xs">
+                              {filters.type}
+                              <button
+                                onClick={() => handleFilterChange("type", "")}
+                                className="ml-1 hover:text-primary"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          )}
+                          {filters.experience &&
+                            filters.experience !== "All Levels" && (
+                              <Badge variant="secondary" className="text-xs">
+                                {filters.experience}
+                                <button
+                                  onClick={() =>
+                                    handleFilterChange("experience", "")
+                                  }
+                                  className="ml-1 hover:text-primary"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            )}
+                        </div>
+                      </div>
+                      <Button
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                        onClick={handleApplyFilters}
+                      >
+                        Apply Filters
+                      </Button>
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
             </div>
           </motion.div>
 
-          {/* Filters Sidebar - Mobile */}
+          {/* Filters Sidebar - Mobile (keep as is) */}
           <AnimatePresence>
             {showMobileFilters && (
               <motion.div
@@ -866,15 +757,15 @@ export default function JobsPage() {
                     </motion.div>
                   </div>
 
-                  {/* Keyword Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
+                  {/* Keyword Filter - Always Visible */}
+                  <div className="mb-6">
+                    <label className="text-sm font-medium mb-2 block">
                       Keyword
                     </label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Job title..."
+                        placeholder="Job title or company..."
                         value={filters.keyword}
                         onChange={(e) =>
                           handleFilterChange("keyword", e.target.value)
@@ -884,130 +775,253 @@ export default function JobsPage() {
                     </div>
                   </div>
 
-                  {/* Location Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Location
-                    </label>
-                    <Select
-                      value={filters.location}
-                      onValueChange={(value) =>
-                        handleFilterChange("location", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {locations.map((loc) => (
-                          <SelectItem key={loc} value={loc}>
-                            {loc}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Category Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Category
-                    </label>
-                    <Select
-                      value={filters.category}
-                      onValueChange={(value) =>
-                        handleFilterChange("category", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Employment Type Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Employment Type
-                    </label>
-                    <Select
-                      value={filters.type}
-                      onValueChange={(value) =>
-                        handleFilterChange("type", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employmentTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Experience Level Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-1 block">
-                      Experience Level
-                    </label>
-                    <Select
-                      value={filters.experience}
-                      onValueChange={(value) =>
-                        handleFilterChange("experience", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select experience" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {experienceLevels.map((exp) => (
-                          <SelectItem key={exp} value={exp}>
-                            {exp}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Apply Filters Button */}
-                  <motion.div
+                  {/* Expand/Collapse Button for Mobile */}
+                  <motion.button
+                    onClick={() => setFiltersExpanded(!filtersExpanded)}
+                    className="w-full mb-4 flex items-center justify-between p-3 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Button
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                      onClick={() => {
-                        handleApplyFilters();
-                        setShowMobileFilters(false);
-                      }}
+                    <span className="text-sm font-medium">
+                      {filtersExpanded ? "Collapse Filters" : "Expand Filters"}
+                    </span>
+                    <motion.div
+                      animate={{ rotate: filtersExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      Apply Filters
-                    </Button>
-                  </motion.div>
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.div>
+                  </motion.button>
+
+                  {/* Collapsible Filter Sections for Mobile */}
+                  <AnimatePresence>
+                    {filtersExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        {/* Location Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Location
+                          </label>
+                          <Select
+                            value={filters.location}
+                            onValueChange={(value) =>
+                              handleFilterChange("location", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((level) => (
+                                <SelectItem
+                                  key={level.value}
+                                  value={level.value}
+                                >
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Category Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Category
+                          </label>
+                          <Select
+                            value={filters.category}
+                            onValueChange={(value) =>
+                              handleFilterChange("category", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {jobCategories.map((level) => (
+                                <SelectItem
+                                  key={level.value}
+                                  value={level.value}
+                                >
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Employment Type Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Employment Type
+                          </label>
+                          <Select
+                            value={filters.type}
+                            onValueChange={(value) =>
+                              handleFilterChange("type", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {employmentTypes.map((level) => (
+                                <SelectItem
+                                  key={level.value}
+                                  value={level.value}
+                                >
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Experience Level Filter */}
+                        <div className="mb-4">
+                          <label className="text-sm font-medium mb-2 block">
+                            Experience Level
+                          </label>
+                          <Select
+                            value={filters.experience}
+                            onValueChange={(value) =>
+                              handleFilterChange("experience", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select experience" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {experienceLevels.map((level) => (
+                                <SelectItem
+                                  key={level.value}
+                                  value={level.value}
+                                >
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Apply Filters Button */}
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="mt-6"
+                        >
+                          <Button
+                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                            onClick={() => {
+                              handleApplyFilters();
+                              setShowMobileFilters(false);
+                            }}
+                          >
+                            Apply Filters
+                          </Button>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Show Apply Filters button when collapsed if filters are applied */}
+                  {!filtersExpanded && hasActiveFilters() && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4"
+                    >
+                      <div className="mb-3">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Active filters:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {filters.location &&
+                            filters.location !== "All Locations" && (
+                              <Badge variant="secondary" className="text-xs">
+                                {filters.location}
+                                <button
+                                  onClick={() =>
+                                    handleFilterChange("location", "")
+                                  }
+                                  className="ml-1 hover:text-primary"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            )}
+                          {filters.category &&
+                            filters.category !== "All Categories" && (
+                              <Badge variant="secondary" className="text-xs">
+                                {filters.category}
+                                <button
+                                  onClick={() =>
+                                    handleFilterChange("category", "")
+                                  }
+                                  className="ml-1 hover:text-primary"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            )}
+                          {filters.type && filters.type !== "All Types" && (
+                            <Badge variant="secondary" className="text-xs">
+                              {filters.type}
+                              <button
+                                onClick={() => handleFilterChange("type", "")}
+                                className="ml-1 hover:text-primary"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          )}
+                          {filters.experience &&
+                            filters.experience !== "All Levels" && (
+                              <Badge variant="secondary" className="text-xs">
+                                {filters.experience}
+                                <button
+                                  onClick={() =>
+                                    handleFilterChange("experience", "")
+                                  }
+                                  className="ml-1 hover:text-primary"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            )}
+                        </div>
+                      </div>
+                      <Button
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                        onClick={() => {
+                          handleApplyFilters();
+                          setShowMobileFilters(false);
+                        }}
+                      >
+                        Apply Filters
+                      </Button>
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Jobs List - Independent Scroll */}
+          {/* Jobs List */}
           <motion.div
             initial="hidden"
             animate="visible"
             variants={slideInRight}
             className="flex-1 flex flex-col min-h-0"
           >
-            {/* Results Count and Pagination Info - Sticky within jobs column */}
+            {/* Results Count and Pagination Info */}
             <div className="pb-2 hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-2 lg:sticky lg:top-20 bg-background pt-3 z-10 border-b">
               <motion.div
                 initial="hidden"
@@ -1099,11 +1113,13 @@ export default function JobsPage() {
                 transition={{ delay: 0.3 }}
                 className="text-sm text-muted-foreground"
               >
-                Showing {totalJobs > 0 ? indexOfFirstJob + 1 : 0}-
-                {Math.min(indexOfLastJob, totalJobs)} of {totalJobs} jobs
+                Showing{" "}
+                {totalItems > 0 ? (currentPage - 1) * jobsPerPage + 1 : 0}-
+                {Math.min(currentPage * jobsPerPage, totalItems)} of{" "}
+                {totalItems} jobs
               </motion.div>
 
-              {/* Page Navigation with Animations */}
+              {/* Page Navigation */}
               {totalPages > 1 && (
                 <motion.div
                   initial="hidden"
@@ -1154,192 +1170,110 @@ export default function JobsPage() {
               )}
             </div>
 
-            {/* HIDE PART Div - Keeping as is */}
-            <div className="bg-background text-background h-20 w-full z-10 top-0 fixed hidden lg:block">
-              HIDE PART
-            </div>
-
-            {/* Scrollable Jobs Container */}
+            {/* Jobs Container */}
             <div
               ref={jobsContainerRef}
               className="flex-1 overflow-y-auto pr-2 space-y-4 px-2 py-2"
             >
-              {currentJobs.length > 0 ? (
+              {isLoading ? (
+                <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
+                  <SubLoadingScreen
+                    message="Loading jobs..."
+                    fullScreen={false}
+                  />
+                </div>
+              ) : error ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-12"
+                >
+                  <p className="text-red-500">{error}</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => fetchJobs()}
+                  >
+                    Try Again
+                  </Button>
+                </motion.div>
+              ) : jobs.length > 0 ? (
                 <motion.div
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
                   className="space-y-4"
                 >
-                  {currentJobs.map((job) => (
-                    <motion.div
-                      key={job.id}
-                      variants={itemVariants}
-                      whileHover={{
-                        scale: 1.01,
-                        transition: { duration: 0.2 },
-                      }}
-                    >
-                      {/* <Card className="hover:shadow-lg transition-all duration-300">
-                        <CardContent className="p-6 py-2">
-                          <div className="flex flex-col md:flex-row gap-4">
-                            <motion.div
-                              whileHover={{ rotate: 5, scale: 1.1 }}
-                              transition={{ duration: 0.2 }}
-                              className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
-                            >
-                              <Briefcase className="h-8 w-8 text-primary" />
-                            </motion.div>
+                  {jobs.map((job) => {
+                    const jobId = job.id!;
+                    const isSaved = savedJobIds.includes(jobId);
+                    const isApplied = appliedJobIds.includes(jobId);
+                    const visited = isJobVisited(jobId) || isSaved || isApplied;
 
-                            <div className="flex-1">
-                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
-                                <h3 className="text-xl font-bold hover:text-primary transition-colors">
-                                  <Link href={`/jobs/${job.id}`}>
-                                    {job.title}
-                                  </Link>
-                                </h3>
-                                {job.isOverseas && (
-                                  <motion.div
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ delay: 0.2 }}
-                                  >
-                                    <Badge
-                                      variant="secondary"
-                                      className="bg-secondary/20 text-secondary-foreground border-secondary/30 w-fit"
-                                    >
-                                      Overseas
-                                    </Badge>
-                                  </motion.div>
-                                )}
-                              </div>
+                    let flag = "Viewed";
+                    if (isSaved) {
+                      flag = "Saved";
+                    }
+                    if (isApplied) {
+                      flag = "Applied";
+                    }
 
-                              <p className="text-muted-foreground mb-3">
-                                {job.company}
-                              </p>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <MapPin className="h-4 w-4 text-primary shrink-0" />
-                                  <span>{job.location}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Briefcase className="h-4 w-4 text-primary shrink-0" />
-                                  <span>{job.type}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <DollarSign className="h-4 w-4 text-primary shrink-0" />
-                                  <span>{job.salary}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Clock className="h-4 w-4 text-primary shrink-0" />
-                                  <span>{job.posted}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Briefcase className="h-4 w-4 text-primary shrink-0" />
-                                  <span>{job.category}</span>
-                                </div>
-                              </div>
-
-                              <div className="flex sm:flex-row gap-3 items-stretch md:items-end justify-end pt-4">
+                    return (
+                      <motion.div
+                        key={job.id}
+                        variants={itemVariants}
+                        whileHover={{
+                          scale: 1.01,
+                          transition: { duration: 0.2 },
+                        }}
+                      >
+                        <Card
+                          className={`relative hover:shadow-lg transition-all duration-300 p-0 ${visited ? "border-secondary/70 bg-secondary/5" : ""}`}
+                        >
+                          <CardContent className="px-4 pt-4 pb-2">
+                            <div className="flex flex-col gap-4">
+                              {/* Company Logo */}
+                              <div className="flex gap-4">
                                 <motion.div
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  className="md:self-start"
+                                  whileHover={{ rotate: 5, scale: 1.1 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden"
                                 >
-                                  <Button
-                                    className="cursor-pointer text-primary bg-background"
-                                    onClick={() => {
-                                      // Add your save/bookmark logic here
-                                      console.log("Saved job:", job.id);
-                                    }}
-                                  >
-                                    <Bookmark className="h-6 w-6" />
-                                  </Button>
+                                  {job.logoUrl ? (
+                                    <SquareAvatar
+                                      src={job.logoUrl}
+                                      alt={job.companyName || "Company"}
+                                      fallback={
+                                        job.companyName
+                                          ? job.companyName.charAt(0)
+                                          : "C"
+                                      }
+                                      size={64}
+                                    />
+                                  ) : (
+                                    <Building2 className="h-8 w-8 text-primary" />
+                                  )}
+                                  {/* Status badge */}
+                                  {visited && (
+                                    <div className="absolute top-0 left-0 rounded-br-full px-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]">
+                                      {flag}
+                                    </div>
+                                  )}
                                 </motion.div>
-
-                                <motion.div
-                                  className="flex-1 md:flex-initial"
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                >
-                                  <Link
-                                    href={`/jobs/${job.id}`}
-                                    className="block"
+                                <div className="flex-1">
+                                  <h3
+                                    className={`text-xl font-bold hover:text-primary transition-colors ${visited ? "text-primary" : ""}`}
                                   >
-                                    <Button className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer px-8 group">
-                                      View & Apply
-                                      <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-                                    </Button>
-                                  </Link>
-                                </motion.div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card> */}
-                      <Card className="hover:shadow-lg transition-all duration-300 p-0">
-                        <CardContent className="px-4 pt-4 pb-2">
-                          <div className="flex flex-col gap-4">
-                            {/* Company Logo Placeholder */}
-                            <div className="flex gap-4">
-                              <motion.div
-                                whileHover={{ rotate: 5, scale: 1.1 }}
-                                transition={{ duration: 0.2 }}
-                                className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
-                              >
-                                <Briefcase className="h-8 w-8 text-primary" />
-                              </motion.div>
-                              <div className="flex-1">
-                                <h3 className="text-xl font-bold hover:text-primary transition-colors">
-                                  <Link href={`/jobs/${job.id}`}>
-                                    {job.title}
-                                  </Link>
-                                </h3>
-                                <p className="text-muted-foreground">
-                                  {job.company}
-                                </p>
-                              </div>
-                              <div className="hidden md:flex flex-col items-end">
-                              {job.isOverseas && (
-                                <motion.div
-                                  initial={{ scale: 0.8, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  transition={{ delay: 0.2 }}
-                                >
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-secondary/20 text-secondary-foreground border-secondary/30 w-fit"
-                                  >
-                                    Overseas
-                                  </Badge>
-                                </motion.div>
-                              )}
-                              <div className="items-center gap-2 text-lg font-semibold text-primary hidden md:flex">
-                                <DollarSign className="h-6 w-6 text-primary shrink-0" />
-                                <span>{job.salary}</span>
-                              </div>
-                              </div>
-                            </div>
-
-                            {/* Job Details */}
-                            <div className="flex-1">
-                              {/* Title and Company Row */}
-                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-0">
-                                {/* <div className="flex-1">
-                                  <h3 className="text-xl font-bold hover:text-primary transition-colors">
                                     <Link href={`/jobs/${job.id}`}>
-                                      {job.title}
+                                      {job.jobTitle}
                                     </Link>
                                   </h3>
                                   <p className="text-muted-foreground">
-                                    {job.company}
+                                    {job.companyName}
                                   </p>
-                                </div> */}
-
-                                {/* Salary - Bigger on md+ */}
-                                <div className="flex flex-col items-center gap-2 md:gap-3 md:self-start md:hidden">
-                                  {job.isOverseas && (
+                                </div>
+                                <div className="hidden md:flex flex-col items-end">
+                                  {job.type === "overseas" && (
                                     <motion.div
                                       initial={{ scale: 0.8, opacity: 0 }}
                                       animate={{ scale: 1, opacity: 1 }}
@@ -1353,82 +1287,113 @@ export default function JobsPage() {
                                       </Badge>
                                     </motion.div>
                                   )}
-                                  <div className="flex items-center gap-2 text-lg font-semibold text-primary">
-                                    <DollarSign className="h-6 w-6 text-primary shrink-0" />
-                                    <span>{job.salary}</span>
+                                  <div className="items-center gap-2 text-lg font-semibold text-primary hidden md:flex">
+                                    <span>
+                                      {formatSalary(
+                                        job.minSalary,
+                                        job.maxSalary,
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Job Details */}
+                              <div className="flex-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <MapPin className="h-4 w-4 text-primary shrink-0" />
+                                    <span>
+                                      {formatLocation(job.location) || "N/A"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Briefcase className="h-4 w-4 text-primary shrink-0" />
+                                    <span>
+                                      {job.employmentType
+                                        ? job.employmentType
+                                            .charAt(0)
+                                            .toUpperCase() +
+                                          job.employmentType.slice(1)
+                                        : "N/A"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Briefcase className="h-4 w-4 text-primary shrink-0" />
+                                    <span>
+                                      {formatCategory(job.category) || "N/A"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex flex-col md:flex-row flex-wrap items-center justify-between gap-3 pt-2 border-t">
+                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-4 w-4" />
+                                      {formatPostedDate(job.createdAt)}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Eye className="h-4 w-4" />
+                                      {job.views || 0} views
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Users className="h-4 w-4" />
+                                      {job.applications || 0} applications
+                                    </span>
                                   </div>
 
-                                </div>
-                              </div>
-
-                              {/* Job Details Grid */}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <MapPin className="h-4 w-4 text-primary shrink-0" />
-                                  <span>{job.location}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Briefcase className="h-4 w-4 text-primary shrink-0" />
-                                  <span>{job.type}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Briefcase className="h-4 w-4 text-primary shrink-0" />
-                                  <span>{job.category}</span>
-                                </div>
-                              </div>
-
-                              {/* Action Buttons - Row with Details */}
-                              <div className="flex flex-col md:flex-row flex-wrap items-center justify-between gap-3 pt-2 border-t">
-                                {/* Left side - Additional details can go here */}
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-4 w-4" />
-                                    {job.posted}
-                                  </span>
-                                </div>
-
-                                {/* Right side - Action Buttons */}
-                                <div className="flex items-center gap-3">
-                                  {/* Bookmark/Save Button */}
-                                  <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
+                                  <div className="flex items-center gap-2">
                                     <Button
                                       variant="outline"
                                       size="icon"
+                                      onClick={() => handleShare(jobId)}
                                       className="cursor-pointer"
-                                      onClick={() => {
-                                        console.log("Saved job:", job.id);
-                                      }}
                                     >
-                                      <Bookmark className="h-5 w-5" />
+                                      <Share2 size={16} />
                                     </Button>
-                                  </motion.div>
-
-                                  {/* Apply Button */}
-                                  <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
-                                    <Link
-                                      href={`/jobs/${job.id}`}
-                                      className="block"
+                                    <motion.div
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
                                     >
-                                      <Button className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer px-6 group">
-                                        View & Apply
-                                        <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className={`cursor-pointer ${isSaved ? "text-primary bg-primary/10" : ""}`}
+                                        onClick={() =>
+                                          handleToggleSave(jobId, isSaved)
+                                        }
+                                        disabled={isToggling}
+                                      >
+                                        <Bookmark
+                                          className={`h-5 w-5 ${isSaved ? "fill-primary" : ""}`}
+                                        />
                                       </Button>
-                                    </Link>
-                                  </motion.div>
+                                    </motion.div>
+
+                                    <motion.div
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                    >
+                                      <Link
+                                        href={`/jobs/${job.id}`}
+                                        className="block"
+                                      >
+                                        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer px-6 group">
+                                          View & Apply
+                                          <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                        </Button>
+                                      </Link>
+                                    </motion.div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
                 </motion.div>
               ) : (
                 <motion.div
@@ -1442,7 +1407,7 @@ export default function JobsPage() {
                 </motion.div>
               )}
 
-              {/* Bottom Pagination for Mobile with Animations */}
+              {/* Bottom Pagination */}
               {totalPages > 1 && (
                 <motion.div
                   initial={{ opacity: 0 }}

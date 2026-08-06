@@ -1,5 +1,6 @@
 import { ApiResponse } from "@/types/apiResponse";
-import { api } from "../axios";
+import { api } from "../../axios";
+import { JobApplicationCountsResponse, JobApplicationParams } from "../seeker/seekerJobEndpoints";
 
 // ==================== TYPES ====================
 
@@ -48,6 +49,7 @@ export interface JobRequest {
   descriptionImageFileKey?: string;
   cvDeliveryOption: "direct" | "matched";
   matchingCriteria?: MatchingCriteria;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "CLOSED" | "DRAFT";
 }
 
 export interface JobResponse {
@@ -169,9 +171,23 @@ export interface CompanyJobParams {
     status?: string;
 }
 
+
+export interface CompanyJobApplicationResponse {
+  seekerId: string;
+  seekerName?: string;
+  seekerProfileUrl?: string;
+  seekerCvUrl?: string;
+  seekerEmail?: string;
+  seekerContactNo?: string;
+  seekerExperience?: string;
+  id: string;
+  status: "PENDING" | "REVIEWED" | "SHORTLISTED" | "REJECTED" | "HIRED";
+  appliedAt: string;
+}
+
 // ==================== JOB API ====================
 
-export const jobAPI = {
+export const companyJobAPI = {
   getJobCounts: () =>
     api.get<ApiResponse<JobCountsResponse>>("/jobs/company/counts"),
 
@@ -222,20 +238,6 @@ export const jobAPI = {
     }),
 
   /**
-   * Approve a job (admin only)
-   */
-  approveJob: (jobId: string) =>
-    api.post<ApiResponse<JobResponse>>(`/jobs/${jobId}/approve`),
-
-  /**
-   * Reject a job (admin only)
-   */
-  rejectJob: (jobId: string, reason: string) =>
-    api.post<ApiResponse<JobResponse>>(`/jobs/${jobId}/reject`, null, {
-      params: { reason },
-    }),
-
-  /**
    * Close a job (company or admin)
    */
   closeJob: (jobId: string) =>
@@ -279,18 +281,25 @@ export const jobAPI = {
   uploadJobImage: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    return api.post<ApiResponse<JobImageUploadResponse>>("/jobs/upload/job-image", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
+    return api.post<ApiResponse<JobImageUploadResponse>>(
+      "/jobs/upload/job-image",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 60000, // ← 60 seconds timeout
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
       },
-    });
+    );
   },
   
 };
 
 // ==================== JOB APPLICATION API ====================
 
-export const jobApplicationAPI = {
+export const companyJobApplicationAPI = {
   /**
    * Apply for a job
    */
@@ -298,15 +307,21 @@ export const jobApplicationAPI = {
     api.post<ApiResponse<JobApplicationResponse>>("/applications", data),
 
   /**
+     * Get count of applied jobs for the current seeker
+     */
+    getCompanyJobsCount: (jobId: string) =>
+      api.get<ApiResponse<JobApplicationCountsResponse>>(
+        `/applications/company/count/${jobId}`,
+      ),
+
+  /**
    * Get applications by job ID (company only)
    */
-  getApplicationsByJob: (jobId: string, page?: number, size?: number) =>
-    api.get<ApiResponse<PaginatedResponse<JobApplicationResponse>>>(
-      `/applications/job/${jobId}`,
-      {
-        params: { page, size },
-      },
-    ),
+  getApplicationsByJob: (jobId: string, params?: JobApplicationParams) =>
+      api.get<ApiResponse<PaginatedResponse<CompanyJobApplicationResponse>>>(
+        `/applications/job/${jobId}`,
+        { params },
+      ),
 
   /**
    * Get my applications (seeker)
@@ -356,9 +371,9 @@ export const jobApplicationAPI = {
 
 // ==================== EXPORT ALL ====================
 
-export const jobEndpoints = {
-  ...jobAPI,
-  applications: jobApplicationAPI,
+export const companyJobEndpoints = {
+  ...companyJobAPI,
+  applications: companyJobApplicationAPI,
 };
 
-export default jobEndpoints;
+export default companyJobEndpoints;

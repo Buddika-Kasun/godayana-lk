@@ -20,7 +20,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
-import jobEndpoints, { JobRequest } from "@/lib/api/endpoints/jobEndpoints";
+import companyJobEndpoints, { JobRequest } from "@/lib/api/endpoints/company/companyJobEndpoints";
+import { educationLevels, employmentTypes, experienceLevels, jobCategories, locations } from "@/types/job";
 
 export interface JobData {
   id?: string;
@@ -127,7 +128,7 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
       setIsLoadingFun && setIsLoadingFun(true);
       
       try {
-        const response = await jobEndpoints.getCompanyJobById(jobId);
+        const response = await companyJobEndpoints.getCompanyJobById(jobId);
         const apiResponse = response.data;
 
         if (apiResponse.success && apiResponse.data) {
@@ -231,7 +232,7 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
     setIsUploadingImage(true);
 
     try {
-      const response = await jobEndpoints.uploadJobImage(file);
+      const response = await companyJobEndpoints.uploadJobImage(file);
       const apiResponse = response.data;
 
       if (apiResponse.success && apiResponse.data) {
@@ -259,11 +260,49 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
     toast.success("Image removed");
   };
 
+  // Helper function to validate form
+    const validateForm = (): boolean => {
+      if (!formData.jobTitle.trim()) {
+        toast.error("Job title is required");
+        return false;
+      }
+      if (!formData.category) {
+        toast.error("Job category is required");
+        return false;
+      }
+      if (!formData.employmentType) {
+        toast.error("Employment type is required");
+        return false;
+      }
+      // if (!formData.location.trim()) {
+      //   toast.error("Location is required");
+      //   return false;
+      // }
+      if (!formData.jobDescription.trim()) {
+        toast.error("Job description is required");
+        return false;
+      }
+      if (formData.applicationDeadline <= new Date().toISOString().split("T")[0]) {
+        toast.error("Application deadline must be after the current date");
+        return false;
+      }
+      if (!formData.confirmationEmail.trim()) {
+        toast.error("Confirmation email is required");
+        return false;
+      }
+      return true;
+    };
+
   const handleSubmit = async (
     e: React.FormEvent,
     action: "publish" | "draft",
   ) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -306,14 +345,15 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
         cvDeliveryOption: cvDeliveryOption,
         matchingCriteria:
           cvDeliveryOption === "matched" ? matchingCriteria : undefined,
+        status: action === "publish" ? "PENDING" : "DRAFT",
       };
 
       let response;
       if (isEditing && jobId) {
-        response = await jobEndpoints.updateJob(jobId, requestData);
+        response = await companyJobEndpoints.updateJob(jobId, requestData);
         toast.success("Job updated successfully!");
       } else {
-        response = await jobEndpoints.createJob(requestData);
+        response = await companyJobEndpoints.createJob(requestData);
         toast.success(
           action === "publish"
             ? "Job published successfully!"
@@ -381,6 +421,7 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                 placeholder="e.g., Senior Software Engineer"
                 required
                 className="mt-1.5"
+                disabled={isEditing}
               />
             </div>
 
@@ -396,12 +437,14 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                 onValueChange={(value) =>
                   setFormData({ ...formData, category: value })
                 }
+                required
+                disabled={isEditing}
               >
                 <SelectTrigger className="mt-1.5 w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="it">IT & Software</SelectItem>
+                  {/* <SelectItem value="it">IT & Software</SelectItem>
                   <SelectItem value="marketing">Marketing</SelectItem>
                   <SelectItem value="finance">Finance</SelectItem>
                   <SelectItem value="sales">Sales</SelectItem>
@@ -410,7 +453,12 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                   <SelectItem value="education">Education</SelectItem>
                   <SelectItem value="hospitality">Hospitality</SelectItem>
                   <SelectItem value="construction">Construction</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="other">Other</SelectItem> */}
+                  {jobCategories.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -430,17 +478,23 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                   setFormData({ ...formData, employmentType: value })
                 }
                 required
+                disabled={isEditing}
               >
                 <SelectTrigger className="mt-1.5 w-full">
                   <SelectValue placeholder="Select employment type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="full-time">Full Time</SelectItem>
+                  {/* <SelectItem value="full-time">Full Time</SelectItem>
                   <SelectItem value="part-time">Part Time</SelectItem>
                   <SelectItem value="contract">Contract</SelectItem>
                   <SelectItem value="remote">Remote</SelectItem>
                   <SelectItem value="freelance">Freelance</SelectItem>
-                  <SelectItem value="internship">Internship</SelectItem>
+                  <SelectItem value="internship">Internship</SelectItem> */}
+                  {employmentTypes.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -450,26 +504,33 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                 htmlFor="location"
                 className="text-sm font-semibold text-primary"
               >
-                Location (District) <span className="text-red-500">*</span>
+                Location (District)
+                {/* <span className="text-red-500">*</span> */}
               </Label>
               <Select
                 value={formData.location}
                 onValueChange={(value) =>
                   setFormData({ ...formData, location: value })
                 }
+                // required
               >
                 <SelectTrigger className="mt-1.5 w-full">
                   <SelectValue placeholder="Select district" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="colombo">Colombo</SelectItem>
+                  {/* <SelectItem value="colombo">Colombo</SelectItem>
                   <SelectItem value="kandy">Kandy</SelectItem>
                   <SelectItem value="galle">Galle</SelectItem>
                   <SelectItem value="kegalle">Kegalle</SelectItem>
                   <SelectItem value="matara">Matara</SelectItem>
                   <SelectItem value="jaffna">Jaffna</SelectItem>
                   <SelectItem value="remote">Remote</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="other">Other</SelectItem> */}
+                  {locations.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -532,13 +593,18 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                   <SelectValue placeholder="Select level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="high-school">High School</SelectItem>
+                  {/* <SelectItem value="high-school">High School</SelectItem>
                   <SelectItem value="diploma">Diploma</SelectItem>
                   <SelectItem value="bachelors">
                     Bachelor&apos;s Degree
                   </SelectItem>
                   <SelectItem value="masters">Master&apos;s Degree</SelectItem>
-                  <SelectItem value="phd">PhD</SelectItem>
+                  <SelectItem value="phd">PhD</SelectItem> */}
+                  {educationLevels.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -560,12 +626,17 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                   <SelectValue placeholder="Select experience" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">Fresher</SelectItem>
+                  {/* <SelectItem value="0">Fresher</SelectItem>
                   <SelectItem value="1">1 Year</SelectItem>
                   <SelectItem value="2">2 Years</SelectItem>
                   <SelectItem value="3">3 Years</SelectItem>
                   <SelectItem value="4">4 Years</SelectItem>
-                  <SelectItem value="5">5+ Years</SelectItem>
+                  <SelectItem value="5">5+ Years</SelectItem> */}
+                  {experienceLevels.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -578,7 +649,9 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
             </Label>
             <div className="flex gap-2 mt-1.5">
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">•</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  •
+                </span>
                 <Input
                   value={currentSkill}
                   onChange={(e) => setCurrentSkill(e.target.value)}
@@ -598,7 +671,10 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
             </div>
             <div className="mt-3 border rounded-lg p-3 space-y-1.5 min-h-[60px] bg-muted/5">
               {skills.map((skill) => (
-                <div key={skill} className="flex items-center justify-between group hover:bg-muted/50 px-2 py-1 rounded-md transition-colors">
+                <div
+                  key={skill}
+                  className="flex items-center justify-between group hover:bg-muted/50 px-2 py-1 rounded-md transition-colors"
+                >
                   <span className="flex items-center gap-2">
                     <span className="text-primary">•</span>
                     <span className="text-sm">{skill}</span>
@@ -613,7 +689,9 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                 </div>
               ))}
               {skills.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-2">No skills added yet</p>
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  No skills added yet
+                </p>
               )}
             </div>
           </div>
@@ -669,7 +747,8 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
               htmlFor="jobDescription"
               className="text-sm font-semibold text-primary"
             >
-              Job Description <span className="text-red-500">*</span>
+              Job Description
+              {/* <span className="text-red-500">*</span> */}
             </Label>
             <Textarea
               id="jobDescription"
@@ -734,7 +813,9 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
             </Label>
             <div className="flex gap-2 mt-1.5">
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">•</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  •
+                </span>
                 <Input
                   value={currentBenefit}
                   onChange={(e) => setCurrentBenefit(e.target.value)}
@@ -754,7 +835,10 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
             </div>
             <div className="mt-3 border rounded-lg p-3 space-y-1.5 min-h-[60px] bg-muted/5">
               {benefits.map((benefit) => (
-                <div key={benefit} className="flex items-center justify-between group hover:bg-muted/50 px-2 py-1 rounded-md transition-colors">
+                <div
+                  key={benefit}
+                  className="flex items-center justify-between group hover:bg-muted/50 px-2 py-1 rounded-md transition-colors"
+                >
                   <span className="flex items-center gap-2">
                     <span className="text-primary">•</span>
                     <span className="text-sm">{benefit}</span>
@@ -769,7 +853,9 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
                 </div>
               ))}
               {benefits.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-2">No benefits added yet</p>
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  No benefits added yet
+                </p>
               )}
             </div>
           </div>
@@ -993,6 +1079,7 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
               }
               placeholder="hr@techcorp.com"
               required
+              disabled={isEditing}
               className="mt-1.5"
             />
             <p className="text-xs text-muted-foreground mt-1">

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
   User,
@@ -45,68 +46,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-
-// Mock Seeker Data based on actual DB structure
-interface JobSeeker {
-  id: string;
-  user_id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  profile_pic_url: string;
-  resume_url: string;
-  skills: string[];
-  experience_years: number;
-  education: string;
-  study_field: string;
-  location: string;
-  date_of_birth: string;
-  gender: string;
-  nationality: string;
-  employment_status: string;
-  current_job_title: string;
-  current_salary: number | null;
-  expected_salary: number;
-  notice_period: string;
-  portfolio_url: string;
-  professional_summary: string;
-  preferred_job_categories: string[];
-  share_cv: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-// Mock data
-const mockSeeker: JobSeeker = {
-  id: "2b30eace-f2de-44eb-80a2-c3379371d22d",
-  user_id: "66becedd-888c-4091-90ba-5828508d9c4c",
-  full_name: "Test User",
-  email: "test@gmail.com",
-  phone: "+94123456789",
-  profile_pic_url:
-    "seeker-profile-pics/b8de2be8-5019-49ea-8f53-fa1a9a3ca8fe-d7159ee3-ec48-4fa3-be98-d253c9714112.jpeg",
-  resume_url:
-    "resumes/fc1d8086-5b98-4d11-9043-7c7adc4ab931-Test_User_CV_20260618.pdf",
-  skills: ["next", "nest", "React", "TypeScript", "Node.js"],
-  experience_years: 1,
-  education: "BACHELORS",
-  study_field: "ICT",
-  location: "Colombo",
-  date_of_birth: "2004-05-16",
-  gender: "MALE",
-  nationality: "OTHER",
-  employment_status: "STUDENT",
-  current_job_title: "SE",
-  current_salary: null,
-  expected_salary: 100000,
-  notice_period: "10",
-  portfolio_url: "https://bk.vercel.app",
-  professional_summary: "test",
-  preferred_job_categories: ["IT & Software", "Education"],
-  share_cv: true,
-  created_at: "2026-06-12 20:58:23.965528",
-  updated_at: "2026-06-18 19:00:13.04693",
-};
+import { adminSeekerProfileAPI } from "@/lib/api/endpoints/admin/adminSeekerProfileEndpoint";
+import { seekerProfileAPI, SeekerProfileData } from "@/lib/api/endpoints/seeker/seekerProfileEndpoints";
+import { OptimizedAvatar } from "@/components/ui/OptimizedAvatar";
 
 // Label mappings
 const educationLabels: Record<string, string> = {
@@ -142,28 +84,38 @@ const employmentStatusLabels: Record<string, string> = {
   OTHER: "Other",
 };
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const formatDate = (dateString?: string) => {
+  if (!dateString) return "N/A";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateString;
+  }
 };
 
-const formatDateOfBirth = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+const formatDateOfBirth = (dateString?: string) => {
+  if (!dateString) return "N/A";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return dateString;
+  }
 };
 
-const formatCurrency = (amount: number | null) => {
-  if (amount === null) return "N/A";
+const formatCurrency = (amount: number | null | undefined) => {
+  if (amount === null || amount === undefined) return "N/A";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "LKR",
@@ -171,48 +123,193 @@ const formatCurrency = (amount: number | null) => {
   }).format(amount);
 };
 
+const getStatusBadge = (isActive?: boolean) => {
+  if (isActive) {
+    return (
+      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+        <CheckCircle className="h-3 w-3 mr-1" />
+        Active
+      </Badge>
+    );
+  }
+  return (
+    <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+      <XCircle className="h-3 w-3 mr-1" />
+      Suspended
+    </Badge>
+  );
+};
+
 export default function AdminSeekerView() {
   const params = useParams();
   const router = useRouter();
-  const seekerId = params.id as string;
+  const userId = params.id as string;
 
-  const [seeker, setSeeker] = useState<JobSeeker | null>(null);
+  const [seeker, setSeeker] = useState<SeekerProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [newStatus, setNewStatus] = useState<"ACTIVE" | "SUSPEND" | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    // Simulate API call
     const fetchSeeker = async () => {
       setIsLoading(true);
       try {
-        // In real app: const response = await seekerAPI.getSeekerById(seekerId);
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setSeeker(mockSeeker);
+        const response = await adminSeekerProfileAPI.getAdminSeekerById(userId);
+        const apiResponse = response.data;
+
+        if (apiResponse.success && apiResponse.data) {
+          setSeeker(apiResponse.data);
+        } else {
+          toast.error(apiResponse.message || "Failed to load seeker details");
+        }
       } catch (error) {
+        console.error("Error fetching seeker:", error);
         toast.error("Failed to load seeker details");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchSeeker();
-  }, [seekerId]);
+    if (userId) {
+      fetchSeeker();
+    }
+  }, [userId]);
 
-  const getStatusBadge = () => {
-    // Since there's no status field in the DB, we can determine based on other factors
-    // For now, we'll show a default "Active" badge
-    return (
-      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-        Active
-      </Badge>
-    );
+  const handleStatusChange = (status: "ACTIVE" | "SUSPEND") => {
+    setNewStatus(status);
+    setShowStatusDialog(true);
   };
 
+  const confirmStatusChange = async () => {
+    if (!newStatus || !seeker) return;
+
+    setIsUpdating(true);
+    try {
+      let response;
+      if (newStatus === "ACTIVE") {
+        response = await adminSeekerProfileAPI.activeSeeker(
+          seeker.userId || seeker.id || "",
+        );
+      } else {
+        response = await adminSeekerProfileAPI.suspendSeeker(
+          seeker.userId || seeker.id || "",
+        );
+      }
+
+      const apiResponse = response.data;
+
+      if (apiResponse.success) {
+        setSeeker({ ...seeker, isActive: newStatus === "ACTIVE" });
+        toast.success(`Seeker ${newStatus.toLowerCase()} successfully`);
+        setShowStatusDialog(false);
+        setNewStatus(null);
+      } else {
+        toast.error(
+          apiResponse.message || `Failed to ${newStatus.toLowerCase()} seeker`,
+        );
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleViewResume = () => {
+    if (seeker?.resumeUrl) {
+      window.open(seeker.resumeUrl, "_blank");
+    } else {
+      toast.error("No resume available");
+    }
+  };
+
+  const handleDownloadResume = async (fileKey: string, name?: string) => {
+    if (!fileKey) {
+      toast.error("No resume available");
+      return;
+    }
+
+    const loadingToast = toast.loading("Downloading resume...");
+
+    try {
+      // Call the backend API to get the file as blob
+      const response = await seekerProfileAPI.downloadResume(fileKey);
+
+      // Create a blob URL from the response data
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create download link
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Extract filename from the fileKey or use default
+      const fileName = name ? `${name}_CV.pdf` : "Resume.pdf";
+      link.download = fileName;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
+      toast.success("Resume downloaded successfully", { id: loadingToast });
+    } catch (error) {
+      console.error("Error downloading resume:", error);
+      toast.error("Failed to download resume. Please try again.", {
+        id: loadingToast,
+      });
+    }
+  };
+
+  // Loading Skeleton
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          <p className="text-muted-foreground">Loading job seeker details...</p>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between">
+          <Link href="/admin/users">
+            <Button variant="ghost" className="pl-0 hover:pl-2 cursor-pointer">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Users
+            </Button>
+          </Link>
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <Skeleton className="h-10 w-32" />
+            <div className="flex items-center gap-3 mt-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-24" />
+            </div>
+          </div>
+        </div>
+
+        {/* Status Card Skeleton */}
+        <Skeleton className="h-24 w-full" />
+
+        {/* Main Content Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
         </div>
       </div>
     );
@@ -237,459 +334,577 @@ export default function AdminSeekerView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <Link href="/admin/users">
-            <Button variant="ghost" className="pl-0 hover:pl-2 cursor-pointer">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Users
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3 mt-2 flex-wrap">
-            <h1 className="text-2xl font-bold">{seeker.full_name}</h1>
-            {getStatusBadge()}
-          </div>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between">
+        <Link href="/admin/users">
+          <Button variant="ghost" className="pl-0 hover:pl-2 cursor-pointer">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Users
+          </Button>
+        </Link>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Main Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Profile Summary */}
-          {/* <Card>
-            <CardContent className="px-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <Avatar className="w-24 h-24 ring-4 ring-primary/10">
-                  <AvatarImage src={seeker.profile_pic_url} />
-                  <AvatarFallback className="text-3xl bg-primary/10 text-primary">
-                    {seeker.full_name?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-xl font-semibold">
-                      {seeker.full_name}
-                    </h2>
-                    <Badge variant="outline" className="text-xs">
-                      {seeker.employment_status
-                        ? employmentStatusLabels[seeker.employment_status]
-                        : "N/A"}
-                    </Badge>
-                    {seeker.share_cv && (
-                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                        <Upload className="h-3 w-3 mr-1" />
-                        CV Shared
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground">
-                    {seeker.current_job_title || "No current job"}
-                  </p>
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      {seeker.email}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      {seeker.phone || "N/A"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      {seeker.location || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {seeker.skills?.map((skill, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card> */}
+      <Card className="p-0">
+        <CardContent className="px-4 pt-2 pb-4 space-y-4">
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
+            <h1 className="text-2xl font-bold">
+              {seeker.fullName || "Unnamed Seeker"}
+            </h1>
+            {getStatusBadge(seeker.isActive)}
+            {seeker.shareCv && (
+              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                <Upload className="h-3 w-3 mr-1" />
+                CV Shared
+              </Badge>
+            )}
+          </div>
 
-          {/* Personal Information */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">
-                Personal Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Full Name
-                  </Label>
-                  <p className="font-medium mt-1">{seeker.full_name}</p>
+          {/* Status Actions */}
+          <Card
+            className={
+              seeker.isActive
+                ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800"
+                : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+            }
+          >
+            <CardContent className="px-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  {seeker.isActive ? (
+                    <>
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <div>
+                        <p className="font-semibold text-green-800 dark:text-green-300">
+                          This job seeker is active
+                        </p>
+                        <p className="text-sm text-green-700 dark:text-green-400">
+                          The job seeker has full access to all features.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                      <div>
+                        <p className="font-semibold text-red-800 dark:text-red-300">
+                          This job seeker has been suspended
+                        </p>
+                        <p className="text-sm text-red-700 dark:text-red-400">
+                          The job seeker cannot access the platform.
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Email</Label>
-                  <p className="font-medium mt-1">{seeker.email}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Phone</Label>
-                  <p className="font-medium mt-1">{seeker.phone || "N/A"}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Date of Birth
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.date_of_birth
-                      ? formatDateOfBirth(seeker.date_of_birth)
-                      : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Gender
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.gender ? genderLabels[seeker.gender] : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Nationality
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.nationality
-                      ? nationalityLabels[seeker.nationality]
-                      : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Location
-                  </Label>
-                  <p className="font-medium mt-1">{seeker.location || "N/A"}</p>
+                <div className="flex flex-wrap gap-2">
+                  {!seeker.isActive ? (
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                      onClick={() => handleStatusChange("ACTIVE")}
+                      disabled={isUpdating}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Activate
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="cursor-pointer"
+                      onClick={() => handleStatusChange("SUSPEND")}
+                      disabled={isUpdating}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Suspend
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Professional Summary */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-3">
-                Professional Summary
-              </h2>
-              <p className="text-muted-foreground">
-                {seeker.professional_summary ||
-                  "No professional summary provided."}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Education & Experience */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">
-                Education & Experience
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Education Level
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.education
-                      ? educationLabels[seeker.education]
-                      : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Study Field
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.study_field || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Experience
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.experience_years || 0} years
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Employment Status
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.employment_status
-                      ? employmentStatusLabels[seeker.employment_status]
-                      : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Current Job Title
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.current_job_title || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Notice Period
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {seeker.notice_period || "N/A"} days
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Skills Summary */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">Skills</h2>
-              <div className="flex flex-wrap gap-2">
-                {seeker.skills?.length > 0 ? (
-                  seeker.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    No skills listed
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Salary Information */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">Salary Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Current Salary
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {formatCurrency(seeker.current_salary)}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Expected Salary
-                  </Label>
-                  <p className="font-medium mt-1">
-                    {formatCurrency(seeker.expected_salary)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Preferred Job Categories */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-3">
-                Preferred Job Categories
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {seeker.preferred_job_categories?.length > 0 ? (
-                  seeker.preferred_job_categories.map((category, index) => (
-                    <Badge key={index} variant="outline" className="text-sm">
-                      {category}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">
-                    No preferred categories specified
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column - Sidebar */}
-        <div className="space-y-6">
-          {/* Profile Picture */}
-          <Card>
-            <CardContent className="p-6 flex flex-col items-center">
-              <Avatar className="w-32 h-32 ring-4 ring-primary/10">
-                <AvatarImage src={seeker.profile_pic_url} />
-                <AvatarFallback className="text-4xl bg-primary/10 text-primary">
-                  {seeker.full_name?.charAt(0).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <p className="text-sm text-muted-foreground mt-2">
-                Profile Picture
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Resume */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">Resume</h2>
-              {seeker.resume_url ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <FileText className="h-8 w-8 text-primary" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {seeker.resume_url.split("/").pop()}
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Main Info */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Profile Summary */}
+              {/* <Card>
+                <CardContent className="px-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <OptimizedAvatar
+                      src={seeker.profilePicUrl}
+                      alt={seeker.fullName || "Seeker"}
+                      height={96}
+                      width={96}
+                      fallback={
+                        seeker.fullName ? seeker.fullName.charAt(0) : "U"
+                      }
+                    />
+                    <div className="flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h2 className="text-xl font-semibold">
+                          {seeker.fullName || "N/A"}
+                        </h2>
+                        <Badge variant="outline" className="text-xs">
+                          {seeker.employmentStatus
+                            ? employmentStatusLabels[seeker.employmentStatus]
+                            : "N/A"}
+                        </Badge>
+                        {seeker.shareCv && (
+                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            <Upload className="h-3 w-3 mr-1" />
+                            CV Shared
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-muted-foreground">
+                        {seeker.currentJobTitle || "No current job"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        PDF Document
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        <span className="flex items-center gap-1">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          {seeker.email || "N/A"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          {seeker.phone || "N/A"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          {seeker.location || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {seeker.skills?.map((skill, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card> */}
+
+              {/* Personal Information */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-4">
+                    Personal Information
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Full Name
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.fullName || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Email
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.email || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Phone
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.phone || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Date of Birth
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {formatDateOfBirth(seeker.dateOfBirth)}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Gender
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.gender ? genderLabels[seeker.gender] : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Nationality
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.nationality
+                          ? nationalityLabels[seeker.nationality]
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Location
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.location || "N/A"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 cursor-pointer"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 cursor-pointer"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  No resume uploaded
-                </p>
-              )}
-              <div className="mt-3 flex items-center gap-2">
-                <Upload className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  CV Sharing: {seeker.share_cv ? "Enabled" : "Disabled"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Portfolio */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">Portfolio</h2>
-              {seeker.portfolio_url ? (
-                <a
-                  href={seeker.portfolio_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-primary hover:underline"
-                >
-                  <Globe className="h-4 w-4" />
-                  {seeker.portfolio_url}
-                </a>
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  No portfolio provided
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Skills Summary */}
-          {/* <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">Skills</h2>
-              <div className="flex flex-wrap gap-2">
-                {seeker.skills?.length > 0 ? (
-                  seeker.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    No skills listed
+              {/* Professional Summary */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-3">
+                    Professional Summary
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {seeker.professionalSummary ||
+                      "No professional summary provided."}
                   </p>
-                )}
-              </div>
-            </CardContent>
-          </Card> */}
+                </CardContent>
+              </Card>
 
-          {/* Timeline */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">Timeline</h2>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Joined</p>
-                    <p className="font-medium">
-                      {formatDate(seeker.created_at)}
-                    </p>
+              {/* Education & Experience */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-4">
+                    Education & Experience
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Education Level
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.education
+                          ? educationLabels[seeker.education]
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Study Field
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.studyField || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Experience
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.experienceYears || 0} years
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Employment Status
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.employmentStatus
+                          ? employmentStatusLabels[seeker.employmentStatus]
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Current Job Title
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.currentJobTitle || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Notice Period
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {seeker.noticePeriod || "N/A"} days
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Last Updated
-                    </p>
-                    <p className="font-medium">
-                      {formatDate(seeker.updated_at)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Quick Actions */}
-          <Card>
-            <CardContent className="px-6">
-              <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-              <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start cursor-pointer"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  View Applications
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start cursor-pointer"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Email
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start cursor-pointer"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  View Resume
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              {/* Salary Information */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-4">
+                    Salary Information
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Current Salary
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {formatCurrency(seeker.currentSalary)}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        Expected Salary
+                      </Label>
+                      <p className="font-medium mt-1">
+                        {formatCurrency(seeker.expectedSalary)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Preferred Job Categories */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-3">
+                    Preferred Job Categories
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {seeker.preferredJobCategories &&
+                    seeker.preferredJobCategories?.length > 0 ? (
+                      seeker.preferredJobCategories.map((category, index) => (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-sm"
+                        >
+                          {category}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground">
+                        No preferred categories specified
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Sidebar */}
+            <div className="space-y-6">
+              {/* Profile Picture */}
+              <Card>
+                <CardContent className="p-6 flex flex-col items-center">
+                  <OptimizedAvatar
+                    src={seeker.profilePicUrl}
+                    alt={seeker.fullName || "Seeker"}
+                    height={128}
+                    width={128}
+                    fallback={seeker.fullName ? seeker.fullName.charAt(0) : "U"}
+                  />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Profile Picture
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Resume */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-4">Resume</h2>
+                  {seeker.resumeUrl ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <FileText className="h-8 w-8 text-primary" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">CV</p>
+                          <p className="text-xs text-muted-foreground">
+                            PDF Document
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 cursor-pointer"
+                          onClick={handleViewResume}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 cursor-pointer"
+                          onClick={() =>
+                            handleDownloadResume(
+                              seeker.resumeFileKey!,
+                              seeker.fullName
+                            )
+                          }
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      No resume uploaded
+                    </p>
+                  )}
+                  <div className="mt-3 flex items-center gap-2">
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      CV Sharing: {seeker.shareCv ? "Enabled" : "Disabled"}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Portfolio */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-4">Portfolio</h2>
+                  {seeker.portfolioUrl ? (
+                    <a
+                      href={seeker.portfolioUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-primary hover:underline break-all"
+                    >
+                      <Globe className="h-4 w-4 shrink-0" />
+                      {seeker.portfolioUrl}
+                    </a>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      No portfolio provided
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Skills Summary */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-4">Skills</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {seeker.skills && seeker.skills?.length > 0 ? (
+                      seeker.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary">
+                          {skill}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        No skills listed
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Timeline */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-4">Timeline</h2>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Joined</p>
+                        <p className="font-medium">
+                          {formatDate(seeker.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Last Updated
+                        </p>
+                        <p className="font-medium">
+                          {formatDate(seeker.updatedAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions */}
+              <Card>
+                <CardContent className="px-6">
+                  <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start cursor-pointer"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      View Applications
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start cursor-pointer"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Email
+                    </Button>
+                    {seeker.resumeUrl && (
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start cursor-pointer"
+                        onClick={handleViewResume}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Resume
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Status Change Confirmation Dialog */}
+      <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to change this job seeker&apos;s status to{" "}
+              <span className="font-semibold">{newStatus?.toLowerCase()}</span>?
+              {newStatus === "ACTIVE" &&
+                " This will allow the job seeker to access all features."}
+              {newStatus === "SUSPEND" &&
+                " This will suspend the job seeker's account and they will not be able to access the platform."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer" disabled={isUpdating}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmStatusChange}
+              className={
+                newStatus === "ACTIVE"
+                  ? "bg-green-600 hover:bg-green-700 cursor-pointer"
+                  : "bg-red-600 hover:bg-red-700 cursor-pointer"
+              }
+              disabled={isUpdating}
+            >
+              {isUpdating ? "Updating..." : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

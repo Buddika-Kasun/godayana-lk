@@ -8,7 +8,7 @@ import { BasicInfoTab } from "@/components/seeker/profile/BasicInfoTab";
 import { CareerDetailsTab } from "@/components/seeker/profile/CareerDetailsTab";
 import { PreferencesTab } from "@/components/seeker/profile/PreferencesTab";
 import toast from "react-hot-toast";
-import { seekerAPI, SeekerProfileData } from "@/lib/api/endpoints/seekerEndpoints";
+import { seekerProfileAPI, SeekerProfileData } from "@/lib/api/endpoints/seeker/seekerProfileEndpoints";
 import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
 
 export default function SeekerProfile() {
@@ -24,7 +24,7 @@ export default function SeekerProfile() {
     setError(null);
 
     try {
-      const response = await seekerAPI.getSeekerProfile();
+      const response = await seekerProfileAPI.getSeekerProfile();
       const apiResponse = response.data;
 
       if (apiResponse.success && apiResponse.data) {

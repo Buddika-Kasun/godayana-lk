@@ -39,9 +39,9 @@ const navItems: NavItem[] = [
   { name: "Dashboard", href: "/company/dashboard", icon: LayoutDashboard },
   { name: "Profile", href: "/company/profile", icon: User },
   { name: "Jobs", href: "/company/jobs", icon: Briefcase },
-  { name: "Applications", href: "/company/applications", icon: FileText },
+  // { name: "Applications", href: "/company/applications", icon: FileText },
   { name: "Courses", href: "/company/courses", icon: Heart },
-  { name: "Lead", href: "/company/lead", icon: FileText },
+  // { name: "Lead", href: "/company/lead", icon: FileText },
   { name: "Payments", href: "/company/payments", icon: Coins },
 ];
 
@@ -278,6 +278,18 @@ export default function CompanyLayout({
               <Badge variant="secondary" className="mt-1 p-3 text-xs">
                 Company
               </Badge>
+              <div className="flex">
+                {user?.status && (
+                  <Badge variant="secondary" className="mt-1 p-3 text-xs">
+                    {user.status.toUpperCase()}
+                  </Badge>
+                )}
+                {user?.isActive && (
+                  <Badge variant="secondary" className="mt-1 p-3 text-xs">
+                    {user.isActive == true ? "Active" : "Suspended"}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>

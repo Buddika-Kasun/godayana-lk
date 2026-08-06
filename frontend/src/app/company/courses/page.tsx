@@ -1,12 +1,11 @@
 // src/app/company/courses/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Calendar,
   Eye,
   Edit,
   Trash2,
@@ -16,6 +15,7 @@ import {
   MapPin,
   Clock,
   DollarSign,
+  GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -29,206 +29,170 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
+import courseEndpoints, {
+  CompanyCourseItem,
+  CompanyCourseParams,
+  CourseCountsResponse,
+} from "@/lib/api/endpoints/company/companyCourseEndpoints";
+import { formatDate } from "@/lib/utils/dateUtils";
+import { formatPrice } from "@/lib/utils/priceUtils";
+import { formatLocation } from "@/lib/utils/locationUtils";
 
-interface Course {
-  id: number;
-  title: string;
-  category: string;
-  enrollType: "online" | "physical";
-  location?: string;
-  status: "active" | "closed" | "draft";
-  enrolledStudents: number;
-  views: number;
-  postedDate: string;
-  price: string;
-  startDate: string;
-  endDate: string;
-  company: string;
-}
+// Status mapping: Frontend filter -> Backend status
+const STATUS_MAP = {
+  all: undefined,
+  pending: "PENDING",
+  active: "APPROVED",
+  closed: "CLOSED",
+  draft: "DRAFT",
+} as const;
 
-// Mock data - replace with API call
-const allCourses: Course[] = [
-  {
-    id: 1,
-    title: "Advanced Web Development Bootcamp",
-    category: "programming",
-    enrollType: "physical",
-    location: "Colombo, Sri Lanka",
-    status: "active",
-    enrolledStudents: 45,
-    views: 320,
-    postedDate: "2024-04-20",
-    price: "45000",
-    startDate: "2025-01-15",
-    endDate: "2025-03-15",
-    company: "Tech Academy",
+// Backend status -> Frontend display
+const STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
+  PENDING: {
+    label: "Pending",
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
   },
-  {
-    id: 2,
-    title: "Digital Marketing Masterclass",
-    category: "marketing",
-    enrollType: "online",
-    location: "",
-    status: "active",
-    enrolledStudents: 128,
-    views: 510,
-    postedDate: "2024-04-15",
-    price: "25000",
-    startDate: "2025-02-01",
-    endDate: "2025-03-01",
-    company: "Creative Agency",
+  APPROVED: {
+    label: "Active",
+    color:
+      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
   },
-  {
-    id: 3,
-    title: "Data Science & AI Fundamentals",
-    category: "data",
-    enrollType: "online",
-    location: "",
-    status: "active",
-    enrolledStudents: 89,
-    views: 430,
-    postedDate: "2024-04-18",
-    price: "55000",
-    startDate: "2025-01-20",
-    endDate: "2025-04-20",
-    company: "Data Institute",
+  REJECTED: {
+    label: "Rejected",
+    color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   },
-  {
-    id: 4,
-    title: "UI/UX Design Course",
-    category: "design",
-    enrollType: "physical",
-    location: "Kandy, Sri Lanka",
-    status: "closed",
-    enrolledStudents: 32,
-    views: 280,
-    postedDate: "2024-04-10",
-    price: "35000",
-    startDate: "2024-10-01",
-    endDate: "2024-12-15",
-    company: "Design Hub",
+  CLOSED: {
+    label: "Closed",
+    color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
   },
-  {
-    id: 5,
-    title: "Business English Communication",
-    category: "language",
-    enrollType: "online",
-    location: "",
-    status: "draft",
-    enrolledStudents: 0,
-    views: 0,
-    postedDate: "2024-04-22",
-    price: "15000",
-    startDate: "2025-03-01",
-    endDate: "2025-04-15",
-    company: "Language Center",
+  DRAFT: {
+    label: "Draft",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   },
-];
-
-const getStatusConfig = (status: Course["status"]) => {
-  const config = {
-    active: {
-      label: "Active",
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    },
-    closed: {
-      label: "Closed",
-      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-    },
-    draft: {
-      label: "Draft",
-      color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-    },
-  };
-  return config[status];
 };
 
-const getEnrollTypeConfig = (type: Course["enrollType"]) => {
-  return {
-    online: {
-      label: "Online",
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    },
-    physical: {
-      label: "Physical",
-      color:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-    },
-  }[type];
+// Enrollment type display
+const ENROLL_TYPE_DISPLAY: Record<string, { label: string; color: string }> = {
+  online: {
+    label: "Online",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  },
+  physical: {
+    label: "Physical",
+    color:
+      "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  },
 };
 
 export default function CompanyCourses() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<
-    "all" | "active" | "closed" | "draft"
-  >("all");
-  const [courses, setCourses] = useState<Course[]>(allCourses);
-  const [deleteCourseId, setDeleteCourseId] = useState<number | null>(null);
+    "all" | "active" | "closed" | "draft" | "pending"
+  >("pending");
+  const [courses, setCourses] = useState<CompanyCourseItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [closeCourseId, setCloseCourseId] = useState<string | null>(null);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [courseCounts, setCourseCounts] = useState<CourseCountsResponse>({
+    all: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    closed: 0,
+    draft: 0,
+  });
   const itemsPerPage = 10;
 
-  // Filter courses based on status
-  const getFilteredCourses = () => {
-    if (activeFilter === "active") {
-      return courses.filter((course) => course.status === "active");
+  // Fetch course counts
+  const fetchCourseCounts = async () => {
+    try {
+      const response = await courseEndpoints.getCourseCounts();
+      const apiResponse = response.data;
+
+      if (apiResponse.success && apiResponse.data) {
+        setCourseCounts(apiResponse.data);
+      }
+    } catch (error) {
+      console.error("Error fetching course counts:", error);
     }
-    if (activeFilter === "closed") {
-      return courses.filter((course) => course.status === "closed");
-    }
-    if (activeFilter === "draft") {
-      return courses.filter((course) => course.status === "draft");
-    }
-    return courses;
   };
 
-  const filteredCourses = getFilteredCourses();
-  const totalItems = filteredCourses.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentCourses = filteredCourses.slice(startIndex, endIndex);
+  // Fetch courses with pagination and filter
+  const fetchCourses = async (
+    filter: typeof activeFilter,
+    page: number = 1,
+  ) => {
+    setIsLoading(true);
+    try {
+      const backendStatus = STATUS_MAP[filter];
+      const params: CompanyCourseParams = {
+        page: page - 1,
+        size: itemsPerPage,
+      };
 
-  // Get counts for filters
-  const allCount = courses.length;
-  const activeCount = courses.filter(
-    (course) => course.status === "active",
-  ).length;
-  const closedCount = courses.filter(
-    (course) => course.status === "closed",
-  ).length;
-  const draftCount = courses.filter(
-    (course) => course.status === "draft",
-  ).length;
+      if (backendStatus) {
+        params.status = backendStatus;
+      }
+
+      const response = await courseEndpoints.getCompanyCourses(params);
+      const apiResponse = response.data;
+
+      if (apiResponse.success && apiResponse.data) {
+        setCourses(apiResponse.data.content);
+        setTotalItems(apiResponse.data.totalElements);
+        setTotalPages(apiResponse.data.totalPages);
+      } else {
+        toast.error(apiResponse.message || "Failed to load courses");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load courses";
+      console.error("Error fetching courses:", errorMessage);
+      toast.error(errorMessage || "Failed to load courses. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Refetch when filter or page changes
+  useEffect(() => {
+    fetchCourseCounts();
+    fetchCourses(activeFilter, currentPage);
+  }, [activeFilter, currentPage]);
+
+  useEffect(() => {
+    setTotalItems(0);
+  }, [activeFilter]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDeleteCourse = () => {
-    if (deleteCourseId) {
-      setCourses(courses.filter((course) => course.id !== deleteCourseId));
-      toast.success("Course deleted successfully");
-      setDeleteCourseId(null);
+  const handleFilterChange = (filter: typeof activeFilter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  };
+
+  const handleCloseCourse = async () => {
+    if (!closeCourseId) return;
+
+    try {
+      await courseEndpoints.closeCourse(closeCourseId);
+      toast.success("Course closed successfully");
+      setCloseCourseId(null);
+      fetchCourseCounts();
+      fetchCourses(activeFilter, currentPage);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to close course";
+      console.error("Error closing course:", errorMessage);
+      toast.error(errorMessage || "Failed to close course");
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 1) return "Posted 1 day ago";
-    if (diffDays <= 7) return `Posted ${diffDays} days ago`;
-    if (diffDays <= 30) return `Posted ${Math.floor(diffDays / 7)} weeks ago`;
-    return `Posted ${Math.floor(diffDays / 30)} months ago`;
-  };
-
-  const formatPrice = (price: string) => {
-    const numPrice = parseInt(price);
-    if (numPrice === 0) return "Free";
-    return `LKR ${numPrice.toLocaleString()}`;
   };
 
   return (
@@ -246,23 +210,20 @@ export default function CompanyCourses() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b pb-3">
             <div className="bg-primary/10 p-1 rounded-lg w-full lg:w-fit flex items-center justify-between gap-1 flex-wrap">
               <button
-                onClick={() => {
-                  setActiveFilter("all");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("pending")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
-                  activeFilter === "all"
+                  activeFilter === "pending"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                All <span className="hidden md:inline-block">({allCount})</span>
+                Pending{" "}
+                <span className="hidden md:inline-block">
+                  ({courseCounts.pending})
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setActiveFilter("active");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("active")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   activeFilter === "active"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -270,27 +231,25 @@ export default function CompanyCourses() {
                 }`}
               >
                 Active{" "}
-                <span className="hidden md:inline-block">({activeCount})</span>
+                <span className="hidden md:inline-block">
+                  ({courseCounts.approved})
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setActiveFilter("closed");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("closed")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   activeFilter === "closed"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                Closed{" "}
-                <span className="hidden md:inline-block">({closedCount})</span>
+                Inactive{" "}
+                <span className="hidden md:inline-block">
+                  ({courseCounts.closed + courseCounts.rejected})
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setActiveFilter("draft");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("draft")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   activeFilter === "draft"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -298,7 +257,9 @@ export default function CompanyCourses() {
                 }`}
               >
                 Draft{" "}
-                <span className="hidden md:inline-block">({draftCount})</span>
+                <span className="hidden md:inline-block">
+                  ({courseCounts.draft})
+                </span>
               </button>
             </div>
             <div>
@@ -313,105 +274,14 @@ export default function CompanyCourses() {
 
           {/* Courses List */}
           <div className="flex-1 space-y-4">
-            {currentCourses.map((course) => {
-              const statusConfig = getStatusConfig(course.status);
-              const enrollTypeConfig = getEnrollTypeConfig(course.enrollType);
-              return (
-                <div
-                  key={course.id}
-                  className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    {/* Left Section */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between flex-wrap gap-2">
-                        <div>
-                          <h3 className="font-semibold text-lg">
-                            {course.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {course.company}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge className={enrollTypeConfig.color}>
-                            {enrollTypeConfig.label}
-                          </Badge>
-                          <Badge className={statusConfig.color}>
-                            {statusConfig.label}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* Course Stats */}
-                      <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Users size={14} /> {course.enrolledStudents} enrolled
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <BarChart3 size={14} /> {course.views} views
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar size={14} /> {formatDate(course.postedDate)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign size={14} /> {formatPrice(course.price)}
-                        </span>
-                        {course.enrollType === "physical" &&
-                          course.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin size={14} /> {course.location}
-                            </span>
-                          )}
-                        <span className="flex items-center gap-1">
-                          <Clock size={14} />
-                          {new Date(
-                            course.startDate,
-                          ).toLocaleDateString()} -{" "}
-                          {new Date(course.endDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2">
-                      <Link href={`/company/courses/${course.id}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1 cursor-pointer"
-                        >
-                          <Eye size={14} />
-                          View
-                        </Button>
-                      </Link>
-                      <Link href={`/company/courses/edit/${course.id}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1 cursor-pointer"
-                        >
-                          <Edit size={14} />
-                          Edit
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="gap-1 cursor-pointer"
-                        onClick={() => setDeleteCourseId(course.id)}
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Empty State */}
-            {currentCourses.length === 0 && (
+            {isLoading ? (
+              <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
+                <SubLoadingScreen
+                  message="Loading your courses..."
+                  fullScreen={false}
+                />
+              </div>
+            ) : courses.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   {activeFilter === "draft"
@@ -423,7 +293,7 @@ export default function CompanyCourses() {
                         : "No courses found. Click 'Post a Course' to create your first course."}
                 </p>
                 {activeFilter === "all" && (
-                  <Link href="/company/courses/post">
+                  <Link href="/company/courses/create">
                     <Button className="mt-4 gap-2">
                       <Plus size={16} />
                       Post Your First Course
@@ -431,6 +301,163 @@ export default function CompanyCourses() {
                   </Link>
                 )}
               </div>
+            ) : (
+              courses.map((course) => {
+                const statusDisplay =
+                  STATUS_DISPLAY[course.status] || STATUS_DISPLAY.DRAFT;
+                const enrollTypeDisplay =
+                  ENROLL_TYPE_DISPLAY[course.enrollType || "online"] ||
+                  ENROLL_TYPE_DISPLAY.online;
+
+                return (
+                  <div
+                    key={course.id}
+                    className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                      {/* Left Section - Takes remaining space */}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-lg">
+                              {course.title}
+                            </h3>
+                          </div>
+                          <div className="flex gap-2">
+                            {/* <Badge className={enrollTypeDisplay.color}>
+                              {enrollTypeDisplay.label}
+                            </Badge> */}
+                            <Badge className={statusDisplay.color}>
+                              {statusDisplay.label}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Course Stats */}
+                        <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Users size={14} /> {course.enrollmentCount || 0}{" "}
+                            enrolled
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <BarChart3 size={14} /> {course.viewCount || 0}{" "}
+                            views
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={14} /> {formatDate(course.createdAt)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <DollarSign size={14} /> {formatPrice(course.price)}
+                          </span>
+                          {/* {course.enrollType === "physical" &&
+                            course.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin size={14} />{" "}
+                                {formatLocation(course.location)}
+                              </span>
+                            )} */}
+                          <span className="flex items-center gap-1">
+                            <GraduationCap size={14} />{" "}
+                            {course.enrollType === "online"
+                              ? "Online"
+                              : "Physical"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right Section - 2 rows on md+ */}
+                      <div className="flex flex-col gap-2 w-full lg:w-auto">
+                        {/* Row 1: Action Buttons */}
+                        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                          <Link
+                            href={`/company/courses/${course.id}`}
+                            className="flex-1 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0"
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 cursor-pointer w-full lg:w-auto text-xs sm:text-sm"
+                            >
+                              <Eye size={14} />
+                              View
+                            </Button>
+                          </Link>
+                          {course.status == "CLOSED" 
+                          || course.status == "REJECTED" 
+                          ? (
+                            <Link
+                              href={`/company/courses/edit/${course.id}`}
+                              className="flex-2 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0"
+                            >
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="gap-1 cursor-pointer w-full lg:w-auto text-xs sm:text-sm bg-green-100
+                                text-green-800 hover:bg-green-200"
+                              >
+                                <Edit size={14} />
+                                Re-Open
+                              </Button>
+                            </Link>
+                          ) : (
+                            <>
+                              <Link
+                                href={`/company/courses/edit/${course.id}`}
+                                className="flex-1 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0"
+                              >
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 cursor-pointer w-full lg:w-auto text-xs sm:text-sm"
+                                >
+                                  <Edit size={14} />
+                                  Edit
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="gap-1 cursor-pointer flex-1 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0 w-full lg:w-auto text-xs sm:text-sm"
+                                onClick={() => setCloseCourseId(course.id)}
+                              >
+                                <Trash2 size={14} />
+                                Close
+                              </Button>
+                            </>
+                          ) 
+                        }
+                        </div>
+
+                        {/* Row 2: View Leads Button */}
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/company/courses/leads/${course.id}`}
+                            className="w-full"
+                            onClick={(e) => {
+                              if (course.enrollmentCount! <= 0) {
+                                e.preventDefault();
+                                toast.error(
+                                  "No leads available for this course",
+                                );
+                              }
+                            }}
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 cursor-pointer w-full"
+                              disabled={course.enrollmentCount! <= 0}
+                            >
+                              <Users size={14} />
+                              View Leads ({course.enrollmentCount || 0})
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -497,7 +524,9 @@ export default function CompanyCourses() {
               </div>
 
               <div className="text-center text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{" "}
+                Showing{" "}
+                {courses.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}{" "}
+                to {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
                 {totalItems} courses
               </div>
             </div>
@@ -513,16 +542,15 @@ export default function CompanyCourses() {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
-        open={!!deleteCourseId}
-        onOpenChange={() => setDeleteCourseId(null)}
+        open={!!closeCourseId}
+        onOpenChange={() => setCloseCourseId(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this
-              course and remove all associated data including student
-              enrollments.
+              This action cannot be undone. This will permanently close this
+              course.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -530,10 +558,10 @@ export default function CompanyCourses() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteCourse}
+              onClick={handleCloseCourse}
               className="bg-red-600 hover:bg-red-700 cursor-pointer"
             >
-              Delete
+              Close
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
