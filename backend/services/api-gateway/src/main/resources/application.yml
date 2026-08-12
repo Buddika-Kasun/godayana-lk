@@ -1,5 +1,9 @@
 server:
   port: ${PORT:8080}
+  shutdown: graceful
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
 
 spring:
   application:
@@ -9,141 +13,71 @@ spring:
   cloud:
     gateway:
       httpclient:
-        connect-timeout: 10000
-        response-timeout: 60000
-#      routes:
-#        - id: auth-service
-#          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
-#          predicates:
-#            - Path=/api/v1/auth/**
-#          filters:
-#            # Remove circuit breaker temporarily to test
-#            - name: StripPrefix
-#              args:
-#                parts: 0
-#          filters:
-#            - name: CircuitBreaker
-#              args:
-#                name: authService
-#                fallbackUri: forward:/fallback/auth
-#            - name: Retry
-#              args:
-#                retries: 3
-#                statuses: INTERNAL_SERVER_ERROR,SERVICE_UNAVAILABLE
-#                methods: GET,POST,PUT,DELETE
-#                backoff:
-#                  firstBackoff: 100ms
-#                  maxBackoff: 500ms
-#                  factor: 2
-#                  basedOnPreviousValue: true
-#
-#        - id: otp-service
-#          uri: ${OTP_SERVICE_URL:http://localhost:8090}
-#          predicates:
-#            - Path=/api/v1/otp/**
-#
-#        - id: user-service
-#          uri: ${USER_SERVICE_URL:http://localhost:8082}
-#          predicates:
-#            - Path=/api/v1/users/**, /api/v1/profiles/**, /api/v1/seeker/**, /api/v1/company/**
-#
-#        - id: file-service
-#          uri: ${FILE_SERVICE_URL:http://localhost:8084}
-#          predicates:
-#            - Path=/api/v1/file/**
-#
-#        - id: job-service
-#          uri: ${JOB_SERVICE_URL:http://localhost:8083}
-#          predicates:
-#            - Path=/api/v1/jobs/**, /api/v1/applications/**
+        connect-timeout: ${CONNECT_TIMEOUT:10000}
+        response-timeout: ${RESPONSE_TIMEOUT:60s}
+        pool:
+          max-connections: ${MAX_CONNECTIONS:500}
+          max-connections-per-route: ${MAX_CONNECTIONS_PER_ROUTE:100}
+          max-idle-time: 30s
+          acquire-timeout: 10000
+      default-filters:
+        - name: DedupeResponseHeader
+          args:
+            name: Access-Control-Allow-Credentials Access-Control-Allow-Origin
 
-    autoconfigure:
-      exclude:
-        - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-        - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
-#  cloud:
-#    gateway:
-#      discovery:
-#        locator:
-#          enabled: false
-#          lower-case-service-id: true
-#      httpclient:
-#        connect-timeout: 5000
-#        response-timeout: 30s
-#      default-filters:
-#        - name: GlobalFilter
-#        - name: DedupeResponseHeader
-#          args:
-#            name: Access-Control-Allow-Credentials Access-Control-Allow-Origin
-#        - name: Retry
-#          args:
-#            retries: 3
-#            statuses: INTERNAL_SERVER_ERROR
-#            methods: GET,POST,PUT,DELETE
-#  # Exclude all Redis auto-configurations
-#  autoconfigure:
-#    exclude:
-#      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-#      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
-#      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  # Exclude auto-configurations
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration
+      - org.springframework.boot.autoconfigure.r2dbc.R2dbcTransactionManagerAutoConfiguration
 
-#  # Disable Eureka for local development (enable for production)
-#  cloud:
-#    discovery:
-#      enabled: false
-
+# CORS Configuration
 cors:
   allowed:
     origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
-    
+
+# JWT
 jwt:
   secret: ${JWT_SECRET}
 
+# Logging
 logging:
   level:
     com.godayana: DEBUG
-#    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.gateway: INFO
     reactor.netty: INFO
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: DEBUG
-    org.springframework.cloud.gateway.handler: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
+# Management / Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,gateway,metrics,prometheus
+      base-path: /actuator
   endpoint:
     health:
       show-details: always
+      probes:
+        enabled: true
     gateway:
       enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 # Resilience4j Configuration
-#resilience4j:
-#  circuitbreaker:
-#    instances:
-#      authService:
-#        slidingWindowSize: 10
-#        failureRateThreshold: 50
-#        waitDurationInOpenState: 10s
-#        permittedNumberOfCallsInHalfOpenState: 3
-#      userService:
-#        slidingWindowSize: 10
-#        failureRateThreshold: 50
-#        waitDurationInOpenState: 10s
-#        permittedNumberOfCallsInHalfOpenState: 3
-#  retry:
-#    instances:
-#      authService:
-#        maxAttempts: 3
-#        waitDuration: 1s
-#      userService:
-#        maxAttempts: 3
-#        waitDuration: 1s
-
 resilience4j:
   circuitbreaker:
     configs:
@@ -158,26 +92,76 @@ resilience4j:
           - org.springframework.web.client.HttpServerErrorException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
+          - org.springframework.cloud.gateway.support.NotFoundException
     instances:
       authService:
         base-config: default
+        wait-duration-in-open-state: 10s
+      otpService:
+        base-config: default
+        wait-duration-in-open-state: 10s
+      userService:
+        base-config: default
+        wait-duration-in-open-state: 20s
+      jobService:
+        base-config: default
+        wait-duration-in-open-state: 20s
+      courseService:
+        base-config: default
+        wait-duration-in-open-state: 20s
+      visaService:
+        base-config: default
+        wait-duration-in-open-state: 20s
+
   timelimiter:
+    configs:
+      default:
+        timeout-duration: 30s
     instances:
       authService:
         timeout-duration: 10s
+      otpService:
+        timeout-duration: 10s
+      userService:
+        timeout-duration: 30s
+      jobService:
+        timeout-duration: 30s
+      courseService:
+        timeout-duration: 30s
+      visaService:
+        timeout-duration: 30s
+      fileService:
+        timeout-duration: 60s
+
   retry:
-    instances:
-      authService:
+    configs:
+      default:
         max-attempts: 3
         wait-duration: 1s
         retry-exceptions:
           - java.io.IOException
           - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.HttpServerErrorException
         exponential-backoff-multiplier: 2
-
-#logging:
-#  level:
-#    org.springframework.cloud.gateway: TRACE
-#    org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory: DEBUG
-#    reactor.netty.http.client: DEBUG
-#    org.springframework.web.reactive.function.client: DEBUG
+    instances:
+      authService:
+        max-attempts: 2
+        wait-duration: 500ms
+      otpService:
+        max-attempts: 2
+        wait-duration: 500ms
+      userService:
+        max-attempts: 3
+        wait-duration: 1s
+      jobService:
+        max-attempts: 3
+        wait-duration: 1s
+      courseService:
+        max-attempts: 3
+        wait-duration: 1s
+      visaService:
+        max-attempts: 3
+        wait-duration: 1s
+      fileService:
+        max-attempts: 5
+        wait-duration: 2s

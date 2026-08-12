@@ -1,0 +1,195 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 10000
+        response-timeout: 60s
+        pool:
+          max-connections: 500
+          max-connections-per-route: 100
+          max-idle-time: 30s
+          acquire-timeout: 10s
+#      routes:
+#        - id: auth-service
+#          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+#          predicates:
+#            - Path=/api/v1/auth/**
+#          filters:
+#            # Remove circuit breaker temporarily to test
+#            - name: StripPrefix
+#              args:
+#                parts: 0
+#          filters:
+#            - name: CircuitBreaker
+#              args:
+#                name: authService
+#                fallbackUri: forward:/fallback/auth
+#            - name: Retry
+#              args:
+#                retries: 3
+#                statuses: INTERNAL_SERVER_ERROR,SERVICE_UNAVAILABLE
+#                methods: GET,POST,PUT,DELETE
+#                backoff:
+#                  firstBackoff: 100ms
+#                  maxBackoff: 500ms
+#                  factor: 2
+#                  basedOnPreviousValue: true
+#
+#        - id: otp-service
+#          uri: ${OTP_SERVICE_URL:http://localhost:8090}
+#          predicates:
+#            - Path=/api/v1/otp/**
+#
+#        - id: user-service
+#          uri: ${USER_SERVICE_URL:http://localhost:8082}
+#          predicates:
+#            - Path=/api/v1/users/**, /api/v1/profiles/**, /api/v1/seeker/**, /api/v1/company/**
+#
+#        - id: file-service
+#          uri: ${FILE_SERVICE_URL:http://localhost:8084}
+#          predicates:
+#            - Path=/api/v1/file/**
+#
+#        - id: job-service
+#          uri: ${JOB_SERVICE_URL:http://localhost:8083}
+#          predicates:
+#            - Path=/api/v1/jobs/**, /api/v1/applications/**
+
+    autoconfigure:
+      exclude:
+        - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+        - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+#  cloud:
+#    gateway:
+#      discovery:
+#        locator:
+#          enabled: false
+#          lower-case-service-id: true
+#      httpclient:
+#        connect-timeout: 5000
+#        response-timeout: 30s
+#      default-filters:
+#        - name: GlobalFilter
+#        - name: DedupeResponseHeader
+#          args:
+#            name: Access-Control-Allow-Credentials Access-Control-Allow-Origin
+#        - name: Retry
+#          args:
+#            retries: 3
+#            statuses: INTERNAL_SERVER_ERROR
+#            methods: GET,POST,PUT,DELETE
+#  # Exclude all Redis auto-configurations
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+#      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+#      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+#  # Disable Eureka for local development (enable for production)
+#  cloud:
+#    discovery:
+#      enabled: false
+
+cors:
+  allowed:
+    origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+    
+jwt:
+  secret: ${JWT_SECRET}
+
+logging:
+  level:
+    com.godayana: DEBUG
+#    org.springframework.cloud.gateway: INFO
+    reactor.netty: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: DEBUG
+    org.springframework.cloud.gateway.handler: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    gateway:
+      enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+# Resilience4j Configuration
+#resilience4j:
+#  circuitbreaker:
+#    instances:
+#      authService:
+#        slidingWindowSize: 10
+#        failureRateThreshold: 50
+#        waitDurationInOpenState: 10s
+#        permittedNumberOfCallsInHalfOpenState: 3
+#      userService:
+#        slidingWindowSize: 10
+#        failureRateThreshold: 50
+#        waitDurationInOpenState: 10s
+#        permittedNumberOfCallsInHalfOpenState: 3
+#  retry:
+#    instances:
+#      authService:
+#        maxAttempts: 3
+#        waitDuration: 1s
+#      userService:
+#        maxAttempts: 3
+#        waitDuration: 1s
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: TIME_BASED
+        record-exceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+    instances:
+      authService:
+        base-config: default
+  timelimiter:
+    instances:
+      authService:
+        timeout-duration: 10s
+  retry:
+    instances:
+      authService:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+        exponential-backoff-multiplier: 2
+
+#logging:
+#  level:
+#    org.springframework.cloud.gateway: TRACE
+#    org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory: DEBUG
+#    reactor.netty.http.client: DEBUG
+#    org.springframework.web.reactive.function.client: DEBUG

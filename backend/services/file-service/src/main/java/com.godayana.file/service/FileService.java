@@ -370,6 +370,71 @@ public class FileService {
         return s3Service.generatePresignedUrl(file.getFileKey());
     }
 
+//    @Transactional(readOnly = true)
+//    public Map<String, String> getPresignedUrlsBatch(List<String> fileKeys) {
+//        log.debug("Getting batch presigned URLs for {} files", fileKeys.size());
+//
+//        if (fileKeys == null || fileKeys.isEmpty()) {
+//            return new HashMap<>();
+//        }
+//
+//        // Remove duplicates
+//        List<String> uniqueKeys = fileKeys.stream()
+//                .filter(key -> key != null && !key.isEmpty())
+//                .distinct()
+//                .collect(Collectors.toList());
+//
+//        if (uniqueKeys.isEmpty()) {
+//            return new HashMap<>();
+//        }
+//
+//        Map<String, String> result = new HashMap<>();
+//        List<String> keysToFetch = new ArrayList<>();
+//
+//        // Check cache first
+////        for (String fileKey : uniqueKeys) {
+////            if (presignedUrlCache.containsKey(fileKey)) {
+////                result.put(fileKey, presignedUrlCache.get(fileKey));
+////            } else {
+////                keysToFetch.add(fileKey);
+////            }
+////        }
+//
+////        if (keysToFetch.isEmpty()) {
+////            return result;
+////        }
+//
+//        // Fetch files from database
+//        List<UploadedFile> files = fileRepository.findByFileKeyIn(keysToFetch);
+//        Map<String, UploadedFile> fileMap = files.stream()
+//                .collect(Collectors.toMap(
+//                        UploadedFile::getFileKey,
+//                        file -> file,
+//                        (existing, replacement) -> existing
+//                ));
+//
+//        // Generate presigned URLs for each file
+//        for (String fileKey : keysToFetch) {
+//            UploadedFile file = fileMap.get(fileKey);
+//            if (file != null) {
+//                try {
+//                    String presignedUrl = s3Service.generatePresignedUrl(file.getFileKey());
+//                    result.put(fileKey, presignedUrl);
+////                    presignedUrlCache.put(fileKey, presignedUrl);
+//                } catch (Exception e) {
+//                    log.error("Failed to generate presigned URL for: {}", fileKey, e);
+//                    result.put(fileKey, null);
+//                }
+//            } else {
+//                log.warn("File not found or inactive: {}", fileKey);
+//                result.put(fileKey, null);
+//            }
+//        }
+//
+//        log.debug("Batch presigned URLs generated for {} files", result.size());
+//        return result;
+//    }
+
     @Transactional(readOnly = true)
     public Map<String, String> getPresignedUrlsBatch(List<String> fileKeys) {
         log.debug("Getting batch presigned URLs for {} files", fileKeys.size());
@@ -389,23 +454,9 @@ public class FileService {
         }
 
         Map<String, String> result = new HashMap<>();
-        List<String> keysToFetch = new ArrayList<>();
-
-        // Check cache first
-//        for (String fileKey : uniqueKeys) {
-//            if (presignedUrlCache.containsKey(fileKey)) {
-//                result.put(fileKey, presignedUrlCache.get(fileKey));
-//            } else {
-//                keysToFetch.add(fileKey);
-//            }
-//        }
-
-//        if (keysToFetch.isEmpty()) {
-//            return result;
-//        }
 
         // Fetch files from database
-        List<UploadedFile> files = fileRepository.findByFileKeyIn(keysToFetch);
+        List<UploadedFile> files = fileRepository.findByFileKeyIn(uniqueKeys);
         Map<String, UploadedFile> fileMap = files.stream()
                 .collect(Collectors.toMap(
                         UploadedFile::getFileKey,
@@ -414,13 +465,12 @@ public class FileService {
                 ));
 
         // Generate presigned URLs for each file
-        for (String fileKey : keysToFetch) {
+        for (String fileKey : uniqueKeys) {
             UploadedFile file = fileMap.get(fileKey);
             if (file != null) {
                 try {
                     String presignedUrl = s3Service.generatePresignedUrl(file.getFileKey());
                     result.put(fileKey, presignedUrl);
-//                    presignedUrlCache.put(fileKey, presignedUrl);
                 } catch (Exception e) {
                     log.error("Failed to generate presigned URL for: {}", fileKey, e);
                     result.put(fileKey, null);

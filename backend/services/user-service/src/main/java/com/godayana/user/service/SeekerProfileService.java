@@ -116,7 +116,7 @@ public class SeekerProfileService {
 
         String applicationStatus = "PENDING";
 
-        return mapToResponse(profile, applicationStatus);
+        return mapToResponse(profile);
     }
 
     @Transactional(readOnly = true)
