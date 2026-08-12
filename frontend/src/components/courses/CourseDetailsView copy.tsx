@@ -42,7 +42,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { formatDate, formatPostedDate } from "@/lib/utils/dateUtils";
 import courseEndpoints from "@/lib/api/endpoints/company/companyCourseEndpoints";
-import { formatCourseCategory, formatCourseLevel } from "@/lib/utils/courseUtils";
+import {
+  formatCourseCategory,
+  formatCourseLevel,
+} from "@/lib/utils/courseUtils";
 
 interface CourseDetailsViewProps {
   course: CourseResponse;
@@ -196,12 +199,31 @@ export function CourseDetailsView({
     }
   };
 
+  // const handleShare = () => {
+  //   if (onShare) {
+  //     onShare();
+  //   } else {
+  //     navigator.clipboard.writeText(window.location.href);
+  //     toast.success("Link copied to clipboard");
+  //   }
+  // };
+
   const handleShare = () => {
     if (onShare) {
       onShare();
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard");
+      // Implement share functionality
+      if (navigator.share) {
+        navigator.share({
+          title: course.title + ` (${course.companyName}) ` + " - Godayana.lk",
+          text: "Godayana.lk",
+          url: window.location.href,
+        });
+      } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copied to clipboard");
+      }
     }
   };
 
@@ -243,9 +265,9 @@ export function CourseDetailsView({
         // setAverageRating(newAverage);
 
         toast.success("Review submitted successfully!");
-        
+
         fetchReviews(); // Refresh reviews after submission
-        
+
         setUserRating(0);
         setUserReview("");
       } else {
@@ -836,7 +858,9 @@ export function CourseDetailsView({
             <div className="px-6 pt-2 space-y-4">
               <div className="pb-2 border-b">
                 <h3 className="font-bold text-lg">{course.title}</h3>
-                <Badge className="mb-2">{formatCourseLevel(course.rating)}</Badge>
+                <Badge className="mb-2">
+                  {formatCourseLevel(course.rating)}
+                </Badge>
                 <p className="text-sm text-muted-foreground">
                   {course.instructor || "Instructor"} •{" "}
                   {course.company?.companyName ||

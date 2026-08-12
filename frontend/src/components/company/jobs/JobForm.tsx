@@ -20,8 +20,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
-import companyJobEndpoints, { JobRequest } from "@/lib/api/endpoints/company/companyJobEndpoints";
-import { educationLevels, employmentTypes, experienceLevels, jobCategories, locations } from "@/types/job";
+import companyJobEndpoints, {
+  JobRequest,
+} from "@/lib/api/endpoints/company/companyJobEndpoints";
+import {
+  educationLevels,
+  employmentTypes,
+  experienceLevels,
+  jobCategories,
+  locations,
+} from "@/types/job";
 
 export interface JobData {
   id?: string;
@@ -63,24 +71,31 @@ interface JobFormProps {
   setIsLoadingFun?: (loading: boolean) => void;
 }
 
-export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobFormProps) {
+export function JobForm({
+  initialData,
+  isEditing,
+  jobId,
+  setIsLoadingFun,
+}: JobFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [jobType, setJobType] = useState<"local" | "overseas">(
     initialData?.type || "local",
   );
-  
+
   // Skills state
   const [skills, setSkills] = useState<string[]>(initialData?.skills || []);
   const [currentSkill, setCurrentSkill] = useState("");
-  
+
   // Benefits state
   const [benefits, setBenefits] = useState<string[]>(
-    initialData?.benefits ? initialData.benefits.split(',').map(b => b.trim()) : []
+    initialData?.benefits
+      ? initialData.benefits.split(",").map((b) => b.trim())
+      : [],
   );
   const [currentBenefit, setCurrentBenefit] = useState("");
-  
+
   const [descriptionImageUrl, setDescriptionImageUrl] = useState<string>(
     initialData?.descriptionImageUrl || "",
   );
@@ -126,7 +141,7 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
       if (!isEditing || !jobId || initialData) return;
 
       setIsLoadingFun && setIsLoadingFun(true);
-      
+
       try {
         const response = await companyJobEndpoints.getCompanyJobById(jobId);
         const apiResponse = response.data;
@@ -156,7 +171,9 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
           });
           setJobType(job.type || "local");
           setSkills(job.skills || []);
-          setBenefits(job.benefits ? job.benefits.split(',').map(b => b.trim()) : []);
+          setBenefits(
+            job.benefits ? job.benefits.split(",").map((b) => b.trim()) : [],
+          );
           setDescriptionImageUrl(job.descriptionImageUrl || "");
           setDescriptionImageFileKey(job.descriptionImageFileKey || "");
           setCvDeliveryOption(job.cvDeliveryOption || "direct");
@@ -261,37 +278,39 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
   };
 
   // Helper function to validate form
-    const validateForm = (): boolean => {
-      if (!formData.jobTitle.trim()) {
-        toast.error("Job title is required");
-        return false;
-      }
-      if (!formData.category) {
-        toast.error("Job category is required");
-        return false;
-      }
-      if (!formData.employmentType) {
-        toast.error("Employment type is required");
-        return false;
-      }
-      // if (!formData.location.trim()) {
-      //   toast.error("Location is required");
-      //   return false;
-      // }
-      if (!formData.jobDescription.trim()) {
-        toast.error("Job description is required");
-        return false;
-      }
-      if (formData.applicationDeadline <= new Date().toISOString().split("T")[0]) {
-        toast.error("Application deadline must be after the current date");
-        return false;
-      }
-      if (!formData.confirmationEmail.trim()) {
-        toast.error("Confirmation email is required");
-        return false;
-      }
-      return true;
-    };
+  const validateForm = (): boolean => {
+    if (!formData.jobTitle.trim()) {
+      toast.error("Job title is required");
+      return false;
+    }
+    if (!formData.category) {
+      toast.error("Job category is required");
+      return false;
+    }
+    if (!formData.employmentType) {
+      toast.error("Employment type is required");
+      return false;
+    }
+    // if (!formData.location.trim()) {
+    //   toast.error("Location is required");
+    //   return false;
+    // }
+    if (!formData.jobDescription.trim()) {
+      toast.error("Job description is required");
+      return false;
+    }
+    if (
+      formData.applicationDeadline <= new Date().toISOString().split("T")[0]
+    ) {
+      toast.error("Application deadline must be after the current date");
+      return false;
+    }
+    if (!formData.confirmationEmail.trim()) {
+      toast.error("Confirmation email is required");
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (
     e: React.FormEvent,
@@ -334,7 +353,7 @@ export function JobForm({ initialData, isEditing, jobId, setIsLoadingFun }: JobF
         jobDescription: formData.jobDescription,
         startTime: formData.startTime,
         endTime: formData.endTime,
-        benefits: benefits.join(', '),
+        benefits: benefits.join(", "),
         applicationDeadline: formData.applicationDeadline
           ? new Date(formData.applicationDeadline).toISOString()
           : undefined,

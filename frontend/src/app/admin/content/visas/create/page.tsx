@@ -1,13 +1,13 @@
-// src/app/company/jobs/create/page.tsx
+// src/app/admin/content/visas/create/page.tsx
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { JobForm } from "@/components/company/jobs/JobForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { VisaForm } from "@/components/admin/content/VisaForm";
 
-export default function PostJobPage() {
+export default function CreateVisaPage() {
   const router = useRouter();
 
   return (
@@ -23,12 +23,12 @@ export default function PostJobPage() {
         >
           <ArrowLeft size={16} />
         </Button>
-        <h2 className="text-xl font-bold">Post a New Job</h2>
+        <h2 className="text-xl font-bold">Create New Visa Guide</h2>
       </div>
 
-      <Card className="bg-primary/4">
-        <CardContent className="px-6 pb-6">
-          <JobForm />
+      <Card className="bg-primary/4 p-0">
+        <CardContent className="px-6 py-6">
+          <VisaForm />
         </CardContent>
       </Card>
     </div>

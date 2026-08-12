@@ -87,12 +87,12 @@ export function CourseDetailsView({
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
   const { savedCourseIds, toggleSaveCourse, isToggling } = useSavedCourses();
-    // Determine if course is saved from Redux state or prop
-    const isCourseSaved = initialIsSaved ?? savedCourseIds.includes(course.id);
-    const [saved, setSaved] = useState(isCourseSaved);
-  
-    const { appliedCourseIds, applyCourse, isApplying } = useAppliedCourses();
-    const isApplied = appliedCourseIds.includes(course.id);
+  // Determine if course is saved from Redux state or prop
+  const isCourseSaved = initialIsSaved ?? savedCourseIds.includes(course.id);
+  const [saved, setSaved] = useState(isCourseSaved);
+
+  const { appliedCourseIds, applyCourse, isApplying } = useAppliedCourses();
+  const isApplied = appliedCourseIds.includes(course.id);
 
   // Fetch reviews on mount
   useEffect(() => {
@@ -219,12 +219,35 @@ export function CourseDetailsView({
     }
   };
 
+  // const handleShare = () => {
+  //   if (onShare) {
+  //     onShare();
+  //   } else {
+  //     navigator.clipboard.writeText(window.location.href);
+  //     toast.success("Link copied to clipboard");
+  //   }
+  // };
   const handleShare = () => {
     if (onShare) {
       onShare();
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard");
+      // Get the base URL without any path
+      const origin = window.location.origin;
+      // Always return the public courses path
+      const publicUrl =  `${origin}/courses/${course.id}`;
+
+      // Implement share functionality
+      if (navigator.share) {
+        navigator.share({
+          title: course.title + ` (${course.companyName}) ` + " - Godayana.lk",
+          text: "Godayana.lk",
+          url: publicUrl,
+        });
+      } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(publicUrl);
+        toast.success("Link copied to clipboard");
+      }
     }
   };
 

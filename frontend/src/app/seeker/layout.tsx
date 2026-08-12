@@ -358,7 +358,7 @@ export default function SeekerLayout({
               </p> */}
             </div>
             <div className="flex items-center gap-4">
-              <div className="relative">
+              {/* <div className="relative">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                   size={18}
@@ -367,7 +367,7 @@ export default function SeekerLayout({
                   placeholder="Search..."
                   className="pl-10 w-64 bg-gray-50 dark:bg-gray-900"
                 />
-              </div>
+              </div> */}
               <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-primary cursor-pointer">
                 <Bell size={20} />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>

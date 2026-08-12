@@ -232,9 +232,24 @@ export default function JobsPage() {
     }
   };
 
-  const handleShare = (jobId: string) => {
-    navigator.clipboard.writeText(window.location.href + `/${jobId}`);
-    toast.success("Link copied to clipboard");
+  // const handleShare = (jobId: string) => {
+  //   navigator.clipboard.writeText(window.location.href + `/${jobId}`);
+  //   toast.success("Link copied to clipboard");
+  // };
+
+  const handleShare = (job: JobListResponse) => {
+    // Implement share functionality
+    if (navigator.share) {
+      navigator.share({
+        title: job.jobTitle + ` (${job.companyName}) ` + " - Godayana.lk",
+        text: "Godayana.lk",
+        url: window.location.href + `/${job.id}`,
+      });
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href + `/${job.id}`);
+      toast.success("Link copied to clipboard");
+    }
   };
 
   const handleApplyFilters = () => {
@@ -1228,7 +1243,7 @@ export default function JobsPage() {
                         }}
                       >
                         <Card
-                          className={`relative hover:shadow-lg transition-all duration-300 p-0 ${visited ? "border-secondary/70 bg-secondary/5" : ""}`}
+                          className={`relative hover:shadow-lg transition-all duration-300 p-0 ${visited ? "border-primary/70 bg-primary/5" : ""}`}
                         >
                           <CardContent className="px-4 pt-4 pb-2">
                             <div className="flex flex-col gap-4">
@@ -1253,13 +1268,13 @@ export default function JobsPage() {
                                   ) : (
                                     <Building2 className="h-8 w-8 text-primary" />
                                   )}
+                                </motion.div>
                                   {/* Status badge */}
                                   {visited && (
                                     <div className="absolute top-0 left-0 rounded-br-full px-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]">
                                       {flag}
                                     </div>
                                   )}
-                                </motion.div>
                                 <div className="flex-1">
                                   <h3
                                     className={`text-xl font-bold hover:text-primary transition-colors ${visited ? "text-primary" : ""}`}
@@ -1347,7 +1362,7 @@ export default function JobsPage() {
                                     <Button
                                       variant="outline"
                                       size="icon"
-                                      onClick={() => handleShare(jobId)}
+                                      onClick={() => handleShare(job)}
                                       className="cursor-pointer"
                                     >
                                       <Share2 size={16} />

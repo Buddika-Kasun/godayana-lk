@@ -221,9 +221,24 @@ export default function CoursesPage() {
     }
   };
 
-  const handleShare = (courseId: string) => {
-    navigator.clipboard.writeText(window.location.href + `/${courseId}`);
-    toast.success("Link copied to clipboard");
+  // const handleShare = (courseId: string) => {
+  //   navigator.clipboard.writeText(window.location.href + `/${courseId}`);
+  //   toast.success("Link copied to clipboard");
+  // };
+
+  const handleShare = (course: CourseListResponse) => {
+    // Implement share functionality
+    if (navigator.share) {
+      navigator.share({
+        title: course.courseTitle + ` (${course.companyName}) ` + " - Godayana.lk",
+        text: "Godayana.lk",
+        url: window.location.href + `/${course.id}`,
+      });
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href + `/${course.id}`);
+      toast.success("Link copied to clipboard!");
+    }
   };
 
   const handleApplyFilters = () => {
@@ -964,7 +979,7 @@ export default function CoursesPage() {
                         className="h-full"
                       >
                         <Card
-                          className={`h-full hover:shadow-xl transition-all duration-300 overflow-hidden pt-0 group relative ${visited ? "border-secondary/70 bg-secondary/5" : ""}`}
+                          className={`h-full hover:shadow-xl transition-all duration-300 overflow-hidden pt-0 group relative ${visited ? "border-primary/70 bg-primary/5" : ""}`}
                         >
                           {/* Course Header with Image/Icon */}
                           <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 border-b">
@@ -1165,7 +1180,7 @@ export default function CoursesPage() {
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  onClick={() => handleShare(courseId)}
+                                  onClick={() => handleShare(course)}
                                   className="cursor-pointer"
                                 >
                                   <Share2 size={16} />

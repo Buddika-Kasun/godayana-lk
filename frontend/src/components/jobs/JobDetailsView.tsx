@@ -139,14 +139,37 @@ export function JobDetailsView({
     // Remove toast from here - it's already shown by the Redux action
   };
 
+  // const handleShare = () => {
+  //   if (onShare) {
+  //     onShare();
+  //   } else {
+  //     navigator.clipboard.writeText(window.location.href);
+  //     toast.success("Link copied to clipboard");
+  //   }
+  // };
   const handleShare = () => {
-    if (onShare) {
-      onShare();
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard");
-    }
-  };
+      if (onShare) {
+        onShare();
+      } else {
+        // Get the base URL without any path
+        const origin = window.location.origin;
+        // Always return the public courses path
+        const publicUrl =  `${origin}/jobs/${job.id}`;
+  
+        // Implement share functionality
+        if (navigator.share) {
+          navigator.share({
+            title: job.jobTitle + ` (${job.companyName}) ` + " - Godayana.lk",
+            text: "Godayana.lk",
+            url: publicUrl,
+          });
+        } else {
+          // Fallback: copy to clipboard
+          navigator.clipboard.writeText(publicUrl);
+          toast.success("Link copied to clipboard");
+        }
+      }
+    };
 
   const handleApply = () => {
     if (onApply) {
