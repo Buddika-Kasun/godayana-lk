@@ -33,8 +33,8 @@ public class GatewayConfig {
     @Value("${COURSE_SERVICE_URL:http://localhost:8092}")
     private String courseServiceUrl;
 
-    @Value("${VISA_SERVICE_URL:http://localhost:8085}")
-    private String visaServiceUrl;
+    @Value("${VISA_GATEWAY_CONTENT_SERVICE_URL:http://localhost:8085}")
+    private String visaGatewayContentServiceUrl;
 
     @Value("${FILE_SERVICE_URL:http://localhost:8084}")
     private String fileServiceUrl;
@@ -216,12 +216,14 @@ public class GatewayConfig {
                                 .stripPrefix(0))
                         .uri(courseServiceUrl))
 
-                // ============ VISA SERVICE ============
-                .route("visa-service", r -> r
+                // ============ VISA, GATEWAY, CONTENT SERVICE ============
+                .route("visa_gateway_content-service", r -> r
                         .path("/api/v1/visa/**",
                                 "/api/v1/visa-consultations/**",
                                 "/api/v1/gateway-consultations/**",
-                                "/api/v1/visa-posts/**")
+                                "/api/v1/visa-posts/**",
+                                "/api/v1/countries/**",
+                                "/api/v1/stories/**")
                         .filters(f -> f
                                 .retry(this::configureStandardRetry)
                                 .circuitBreaker(config -> {
@@ -229,7 +231,7 @@ public class GatewayConfig {
                                     config.setFallbackUri(FALLBACK_VISA);
                                 })
                                 .stripPrefix(0))
-                        .uri(visaServiceUrl))
+                        .uri(visaGatewayContentServiceUrl))
 
                 // ============ FILE SERVICE ============
                 .route("file-service", r -> r

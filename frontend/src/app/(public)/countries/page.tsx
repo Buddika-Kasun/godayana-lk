@@ -21,149 +21,103 @@ import { Card, CardContent } from "@/components/ui/card";
 const countriesData = [
   {
     id: 1,
-    code: "JP",
     name: "Japan",
-    flag: "🇯🇵",
-    description: "High demand for caregivers & factory workers.",
+    shortDescription: "High demand for caregivers & factory workers.",
     salary: "LKR 280,000 - 450,000",
     visaType: "Specified Skilled Worker (SSW)",
-    image: "/images/countries/japan.jpg",
-    color: "from-red-500 to-red-700",
-    opportunities: ["Caregivers", "Factory Workers", "IT Professionals"],
+    imageUrl: "/images/countries/japan.jpg",
   },
   {
     id: 2,
-    code: "AU",
     name: "Australia",
-    flag: "🇦🇺",
-    description: "Great opportunities for healthcare and construction.",
+    shortDescription: "Great opportunities for healthcare and construction.",
     salary: "LKR 800,000 - 1,500,000",
     visaType: "Work / Skilled Migration",
-    image: "/images/countries/australia.jpg",
-    color: "from-blue-500 to-blue-700",
-    opportunities: ["Healthcare", "Construction", "Engineering"],
+    imageUrl: "/images/countries/australia.jpg",
   },
   {
     id: 3,
-    code: "GB",
     name: "United Kingdom",
-    flag: "🇬🇧",
-    description: "Top destination for students and healthcare professionals.",
+    shortDescription:
+      "Top destination for students and healthcare professionals.",
     salary: "LKR 700,000 - 1,200,000",
     visaType: "Student / Health & Care",
-    image: "/images/countries/uk.jpg",
-    color: "from-blue-600 to-blue-800",
-    opportunities: ["Healthcare", "Education", "IT"],
+    imageUrl: "/images/countries/uk.jpg",
   },
   {
     id: 4,
-    code: "KR",
     name: "South Korea",
-    flag: "🇰🇷",
-    description: "Manufacturing and agriculture sectors are booming.",
+    shortDescription: "Manufacturing and agriculture sectors are booming.",
     salary: "LKR 350,000 - 550,000",
     visaType: "E-9 / EPS",
-    image: "/images/countries/south-korea.jpg",
-    color: "from-indigo-500 to-indigo-700",
-    opportunities: ["Manufacturing", "Agriculture", "Shipbuilding"],
+    imageUrl: "/images/countries/south-korea.jpg",
   },
   {
     id: 5,
-    code: "AE",
     name: "UAE",
-    flag: "🇦🇪",
-    description: "Hospitality, retail and construction hub.",
+    shortDescription: "Hospitality, retail and construction hub.",
     salary: "LKR 250,000 - 800,000",
     visaType: "Work Permit",
-    image: "/images/countries/uae.jpg",
-    color: "from-emerald-500 to-emerald-700",
-    opportunities: ["Hospitality", "Retail", "Construction"],
+    imageUrl: "/images/countries/uae.jpg",
   },
   {
     id: 6,
-    code: "RO",
     name: "Romania",
-    flag: "🇷🇴",
-    description:
+    shortDescription:
       "Growing demand for construction and factory workers in Europe.",
     salary: "LKR 200,000 - 350,000",
     visaType: "Work Visa",
-    image: "/images/countries/romania.jpg",
-    color: "from-yellow-500 to-yellow-700",
-    opportunities: ["Construction", "Factory Workers", "Agriculture"],
+    imageUrl: "/images/countries/romania.jpg",
   },
   {
     id: 7,
-    code: "DE",
     name: "Germany",
-    flag: "🇩🇪",
-    description: "Excellent opportunities in healthcare and engineering.",
+    shortDescription: "Excellent opportunities in healthcare and engineering.",
     salary: "LKR 600,000 - 1,100,000",
     visaType: "Skilled Worker Visa",
-    //image: "/images/countries/germany.jpg",
-    color: "from-black to-gray-700",
-    opportunities: ["Healthcare", "Engineering", "IT"],
+    //imageUrl: "/images/countries/germany.jpg",
   },
   {
     id: 8,
-    code: "CA",
     name: "Canada",
-    flag: "🇨🇦",
-    description: "Diverse opportunities across multiple sectors.",
+    shortDescription: "Diverse opportunities across multiple sectors.",
     salary: "LKR 750,000 - 1,400,000",
     visaType: "Express Entry / PNP",
-    //image: "/images/countries/canada.jpg",
-    color: "from-red-500 to-red-700",
-    opportunities: ["Healthcare", "IT", "Construction"],
+    //imageUrl: "/images/countries/canada.jpg",
   },
   {
     id: 9,
-    code: "NZ",
     name: "New Zealand",
-    flag: "🇳🇿",
-    description:
+    shortDescription:
       "Great work-life balance with high demand for skilled workers.",
     salary: "LKR 700,000 - 1,300,000",
     visaType: "Skilled Migrant",
-    //image: "/images/countries/new-zealand.jpg",
-    color: "from-green-500 to-green-700",
-    opportunities: ["Healthcare", "Agriculture", "Construction"],
+    //imageUrl: "/images/countries/new-zealand.jpg",
   },
   {
     id: 10,
-    code: "SG",
     name: "Singapore",
-    flag: "🇸🇬",
-    description: "Financial and tech hub in Southeast Asia.",
+    shortDescription: "Financial and tech hub in Southeast Asia.",
     salary: "LKR 500,000 - 900,000",
     visaType: "Employment Pass",
-    //image: "/images/countries/singapore.jpg",
-    color: "from-red-600 to-red-800",
-    opportunities: ["Finance", "IT", "Hospitality"],
+    //imageUrl: "/images/countries/singapore.jpg",
   },
   {
     id: 11,
-    code: "QA",
     name: "Qatar",
-    flag: "🇶🇦",
-    description: "Growing economy with construction and hospitality focus.",
+    shortDescription:
+      "Growing economy with construction and hospitality focus.",
     salary: "LKR 300,000 - 600,000",
     visaType: "Work Permit",
-    //image: "/images/countries/qatar.jpg",
-    color: "from-purple-500 to-purple-700",
-    opportunities: ["Construction", "Hospitality", "Oil & Gas"],
+    //imageUrl: "/images/countries/qatar.jpg",
   },
   {
     id: 12,
-    code: "SA",
     name: "Saudi Arabia",
-    flag: "🇸🇦",
-    description: "Major opportunities in healthcare and construction.",
+    shortDescription: "Major opportunities in healthcare and construction.",
     salary: "LKR 280,000 - 550,000",
     visaType: "Work Visa",
-    //image: "/images/countries/saudi.jpg",
-    color: "from-green-600 to-green-800",
-    opportunities: ["Healthcare", "Construction", "Engineering"],
+    //imageUrl: "/images/countries/saudi.jpg",
   },
 ];
 
@@ -224,20 +178,7 @@ export default function GatewayPage() {
   return (
     <div className="bg-background min-h-screen flex flex-col">
       {/* Header */}
-      {/* <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={fadeInUp}
-        className="py-8 mx-4 sm:mx-6 lg:mx-8"
-      >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">
-          ගොඩයන
-          <span className="text-primary"> Countries</span>
-        </h1>
-        <p className="text-muted-foreground max-w-2xl">
-          Explore global destinations and find the best fit for your future.
-        </p>
-      </motion.div> */}
+      
       <motion.div
         initial="hidden"
         animate="visible"
@@ -276,9 +217,9 @@ export default function GatewayPage() {
                 {/* Country Image with Overlay */}
                 <div className="relative h-60 overflow-hidden">
                   {/* Image Placeholder with Gradient Background */}
-                  {country.image ? (
+                  {country.imageUrl ? (
                     <Image
-                      src={country.image}
+                      src={country.imageUrl}
                       alt={country.name}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -286,18 +227,11 @@ export default function GatewayPage() {
                     />
                   ) : (
                     <div
-                      className={`absolute inset-0 bg-gradient-to-br ${country.color} opacity-90`}
+                      className={`absolute inset-0 bg-linear-to-br from-blue-500 to-blue-700 opacity-90`}
                     >
                       <div className="absolute inset-0 bg-black/20" />
                     </div>
                   )}
-
-                  {/* Country Code Badge */}
-                  {/* <div className="absolute top-4 left-4 z-10">
-                    <Badge className="bg-background/90 backdrop-blur-sm text-foreground/80 border-0 px-3 py-1 text-lg font-bold">
-                      {country.flag} {country.code}
-                    </Badge>
-                  </div> */}
 
                   {/* Country Name Overlay */}
                   <div className="absolute bottom-0 left-0 right-0 px-4 py-2 z-10 bg-linear-to-t from-background/90 via-background/50 to-transparent">
@@ -318,7 +252,7 @@ export default function GatewayPage() {
                   <div className="flex-1">
                     {/* Description */}
                     <p className="text-muted-foreground mb-4 line-clamp-2">
-                      {country.description}
+                      {country.shortDescription}
                     </p>
 
                     {/* Salary */}

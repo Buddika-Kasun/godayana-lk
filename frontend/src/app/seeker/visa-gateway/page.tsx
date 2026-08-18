@@ -579,7 +579,7 @@ export default function SeekerEnrollments() {
             )}
 
             {/* Empty State */}
-            {visaApplications.length === 0 && (
+            {/* {visaApplications.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   {activeFilter === "visa"
@@ -589,7 +589,7 @@ export default function SeekerEnrollments() {
                       : "No enrollments found"}
                 </p>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Pagination */}

@@ -1,6 +1,7 @@
-// src/lib/api/endpoints/admin/adminContentEndpoints.ts
+// src/lib/api/endpoints/public/publicContentEndpoints.ts
 import { ApiResponse, PaginatedResponse } from "@/types/apiResponse";
 import { api } from "../../axios";
+import { StoryResponse } from "../admin/adminContentEndpoints";
 
 // ==================== TYPES ====================
 
@@ -35,14 +36,13 @@ export interface VisaGuideRequest {
 }
 
 export interface PostParams {
-    page?: number;
-    size?: number;
+  page?: number;
+  size?: number;
 }
-
 
 // ==================== CONTENT API ====================
 
-const contentAPI = {
+const visaContentAPI = {
   /**
    * Get all visa guides
    */
@@ -59,13 +59,30 @@ const contentAPI = {
    */
   getVisaById: (visaId: string) =>
     api.get<ApiResponse<VisaGuideResponse>>(`/visa-posts/public/${visaId}`),
-
 };
 
-export const contentEndpoints = {
-  visa: contentAPI,
+const storyContentAPI = {
+  /**
+   * Get all stories
+   */
+  getStories: (params?: PostParams) =>
+    api.get<ApiResponse<PaginatedResponse<StoryResponse>>>("/stories/public",
+      {
+        params
+      }
+    ),
+
+  likeStory: (storyId: string) =>
+    api.post<ApiResponse<void>>(`/stories/${storyId}/like`),
+
+  unlikeStory: (storyId: string) =>
+    api.delete<ApiResponse<void>>(`/stories/${storyId}/like`),
+};
+
+const contentEndpoints = {
+  visa: visaContentAPI,
   county: "",
-  story: "",
+  story: storyContentAPI,
 };
 
 export default contentEndpoints;

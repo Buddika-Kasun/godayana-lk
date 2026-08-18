@@ -456,7 +456,7 @@ export function Header() {
                     </motion.div>
                   </Link>
 
-                  <Link href="/company/post-job">
+                  <Link href="/auth/login">
                     <motion.div
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
