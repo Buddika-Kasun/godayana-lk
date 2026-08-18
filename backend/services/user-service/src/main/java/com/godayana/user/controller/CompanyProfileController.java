@@ -2,8 +2,11 @@ package com.godayana.user.controller;
 
 import com.godayana.dto.ApiResponse;
 import com.godayana.dto.company.CompanyDetailsResponse;
-import com.godayana.user.dto.CompanyProfileRequest;
-import com.godayana.user.dto.CompanyProfileResponse;
+import com.godayana.user.dto.request.CompanyProfileRequest;
+import com.godayana.user.dto.response.AdminCompanyProfileResponse;
+import com.godayana.user.dto.response.ApprovedCountResponse;
+import com.godayana.user.dto.response.CompanyCountResponse;
+import com.godayana.user.dto.response.CompanyProfileResponse;
 import com.godayana.user.service.CompanyProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -49,9 +53,39 @@ public class CompanyProfileController {
     }
 
     // Admin endpoints
-    @GetMapping("/admin/pending")
-    public ApiResponse<Page<CompanyProfileResponse>> getPendingApprovals(Pageable pageable) {
-        return ApiResponse.success(companyProfileService.getPendingApprovals(pageable));
+    @GetMapping("/admin/counts")
+    public ApiResponse<CompanyCountResponse> getCompanyCounts() {
+        return ApiResponse.success(companyProfileService.getCompanyCounts());
+    }
+
+    @GetMapping("/admin/approved/counts")
+    public ApiResponse<ApprovedCountResponse> getCompanyApprovedCounts() {
+        return ApiResponse.success(companyProfileService.getCompanyApprovedCounts());
+    }
+
+    @GetMapping("/admin/status")
+    public ApiResponse<Page<AdminCompanyProfileResponse>> getCompaniesByStatus(
+            @RequestParam(required = false) String status,
+            Pageable pageable) {
+        return ApiResponse.success(companyProfileService.getCompaniesByStatus(status, pageable));
+    }
+
+    @GetMapping("/admin/search")
+    public ApiResponse<Page<AdminCompanyProfileResponse>> searchCompanies(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String industry,
+            @RequestParam(required = false) Boolean isVerified,
+            @RequestParam(required = false) Boolean activeJobs,
+            @RequestParam(required = false) String dateRange,
+            Pageable pageable) {
+        return ApiResponse.success(companyProfileService.searchCompanies(
+                search, status, industry, isVerified, activeJobs, dateRange, pageable));
+    }
+
+    @GetMapping("/admin/{companyId}")
+    public ApiResponse<CompanyProfileResponse> getAdminCompanyProfile(@PathVariable UUID companyId) {
+        return ApiResponse.success(companyProfileService.getProfileByUserId(companyId));
     }
 
     @GetMapping("/admin/unverified")
@@ -59,16 +93,30 @@ public class CompanyProfileController {
         return ApiResponse.success(companyProfileService.getUnverifiedCompanies());
     }
 
-    @PostMapping("/admin/{userId}/approve")
-    public ApiResponse<CompanyProfileResponse> approveCompany(@PathVariable UUID userId) {
-        return ApiResponse.success(companyProfileService.approveCompany(userId));
+    @PostMapping("/admin/{companyId}/approve")
+    public ApiResponse<Void> approveCompany(@PathVariable UUID companyId) {
+        companyProfileService.approveCompany(companyId);
+        return ApiResponse.success(null);
     }
 
-    @PostMapping("/admin/{userId}/suspend")
-    public ApiResponse<CompanyProfileResponse> suspendCompany(
-            @PathVariable UUID userId,
-            @RequestParam String reason) {
-        return ApiResponse.success(companyProfileService.suspendCompany(userId, reason));
+    @PostMapping("/admin/{companyId}/reject")
+    public ApiResponse<Void> rejectCompany(@PathVariable UUID companyId) {
+        companyProfileService.rejectCompany(companyId);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/admin/{companyId}/active")
+    public ApiResponse<Void> activeCompany(@PathVariable UUID companyId) {
+        companyProfileService.activeCompany(companyId);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/admin/{companyId}/suspend")
+    public ApiResponse<Void> suspendCompany(
+            @PathVariable UUID companyId
+    ) {
+        companyProfileService.suspendCompany(companyId);
+        return ApiResponse.success(null);
     }
 
     // Internal endpoints for auth service
@@ -82,5 +130,10 @@ public class CompanyProfileController {
     @GetMapping("/internal/{companyId}")
     public ApiResponse<CompanyDetailsResponse> getCompanyProfile(@PathVariable UUID companyId) {
         return ApiResponse.success(companyProfileService.getInternalProfileByUserId(companyId));
+    }
+
+    @PostMapping("/internal/batch")
+    public ApiResponse<Map<UUID, CompanyDetailsResponse>> getCompanyProfileBatch(@RequestBody List<UUID> companyIds) {
+        return ApiResponse.success(companyProfileService.getInternalProfileByUserIds(companyIds));
     }
 }

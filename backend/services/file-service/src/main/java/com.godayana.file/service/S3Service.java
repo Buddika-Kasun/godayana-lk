@@ -12,18 +12,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.util.UUID;
@@ -112,6 +111,26 @@ public class S3Service {
             );
         }
     }
+
+    public InputStream downloadFile(String fileKey) throws Exception {
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(storageConfig.getBucketName())
+                    .key(fileKey)
+                    .build();
+
+            return s3Client.getObject(getObjectRequest);
+
+        } catch (Exception e) {
+            log.error("Failed to download file from S3: {}", fileKey, e);
+            throw new BusinessException(
+                    "Failed to download file: " + e.getMessage(),
+                    ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                    HttpStatus.SC_NOT_FOUND
+            );
+        }
+    }
+
 
     public void deleteFile(String fileKey) {
         try {

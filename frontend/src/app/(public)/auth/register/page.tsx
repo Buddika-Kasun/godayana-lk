@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { authAPI, RegisterRequest } from "@/lib/api/endpoints/authEndpoints";
+import { authAPI, RegisterRequest } from "@/lib/api/endpoints/public/authEndpoints";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {

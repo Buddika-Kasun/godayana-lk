@@ -37,7 +37,9 @@
         <module>services/user-service</module>
         <!--<module>services/notification-service</module>-->
         <module>services/job-service</module>
+        <module>services/course-service</module>
         <module>services/file-service</module>
+        <module>services/visa-service</module>
     </modules>
 
     <dependencyManagement>

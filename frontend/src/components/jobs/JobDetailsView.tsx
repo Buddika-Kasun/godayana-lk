@@ -26,22 +26,45 @@ import {
   Tag,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { JobResponse } from "@/lib/api/endpoints/jobEndpoints";
+import { JobResponse } from "@/lib/api/endpoints/company/companyJobEndpoints";
+import { formatPostedDate } from "@/lib/utils/dateUtils";
+import {
+  formatCategory,
+  formatCompanyType,
+  formatEmployeeCount,
+} from "@/lib/utils/companyUtils";
+import { formatEmploymentType } from "@/lib/utils/jobUtils";
+import { formatLocation } from "@/lib/utils/locationUtils";
+import { useSavedJobs } from "@/lib/hooks/useSavedJobs";
+import { useAppliedJobs } from "@/lib/hooks/useAppliedJobs";
 
 interface JobDetailsViewProps {
   job: JobResponse;
-  onApply?: () => void;
-  onSave?: () => void;
+  isVisited?: boolean;
+  isSaved?: boolean;
+  hideButtons?: boolean;
+  onApply?: (jobId: string) => void;
+  onSave?: (jobId: string, status: boolean) => void;
   onShare?: () => void;
 }
 
 export function JobDetailsView({
   job,
+  isVisited,
+  isSaved: initialIsSaved,
+  hideButtons = false,
   onApply,
   onSave,
   onShare,
 }: JobDetailsViewProps) {
-  const [saved, setSaved] = useState(false);
+  // Use Redux hook for saved jobs
+  const { savedJobIds, toggleSaveJob, isToggling } = useSavedJobs();
+  // Determine if job is saved from Redux state or prop
+  const isJobSaved = initialIsSaved ?? savedJobIds.includes(job.id);
+  const [saved, setSaved] = useState(isJobSaved);
+
+  const { appliedJobIds, applyJob, isApplying } = useAppliedJobs();
+  const isApplied = appliedJobIds.includes(job.id);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Not specified";
@@ -54,16 +77,6 @@ export function JobDetailsView({
       return diff > 0 ? `${diff} days left` : "Expired";
     } catch {
       return "Not specified";
-    }
-  };
-
-  const formatPostedDate = (dateString?: string) => {
-    if (!dateString) return "Recently";
-    try {
-      const d = new Date(dateString);
-      return d.toLocaleDateString();
-    } catch {
-      return "Recently";
     }
   };
 
@@ -95,24 +108,6 @@ export function JobDetailsView({
     }
   };
 
-  const formatCategory = (category?: string) => {
-    if (!category) return "Not specified";
-    const categoryMap: Record<string, string> = {
-      IT: "IT & Software",
-      ENGINEERING: "Engineering",
-      MARKETING: "Marketing & Advertising",
-      FINANCE: "Finance & Banking",
-      HEALTHCARE: "Healthcare",
-      EDUCATION: "Education",
-      CONSTRUCTION: "Construction",
-      HOSPITALITY: "Hospitality",
-      RETAIL: "Retail",
-      MANUFACTURING: "Manufacturing",
-      OTHER: "Other",
-    };
-    return categoryMap[category.toUpperCase()] || category;
-  };
-
   const formatEducationLevel = (level?: string) => {
     if (!level) return "Not specified";
     const levelMap: Record<string, string> = {
@@ -125,71 +120,60 @@ export function JobDetailsView({
     return levelMap[level.toLowerCase()] || level;
   };
 
-  const formatEmploymentType = (type?: string) => {
-    if (!type) return "Not specified";
-    const typeMap: Record<string, string> = {
-      "full-time": "Full Time",
-      "part-time": "Part Time",
-      contract: "Contract",
-      remote: "Remote",
-      freelance: "Freelance",
-      internship: "Internship",
-    };
-    return typeMap[type.toLowerCase()] || type;
-  };
-
-  const formatCompanyType = (type?: string) => {
-    if (!type) return "Not specified";
-    const typeMap: Record<string, string> = {
-      PRIVATE: "Private Limited",
-      PUBLIC: "Public Limited",
-      SOLE: "Sole Proprietorship",
-      PARTNERSHIP: "Partnership",
-      LLC: "LLC",
-      NONPROFIT: "Non-Profit",
-    };
-    return typeMap[type.toUpperCase()] || type;
-  };
-
-  const formatEmployeeCount = (count?: number) => {
-    if (!count) return "Not specified";
-    const countMap: Record<number, string> = {
-      1: "1-10 employees",
-      2: "11-50 employees",
-      3: "51-200 employees",
-      4: "201-500 employees",
-      5: "501-1000 employees",
-      6: "1000+ employees",
-    };
-    return countMap[count] || `${count} employees`;
-  };
-
   const getCompanyInitials = (name?: string) => {
     if (!name) return "C";
     return name.charAt(0).toUpperCase();
   };
 
-  const handleSave = () => {
-    setSaved(!saved);
+  const handleSave = async () => {
+    const newStatus = !saved;
+    setSaved(newStatus);
+
+    // Use Redux action - the toast will be shown by the Redux action
+    // await toggleSaveJob(job.id, saved);
+
+    // Call parent callback if provided
     if (onSave) {
-      onSave();
-    } else {
-      toast.success(saved ? "Removed from saved" : "Saved successfully");
+      onSave(job.id, saved);
     }
+    // Remove toast from here - it's already shown by the Redux action
   };
 
+  // const handleShare = () => {
+  //   if (onShare) {
+  //     onShare();
+  //   } else {
+  //     navigator.clipboard.writeText(window.location.href);
+  //     toast.success("Link copied to clipboard");
+  //   }
+  // };
   const handleShare = () => {
-    if (onShare) {
-      onShare();
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard");
-    }
-  };
+      if (onShare) {
+        onShare();
+      } else {
+        // Get the base URL without any path
+        const origin = window.location.origin;
+        // Always return the public courses path
+        const publicUrl =  `${origin}/jobs/${job.id}`;
+  
+        // Implement share functionality
+        if (navigator.share) {
+          navigator.share({
+            title: job.jobTitle + ` (${job.companyName}) ` + " - Godayana.lk",
+            text: "Godayana.lk",
+            url: publicUrl,
+          });
+        } else {
+          // Fallback: copy to clipboard
+          navigator.clipboard.writeText(publicUrl);
+          toast.success("Link copied to clipboard");
+        }
+      }
+    };
 
   const handleApply = () => {
     if (onApply) {
-      onApply();
+      onApply(job.id);
     } else {
       toast.success("Application submitted successfully");
     }
@@ -223,10 +207,24 @@ export function JobDetailsView({
         .filter((b) => b)
     : [];
 
+  let flag = "Viewed";
+  if (saved) {
+    flag = "Saved";
+  }
+  if (isApplied) {
+    flag = "Applied";
+  }
+
   return (
     <div className="space-y-6">
       {/* HERO HEADER */}
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl p-8">
+      <div className="relative bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl p-8 overflow-hidden">
+        {/* Visited badge */}
+        {isVisited && (
+          <div className="absolute top-0 left-0 rounded-br-full px-4 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 font-semibold text-xs">
+            {flag}
+          </div>
+        )}
         <h1 className="text-3xl font-bold">{job.jobTitle}</h1>
         <p className="text-lg opacity-90 mt-2">
           {job.company?.companyName || job.companyName || "Company"} -{" "}
@@ -257,14 +255,15 @@ export function JobDetailsView({
         <div className="lg:col-span-3 space-y-6">
           <div className="bg-card rounded-xl shadow-xl overflow-visible md:sticky md:top-40 z-12 border py-2 md:hidden sticky top-14 mb-2">
             <div className="px-4 py-2 space-y-4">
+              {/* ACTION BUTTONS */}
               <div className="space-y-3">
-                {/* ACTION BUTTONS */}
                 <Button
                   onClick={handleApply}
                   className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold"
                   size="lg"
+                  disabled={isApplied || hideButtons}
                 >
-                  APPLY FOR JOB
+                  {isApplied ? "ALREADY APPLIED" : "APPLY FOR JOB"}
                 </Button>
 
                 <div className="flex gap-3">
@@ -272,6 +271,7 @@ export function JobDetailsView({
                     variant="outline"
                     onClick={handleSave}
                     className="flex-1 gap-2"
+                    disabled={isToggling || hideButtons}
                   >
                     {saved ? (
                       <BookmarkCheck size={16} className="text-primary" />
@@ -408,7 +408,6 @@ export function JobDetailsView({
 
                 {(job.salaryMin || job.salaryMax || job.salaryNegotiable) && (
                   <div className="flex items-center gap-2 pt-4 border-t">
-                    <DollarSign size={18} className="text-primary" />
                     <span className="font-medium">Salary:</span>
                     {job.salaryMin && job.salaryMax ? (
                       <span className="text-lg font-bold text-primary bg-primary/10 px-4 py-1 rounded-full">
@@ -455,28 +454,7 @@ export function JobDetailsView({
             </div>
           )}
 
-          {/* COMPANY DESCRIPTION */}
-          {/* {job.company?.description && (
-            <div className="bg-card rounded-xl p-6 shadow-sm border">
-              <h2 className="text-xl font-bold mb-4 uppercase text-primary">
-                About {job.company.companyName}
-              </h2>
-              <div className="text-muted-foreground whitespace-pre-line leading-relaxed">
-                {job.company.description}
-              </div>
-              {job.company.website && (
-                <Link
-                  href={job.company.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline flex items-center gap-1 mt-4"
-                >
-                  Visit Website
-                  <ExternalLink size={14} />
-                </Link>
-              )}
-            </div>
-          )} */}
+          {/* COMPANY DESCRIPTION - Commented out as it's in sidebar */}
         </div>
 
         {/* SIDEBAR */}
@@ -486,10 +464,15 @@ export function JobDetailsView({
               <div className="flex w-full gap-3 justify-between items-center px-2">
                 <Button
                   onClick={handleApply}
-                  className="px-6 bg-primary hover:bg-primary/80 cursor-pointer text-white font-semibold"
+                  className={`px-6 cursor-pointer text-white font-semibold ${
+                    isApplied
+                      ? "bg-gray-500 hover:bg-gray-400 cursor-not-allowed opacity-100!"
+                      : "bg-primary hover:bg-primary/80"
+                  }`}
                   size="lg"
+                  disabled={isApplied || hideButtons}
                 >
-                  APPLY FOR JOB
+                  {isApplied ? "Already Applied" : "APPLY NOW"}
                 </Button>
 
                 <div className="flex gap-1">
@@ -497,6 +480,7 @@ export function JobDetailsView({
                     variant="ghost"
                     onClick={handleSave}
                     className="text-white h-8 w-8 cursor-pointer bg-primary rounded-full"
+                    disabled={isToggling || hideButtons}
                   >
                     {saved ? (
                       <BookmarkCheck size={16} className="text-white" />
@@ -504,7 +488,6 @@ export function JobDetailsView({
                       <Bookmark size={16} />
                     )}
                   </Button>
-
                   <Button
                     variant="ghost"
                     onClick={handleShare}
@@ -560,7 +543,7 @@ export function JobDetailsView({
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin size={14} className="text-primary" />
-                  <span>{(job.location?.charAt(0).toUpperCase() + job.location!.slice(1)) || "Not specified"}</span>
+                  <span>{formatLocation(job.location) || "Not specified"}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock size={14} className="text-primary" />
@@ -648,40 +631,6 @@ export function JobDetailsView({
                   <p className="text-xs text-muted-foreground">Applicants</p>
                 </div>
               </div>
-
-              {/* CV DELIVERY OPTION */}
-              {/* <div className="py-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">CV Delivery</span>
-                  <span className="font-medium">
-                    {job.cvDeliveryOption === "direct"
-                      ? "Direct to company"
-                      : "Matched forwarding"}
-                  </span>
-                </div>
-              </div> */}
-
-              {/* MATCHING CRITERIA */}
-              {/* {job.cvDeliveryOption === "matched" && job.matchingCriteria && (
-                <div className="py-2 border-t">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Matching Criteria
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {Object.entries(job.matchingCriteria).map(
-                      ([key, value]) =>
-                        value && (
-                          <span
-                            key={key}
-                            className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full"
-                          >
-                            {key.charAt(0).toUpperCase() + key.slice(1)}
-                          </span>
-                        ),
-                    )}
-                  </div>
-                </div>
-              )} */}
             </div>
           </div>
 
@@ -692,8 +641,9 @@ export function JobDetailsView({
                   onClick={handleApply}
                   className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold"
                   size="lg"
+                  disabled={isApplied}
                 >
-                  APPLY FOR JOB
+                  {isApplied ? "ALREADY APPLIED" : "APPLY FOR JOB"}
                 </Button>
 
                 <div className="flex gap-3">
@@ -701,6 +651,7 @@ export function JobDetailsView({
                     variant="outline"
                     onClick={handleSave}
                     className="flex-1 gap-2"
+                    disabled={isToggling}
                   >
                     {saved ? (
                       <BookmarkCheck size={16} className="text-primary" />
@@ -771,7 +722,6 @@ export function JobDetailsView({
                 )}
                 {job.company?.website && (
                   <div className="flex flex-col justify-between">
-                    {/* <span className="text-muted-foreground">Website</span> */}
                     <Link
                       href={job.company.website}
                       target="_blank"
@@ -789,27 +739,16 @@ export function JobDetailsView({
           {/* COMPANY DESCRIPTION */}
           {job.company?.description && (
             <Card className="rounded-xl shadow-sm mt-8 mb-4">
-            <CardContent className="px-5">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Building2 size={16} className="text-primary" />
-                Company About
-              </h3>
-              <div className="text-muted-foreground whitespace-pre-line leading-relaxed">
-                {job.company.description}
-              </div>
-              {/* {job.company.website && (
-                <Link
-                  href={job.company.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline flex items-center gap-1 mt-4"
-                >
-                  Visit Website
-                  <ExternalLink size={14} />
-                </Link>
-              )} */}
-            </CardContent>
-          </Card>
+              <CardContent className="px-5">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Building2 size={16} className="text-primary" />
+                  Company About
+                </h3>
+                <div className="text-muted-foreground whitespace-pre-line leading-relaxed">
+                  {job.company.description}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* SHARE MESSAGE */}

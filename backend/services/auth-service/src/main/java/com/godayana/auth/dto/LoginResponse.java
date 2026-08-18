@@ -27,5 +27,7 @@ public class LoginResponse {
         private String phone;
         private String email;
         private String role;
+        private String status;
+        private Boolean isActive;
     }
 }

@@ -16,6 +16,7 @@ import {
   Bell,
   Search,
   Coins,
+  Plane,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
@@ -36,9 +37,10 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/seeker/dashboard", icon: LayoutDashboard },
   { name: "Profile", href: "/seeker/profile", icon: User },
-  { name: "Applications", href: "/seeker/applications", icon: FileText },
-  { name: "Enrollments", href: "/seeker/enrollments", icon: Heart },
-  { name: "Payments", href: "/seeker/payments", icon: Coins },
+  { name: "Jobs", href: "/seeker/applications", icon: FileText },
+  { name: "Courses", href: "/seeker/enrollments", icon: Heart },
+  { name: "Visa & Gateway", href: "/seeker/visa-gateway", icon: Plane },
+  // { name: "Payments", href: "/seeker/payments", icon: Coins },
 ];
 
 export default function SeekerLayout({
@@ -51,6 +53,8 @@ export default function SeekerLayout({
   const [showRedirectMessage, setShowRedirectMessage] = useState(false);
   const [redirectMessage, setRedirectMessage] = useState("");
   const pathname = usePathname();
+  const segments = pathname.split("/").filter(Boolean);
+  const parentPath = "/" + segments.slice(0, 2).join("/");
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
   const hasRedirected = useRef(false);
@@ -127,26 +131,28 @@ export default function SeekerLayout({
   }
 
   const getTitle = () => {
-    const currentItem = navItems.find((item) => item.href === pathname);
+    const currentItem = navItems.find((item) => item.href === parentPath);
     switch (currentItem?.name) {
-        case "Dashboard":
-            return (
-              <>
-                Welcome back,{" "}
-                <span className="text-primary">
-                  {user?.name?.split(" ")[0] || "User"}
-                </span>{" "}
-                !
-              </>
-            );
-        case "Profile":
-            return "My Profile";
-        case "Applications":
-            return "My Applications";
-        case "Enrollments":
-            return "My Enrollments";
-        case "Payments":
-            return "My Payments History";
+      case "Dashboard":
+        return (
+          <>
+            Welcome back,{" "}
+            <span className="text-primary">
+              {user?.name?.split(" ")[0] || "User"}
+            </span>{" "}
+            !
+          </>
+        );
+      case "Profile":
+        return "My Profile";
+      case "Jobs":
+        return "My Jobs";
+      case "Courses":
+        return "My Courses";
+      case "Visa & Gateway":
+        return "Visa & Gateway";
+      case "Payments":
+        return "My Payments History";
     }
   };
 
@@ -268,6 +274,18 @@ export default function SeekerLayout({
               <Badge variant="secondary" className="mt-1 p-3 text-xs">
                 Job Seeker
               </Badge>
+              <div className="flex">
+                {user?.status && (
+                  <Badge variant="secondary" className="mt-1 p-3 text-xs">
+                    {user.status.toUpperCase()}
+                  </Badge>
+                )}
+                {user?.isActive && (
+                  <Badge variant="secondary" className="mt-1 p-3 text-xs">
+                    {user.isActive == true ? "Active" : "Suspended"}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -275,7 +293,7 @@ export default function SeekerLayout({
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = parentPath === item.href;
             return (
               <Link
                 key={item.name}
@@ -340,7 +358,7 @@ export default function SeekerLayout({
               </p> */}
             </div>
             <div className="flex items-center gap-4">
-              <div className="relative">
+              {/* <div className="relative">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                   size={18}
@@ -349,7 +367,7 @@ export default function SeekerLayout({
                   placeholder="Search..."
                   className="pl-10 w-64 bg-gray-50 dark:bg-gray-900"
                 />
-              </div>
+              </div> */}
               <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-primary cursor-pointer">
                 <Bell size={20} />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -360,7 +378,9 @@ export default function SeekerLayout({
 
         {/* Mobile Header */}
         <div>
-          <h1 className="lg:hidden pt-4 pb-2 text-xl font-bold text-foreground text-center">{getTitle()}</h1>
+          <h1 className="lg:hidden pt-4 pb-2 text-xl font-bold text-foreground text-center">
+            {getTitle()}
+          </h1>
         </div>
 
         {/* Page Content */}

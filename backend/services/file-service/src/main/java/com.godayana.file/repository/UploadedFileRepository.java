@@ -21,6 +21,9 @@ public interface UploadedFileRepository extends JpaRepository<UploadedFile, Stri
 
     Optional<UploadedFile> findByFileKey(String fileKey);
 
+    @Query("SELECT f FROM UploadedFile f WHERE f.fileKey IN :fileKeys")
+    List<UploadedFile> findByFileKeyIn(@Param("fileKeys") List<String> fileKeys);
+
     List<UploadedFile> findByUploaderId(String uploaderId);
 
     List<UploadedFile> findByFolder(String folder);

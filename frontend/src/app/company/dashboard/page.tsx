@@ -14,6 +14,7 @@ import {
   PlusCircle,
   FileText,
   Settings,
+  File,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,9 +29,9 @@ const stats = [
   },
   {
     id: 2,
-    label: "Total Applications",
-    value: 145,
-    icon: Users,
+    label: "Active Courses",
+    value: 4,
+    icon: File,
     color: "bg-green-500/10 text-green-500",
   },
   {
@@ -83,14 +84,28 @@ const quickActions = [
   },
   {
     title: "Review Applications",
-    description: "45 new applications",
+    description: "45 pending applications",
     icon: FileText,
     href: "/company/applications",
     color: "text-blue-500",
   },
   {
-    title: "Manage Jobs",
-    description: "Edit or close postings",
+    title: "Post a Course",
+    description: "Create new course posting",
+    icon: PlusCircle,
+    href: "/company/jobs/post",
+    color: "text-primary",
+  },
+  {
+    title: "Review Leads",
+    description: "45 pending leads",
+    icon: FileText,
+    href: "/company/applications",
+    color: "text-blue-500",
+  },
+  {
+    title: "Manage Profile",
+    description: "Edit profile details",
     icon: Settings,
     href: "/company/jobs",
     color: "text-purple-500",
@@ -140,10 +155,56 @@ export default function CompanyDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Job Posts - Takes 2/3 of the space */}
-        <div className="lg:col-span-2">
+        <div className="flex flex-col lg:col-span-2 gap-4">
           <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Active Job Posts</CardTitle>
+              <CardTitle>Latest Active Job Posts</CardTitle>
+              <Link href="/company/jobs">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary cursor-pointer"
+                >
+                  View All Jobs
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {activeJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{job.title}</h4>
+                      <div className="flex flex-wrap gap-4 mt-1 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Users size={14} /> {job.applications} applications
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Eye size={14} /> {job.views} views
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar size={14} /> {formatDate(job.postedDate)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {activeJobs.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No active job posts
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Latest Active Course Posts</CardTitle>
               <Link href="/company/jobs">
                 <Button
                   variant="ghost"

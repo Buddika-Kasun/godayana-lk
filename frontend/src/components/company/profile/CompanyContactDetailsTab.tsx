@@ -15,7 +15,7 @@ import {
   User,
   Briefcase,
 } from "lucide-react";
-import { companyAPI, CompanyProfileData } from "@/lib/api/endpoints/companyEndpoints";
+import { companyProfileAPI, CompanyProfileData } from "@/lib/api/endpoints/company/companyProfileEndpoints";
 import toast from "react-hot-toast";
 
 interface CompanyContactDetailsTabProps {
@@ -77,7 +77,7 @@ export function CompanyContactDetailsTab({
         cvDeliveryEmail: formData.cvDeliveryEmail,
       };
 
-      await companyAPI.updateCompanyProfile(updateData);
+      await companyProfileAPI.updateCompanyProfile(updateData);
 
       toast.dismiss(loadingToast);
       if (onSaveComplete) {

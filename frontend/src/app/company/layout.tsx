@@ -39,9 +39,9 @@ const navItems: NavItem[] = [
   { name: "Dashboard", href: "/company/dashboard", icon: LayoutDashboard },
   { name: "Profile", href: "/company/profile", icon: User },
   { name: "Jobs", href: "/company/jobs", icon: Briefcase },
-  { name: "Applications", href: "/company/applications", icon: FileText },
+  // { name: "Applications", href: "/company/applications", icon: FileText },
   { name: "Courses", href: "/company/courses", icon: Heart },
-  { name: "Lead", href: "/company/lead", icon: FileText },
+  // { name: "Lead", href: "/company/lead", icon: FileText },
   { name: "Payments", href: "/company/payments", icon: Coins },
 ];
 
@@ -278,6 +278,18 @@ export default function CompanyLayout({
               <Badge variant="secondary" className="mt-1 p-3 text-xs">
                 Company
               </Badge>
+              <div className="flex">
+                {user?.status && (
+                  <Badge variant="secondary" className="mt-1 p-3 text-xs">
+                    {user.status.toUpperCase()}
+                  </Badge>
+                )}
+                {user?.isActive && (
+                  <Badge variant="secondary" className="mt-1 p-3 text-xs">
+                    {user.isActive == true ? "Active" : "Suspended"}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -350,7 +362,7 @@ export default function CompanyLayout({
               </p> */}
             </div>
             <div className="flex items-center gap-4">
-              <div className="relative">
+              {/* <div className="relative">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                   size={18}
@@ -359,7 +371,7 @@ export default function CompanyLayout({
                   placeholder="Search..."
                   className="pl-10 w-64 bg-gray-50 dark:bg-gray-900"
                 />
-              </div>
+              </div> */}
               <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-primary">
                 <Bell size={20} />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>

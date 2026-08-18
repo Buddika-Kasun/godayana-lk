@@ -3,10 +3,17 @@ package com.godayana.user.service;
 import com.godayana.dto.ApiResponse;
 import com.godayana.dto.ApiResponseWrapper;
 import com.godayana.dto.FileUploadResponse;
+import com.godayana.dto.company.CompanyDetailsResponse;
+import com.godayana.dto.seeker.SeekerDetailsResponse;
 import com.godayana.exception.BusinessException;
 import com.godayana.exception.ErrorCode;
-import com.godayana.user.dto.SeekerProfileRequest;
-import com.godayana.user.dto.SeekerProfileResponse;
+import com.godayana.user.dto.SeekerProfileSummary;
+import com.godayana.user.dto.request.SeekerProfileRequest;
+import com.godayana.user.dto.response.AdminCompanyProfileResponse;
+import com.godayana.user.dto.response.AdminSeekerProfileResponse;
+import com.godayana.user.dto.response.ApprovedCountResponse;
+import com.godayana.user.dto.response.SeekerProfileResponse;
+import com.godayana.user.entity.CompanyProfile;
 import com.godayana.user.entity.SeekerProfile;
 import com.godayana.user.repository.SeekerProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +22,8 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +38,11 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -82,6 +94,7 @@ public class SeekerProfileService {
                 .professionalSummary(request.getProfessionalSummary())
                 .preferredJobCategories(request.getPreferredJobCategories())
                 .shareCv(request.getShareCv() != null ? request.getShareCv() : true)
+                .isActive(true)
                 .build();
 
         profile = seekerProfileRepository.save(profile);
@@ -101,8 +114,91 @@ public class SeekerProfileService {
                         HttpStatus.SC_NOT_FOUND
                 ));
 
+        String applicationStatus = "PENDING";
+
         return mapToResponse(profile);
     }
+
+    @Transactional(readOnly = true)
+    public SeekerProfileResponse getProfileByUserIdAndApplicationId(UUID userId, String applicationId) {
+        log.debug("Fetching seeker profile for user: {}", userId);
+
+        SeekerProfile profile = seekerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(
+                        "Seeker profile not found for user: " + userId,
+                        ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                        HttpStatus.SC_NOT_FOUND
+                ));
+
+        return mapToResponse(profile);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, SeekerDetailsResponse> getInternalProfileByUserIds(List<UUID> userIds) {
+        log.debug("Fetching seeker profiles for {} users", userIds != null ? userIds.size() : 0);
+
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // Remove duplicates
+        List<UUID> uniqueUserIds = userIds.stream()
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Fetch all profiles in one query
+        List<SeekerProfileSummary> profiles = seekerProfileRepository.findAllByUserIdIn(uniqueUserIds);
+
+        // Batch fetch presigned URLs for all logo keys
+        List<String> fileKeys = profiles.stream()
+                .map(SeekerProfileSummary::getProfilePicUrl)
+                .filter(key -> key != null && !key.isEmpty())
+                .distinct()
+                .toList();
+
+        // Get all presigned URLs in one batch
+        Map<String, String> presignedUrlMap = getPresignedUrlsBatch(fileKeys);
+
+        // Map to response
+        return profiles.stream()
+                .map(profile -> mapToSeekerDetails(profile, presignedUrlMap))
+                .collect(Collectors.toMap(
+                        SeekerDetailsResponse::getUserId,
+                        details -> details
+                ));
+
+    }
+
+    private Map<String, String> getPresignedUrlsBatch(List<String> fileKeys) {
+        Map<String, String> result = new HashMap<>();
+
+        if (fileKeys == null || fileKeys.isEmpty()) {
+            return result;
+        }
+
+        try {
+            // Call file service batch endpoint
+            ApiResponse<Map<String, String>> response = webClientBuilder.build()
+                    .post()
+                    .uri(fileServiceUrl + "/api/v1/files/internal/presigned-urls/batch")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(fileKeys)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<ApiResponse<Map<String, String>>>() {})
+                    .block();
+
+            if (response != null && response.isSuccess() && response.getData() != null) {
+                result.putAll(response.getData());
+            } else {
+                log.warn("Failed to get batch presigned URLs: {}", response != null ? response.getMessage() : "Unknown error");
+            }
+        } catch (Exception e) {
+            log.error("Failed to get batch presigned URLs", e);
+        }
+
+        return result;
+    }
+
 
     @Transactional
     public SeekerProfileResponse updateProfile(UUID userId, SeekerProfileRequest request) {
@@ -165,6 +261,204 @@ public class SeekerProfileService {
         return mapToResponse(profile);
     }
 
+    @Transactional(readOnly = true)
+    public ApprovedCountResponse getSeekerApprovedCounts() {
+        log.debug("Getting company approved counts");
+
+        long total = seekerProfileRepository.countByStatus(SeekerProfile.ProfileStatus.APPROVED);
+        long active = seekerProfileRepository.countApprovedByActivation(true);
+        long suspended = seekerProfileRepository.countApprovedByActivation(false);
+
+        return ApprovedCountResponse.builder()
+                .all(total)
+                .active(active)
+                .suspended(suspended)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminSeekerProfileResponse> getSeekersByStatus(String status, Pageable pageable) {
+        log.debug("Fetching seekers with status: {}", status);
+
+        // If no status provided, return all companies
+        if (status == null || status.isEmpty()) {
+            return seekerProfileRepository.findAll(pageable)
+                    .map(this::mapToAdminResponse);
+        }
+
+        try {
+            if (status.equalsIgnoreCase("active")){
+                return seekerProfileRepository.findByActivation(true, pageable)
+                        .map(this::mapToAdminResponse);
+            }
+
+            if (status.equalsIgnoreCase("suspended")){
+                return seekerProfileRepository.findByActivation(false, pageable)
+                        .map(this::mapToAdminResponse);
+            }
+
+            // Convert string to enum
+            SeekerProfile.ProfileStatus seekerStatus = SeekerProfile.ProfileStatus.valueOf(status.toUpperCase());
+
+            // Use the dynamic status parameter
+            return seekerProfileRepository.findByStatus(seekerStatus, pageable)
+                    .map(this::mapToAdminResponse);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid status value: {}", status);
+            throw new BusinessException(
+                    "Invalid status: " + status + ". Valid values: PENDING, APPROVED, REJECTED, SUSPENDED",
+                    ErrorCode.INVALID_INPUT.getCode(),
+                    HttpStatus.SC_BAD_REQUEST
+            );
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminSeekerProfileResponse> searchSeekers(
+            String search,
+            String status,
+            String location,
+            Boolean isActive,
+            String gender,
+            String educationLevel,
+            String experience,
+            String dateRange,
+            Pageable pageable
+    ) {
+        log.debug("Searching seekers with filters - search: {}, status: {}, location: {}, isActive: {}, dateRange: {}, gender: {}",
+                search, status, location, isActive, dateRange, gender);
+
+        // Parse date range
+        LocalDateTime createdAfter = null;
+        LocalDateTime createdBefore = null;
+
+
+        // Convert string to enum
+        SeekerProfile.ProfileStatus companyStatus = SeekerProfile.ProfileStatus.valueOf(status.toUpperCase());
+
+        if (dateRange != null && !dateRange.equalsIgnoreCase("all") && !dateRange.isEmpty()) {
+            switch (dateRange.toLowerCase()) {
+                case "7":
+                    createdAfter = LocalDateTime.now().minusDays(7);
+                    break;
+                case "30":
+                    createdAfter = LocalDateTime.now().minusDays(30);
+                    break;
+                case "90":
+                    createdAfter = LocalDateTime.now().minusDays(90);
+                    break;
+                case "year":
+                    createdAfter = LocalDateTime.now().minusDays(365);
+                    break;
+                default:
+                    // Try to parse as custom date range
+                    String[] parts = dateRange.split(",");
+                    if (parts.length == 2) {
+                        try {
+                            createdAfter = LocalDateTime.parse(parts[0] + "T00:00:00");
+                            createdBefore = LocalDateTime.parse(parts[1] + "T23:59:59");
+                        } catch (Exception e) {
+                            log.warn("Invalid date range format: {}", dateRange);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        Integer minExperience = null;
+        Integer maxExperience  = null;
+
+        if (experience != null && !experience.equalsIgnoreCase("all") && !experience.isEmpty()) {
+            String[] parts = experience.split("-");
+            if (parts.length == 2) {
+                minExperience = Integer.parseInt(parts[0]);
+                maxExperience = Integer.parseInt(parts[1]);
+            }else {
+                minExperience = Integer.parseInt(parts[0]);
+            }
+        }
+
+        try {
+
+            // Use the dynamic status parameter
+            return seekerProfileRepository.searchSeekersNative(
+                            search,
+                            status,
+                            location,
+                            isActive,
+                            gender,
+                            educationLevel,
+                            minExperience,
+                            maxExperience,
+                            createdAfter,
+                            createdBefore,
+                            pageable
+                    )
+                    .map(this::mapToAdminResponse);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid status value: {}", status);
+            throw new BusinessException(
+                    "Invalid status: " + status + ". Valid values: PENDING, APPROVED, REJECTED, SUSPENDED",
+                    ErrorCode.INVALID_INPUT.getCode(),
+                    HttpStatus.SC_BAD_REQUEST
+            );
+        }
+    }
+
+    @Transactional
+    public void activeSeeker(UUID userId) {
+        log.info("Activating seeker profile for user: {}", userId);
+
+        SeekerProfile profile = seekerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(
+                        "Seeker profile not found for user: " + userId,
+                        ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                        HttpStatus.SC_NOT_FOUND
+                ));
+
+        if (profile.getStatus() != SeekerProfile.ProfileStatus.APPROVED) {
+            throw new BusinessException(
+                    "Only approved accounts can be activated. Current status: " + profile.getStatus(),
+                    ErrorCode.INVALID_STATUS_TRANSITION.getCode(),
+                    HttpStatus.SC_BAD_REQUEST
+            );
+        }
+
+        profile.setIsActive(true);
+        profile = seekerProfileRepository.save(profile);
+
+        log.info("Seeker profile activated for user: {}", userId);
+//        return mapToResponse(profile);
+    }
+
+    @Transactional
+    public void suspendSeeker(UUID userId) {
+        log.info("Suspending seeker profile for user: {}", userId);
+
+        SeekerProfile profile = seekerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(
+                        "Seeker profile not found for user: " + userId,
+                        ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                        HttpStatus.SC_NOT_FOUND
+                ));
+
+        if (profile.getStatus() != SeekerProfile.ProfileStatus.APPROVED) {
+            throw new BusinessException(
+                    "Only approved accounts can be suspend. Current status: " + profile.getStatus(),
+                    ErrorCode.INVALID_STATUS_TRANSITION.getCode(),
+                    HttpStatus.SC_BAD_REQUEST
+            );
+        }
+
+        profile.setIsActive(false);
+        profile = seekerProfileRepository.save(profile);
+
+        log.info("Seeker profile suspended for user: {}", userId);
+//        return mapToResponse(profile);
+    }
+
     private void authNameUpdate(String userId, String name) {
         webClientBuilder.build()
                 .post()
@@ -199,6 +493,7 @@ public class SeekerProfileService {
                 .phone(profile.getPhone())
                 .profilePicUrl(profilePicUrl)
                 .resumeUrl(resumeUrl)
+                .resumeFileKey(profile.getResumeUrl())
                 .skills(profile.getSkills())
                 .experienceYears(profile.getExperienceYears())
                 .education(profile.getEducation())
@@ -216,10 +511,29 @@ public class SeekerProfileService {
                 .professionalSummary(profile.getProfessionalSummary())
                 .preferredJobCategories(profile.getPreferredJobCategories())
                 .shareCv(profile.getShareCv())
+                .isActive(profile.getIsActive())
                 .createdAt(profile.getCreatedAt())
                 .updatedAt(profile.getUpdatedAt())
                 .build();
     }
+
+    private AdminSeekerProfileResponse mapToAdminResponse(SeekerProfile profile) {
+        String profilePicUrl = getPresignedUrlFromFileService(profile.getProfilePicUrl());
+//        String resumeUrl = getPresignedUrlFromFileService(profile.getResumeUrl());
+
+        return AdminSeekerProfileResponse.builder()
+                .userId(profile.getUserId())
+                .name(profile.getFullName())
+                .contactNo(profile.getPhone())
+                .profileImageUrl(profilePicUrl)
+                .activation(profile.getIsActive())
+                .appliedCount(0)
+                .enrolledCount(0)
+                .status(profile.getStatus().toString())
+                .createdAt(profile.getCreatedAt())
+                .build();
+    }
+
 
     private String getPresignedUrlFromFileService(String fileKey) {
         try {
@@ -492,5 +806,33 @@ public class SeekerProfileService {
             );
         }
     }
+
+    private SeekerDetailsResponse mapToSeekerDetails(SeekerProfileSummary profile, Map<String, String> presignedUrlMap) {
+        // Get logo URL from map or fallback to single fetch
+        String profileUrl = null;
+        if (profile.getProfilePicUrl() != null && !profile.getProfilePicUrl().isEmpty()) {
+            // Try to get from the batch map first
+            if (presignedUrlMap != null && presignedUrlMap.containsKey(profile.getProfilePicUrl())) {
+                profileUrl = presignedUrlMap.get(profile.getProfilePicUrl());
+            } else {
+                // Fallback: fetch individually (should rarely happen)
+                log.warn("Logo URL not found in batch map for profile: {}, fetching individually",
+                        profile.getProfilePicUrl());
+                profileUrl = getPresignedUrlFromFileService(profile.getProfilePicUrl());
+            }
+        }
+
+        return SeekerDetailsResponse.builder()
+                .id(profile.getId())
+                .userId(profile.getUserId())
+                .fullName(profile.getFullName())
+                .contactNo(profile.getPhone())
+                .profileUrl(profileUrl)
+                .cvUrl(profile.getResumeUrl())
+                .email(profile.getEmail())
+                .experience(profile.getExperienceYears())
+                .build();
+    }
+
 
 }

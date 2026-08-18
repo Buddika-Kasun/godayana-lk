@@ -6,9 +6,13 @@ import com.godayana.dto.FileUploadResponse;
 import com.godayana.dto.company.CompanyDetailsResponse;
 import com.godayana.exception.BusinessException;
 import com.godayana.exception.ErrorCode;
-import com.godayana.user.dto.CompanyProfileRequest;
-import com.godayana.user.dto.CompanyProfileResponse;
+import com.godayana.user.dto.request.CompanyProfileRequest;
+import com.godayana.user.dto.response.AdminCompanyProfileResponse;
+import com.godayana.user.dto.response.ApprovedCountResponse;
+import com.godayana.user.dto.response.CompanyCountResponse;
+import com.godayana.user.dto.response.CompanyProfileResponse;
 import com.godayana.user.entity.CompanyProfile;
+import com.godayana.user.entity.SeekerProfile;
 import com.godayana.user.repository.CompanyProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -30,6 +35,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -133,14 +140,207 @@ public class CompanyProfileService {
 
     }
 
+    @Transactional(readOnly = true)
+    public Map<UUID, CompanyDetailsResponse> getInternalProfileByUserIds(List<UUID> userIds) {
+        log.debug("Fetching company profiles for {} users", userIds != null ? userIds.size() : 0);
+
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // Remove duplicates
+        List<UUID> uniqueUserIds = userIds.stream()
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Fetch all profiles in one query
+        List<CompanyProfile> profiles = companyProfileRepository.findAllByUserIdIn(uniqueUserIds);
+
+        // Batch fetch presigned URLs for all logo keys
+        List<String> fileKeys = profiles.stream()
+                .map(CompanyProfile::getLogoUrl)
+                .filter(key -> key != null && !key.isEmpty())
+                .distinct()
+                .toList();
+
+        // Get all presigned URLs in one batch
+        Map<String, String> presignedUrlMap = getPresignedUrlsBatch(fileKeys);
+
+        // Map to response
+        return profiles.stream()
+                .map(profile -> mapToCompanyDetails(profile, presignedUrlMap))
+                .collect(Collectors.toMap(
+                        CompanyDetailsResponse::getUserId,
+                        details -> details
+                ));
+
+    }
 
     @Transactional(readOnly = true)
-    public Page<CompanyProfileResponse> getPendingApprovals(Pageable pageable) {
-        log.debug("Fetching pending company approvals");
+    public CompanyCountResponse getCompanyCounts() {
+        log.debug("Getting company counts");
 
-        return companyProfileRepository.findByStatus(CompanyProfile.CompanyStatus.PENDING, pageable)
-                .map(this::mapToResponse);
+        long total = companyProfileRepository.countAll();
+        long pending = companyProfileRepository.countByStatus(CompanyProfile.CompanyStatus.PENDING);
+        long approved = companyProfileRepository.countByStatus(CompanyProfile.CompanyStatus.APPROVED);
+        long rejected = companyProfileRepository.countByStatus(CompanyProfile.CompanyStatus.REJECTED);
+
+        return CompanyCountResponse.builder()
+                .all(total)
+                .pending(pending)
+                .approved(approved)
+                .rejected(rejected)
+                .build();
     }
+
+    @Transactional(readOnly = true)
+    public ApprovedCountResponse getCompanyApprovedCounts() {
+        log.debug("Getting company approved counts");
+
+        long total = companyProfileRepository.countByStatus(CompanyProfile.CompanyStatus.APPROVED);
+        long active = companyProfileRepository.countApprovedByActivation(true);
+        long suspended = companyProfileRepository.countApprovedByActivation(false);
+
+        return ApprovedCountResponse.builder()
+                .all(total)
+                .active(active)
+                .suspended(suspended)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminCompanyProfileResponse> searchCompanies(
+            String search,
+            String status,
+            String industry,
+            Boolean isVerified,
+            Boolean activeJobs,
+            String dateRange,
+            Pageable pageable
+    ) {
+        log.debug("Searching companies with filters - search: {}, status: {}, industry: {}, isVerified: {}, dateRange: {}, activeJobs: {}",
+                search, status, industry, isVerified, dateRange, activeJobs);
+
+        // Parse date range
+        LocalDateTime createdAfter = null;
+        LocalDateTime createdBefore = null;
+
+
+        // Convert string to enum
+        CompanyProfile.CompanyStatus companyStatus = CompanyProfile.CompanyStatus.valueOf(status.toUpperCase());
+
+        if (dateRange != null && !dateRange.equalsIgnoreCase("all") && !dateRange.isEmpty()) {
+            switch (dateRange.toLowerCase()) {
+                case "7":
+                    createdAfter = LocalDateTime.now().minusDays(7);
+                    break;
+                case "30":
+                    createdAfter = LocalDateTime.now().minusDays(30);
+                    break;
+                case "90":
+                    createdAfter = LocalDateTime.now().minusDays(90);
+                    break;
+                case "year":
+                    createdAfter = LocalDateTime.now().minusDays(365);
+                    break;
+                default:
+                    // Try to parse as custom date range
+                    String[] parts = dateRange.split(",");
+                    if (parts.length == 2) {
+                        try {
+                            createdAfter = LocalDateTime.parse(parts[0] + "T00:00:00");
+                            createdBefore = LocalDateTime.parse(parts[1] + "T23:59:59");
+                        } catch (Exception e) {
+                            log.warn("Invalid date range format: {}", dateRange);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        try {
+            // Fetch companies from database
+            Page<CompanyProfile> companyPage = companyProfileRepository.searchCompaniesNative(
+                    search,
+                    status,
+                    industry,
+                    isVerified,
+                    createdAfter,
+                    createdBefore,
+                    pageable
+            );
+
+            // Extract all logo file keys from the results
+            List<String> logoKeys = companyPage.getContent().stream()
+                    .map(CompanyProfile::getLogoUrl)
+                    .filter(key -> key != null && !key.isEmpty())
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            // Batch fetch presigned URLs for all logos
+            Map<String, String> presignedUrlMap = getPresignedUrlsBatch(logoKeys);
+
+            // Map to response with batch presigned URLs
+            return companyPage.map(profile -> mapToAdminResponse(profile, presignedUrlMap));
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid status value: {}", status);
+            throw new BusinessException(
+                    "Invalid status: " + status + ". Valid values: PENDING, APPROVED, REJECTED, SUSPENDED",
+                    ErrorCode.INVALID_INPUT.getCode(),
+                    HttpStatus.SC_BAD_REQUEST
+            );
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminCompanyProfileResponse> getCompaniesByStatus(String status, Pageable pageable) {
+        log.debug("Fetching companies with status: {}", status);
+
+        // If no status provided, return all companies
+        if (status == null || status.isEmpty()) {
+            Page<CompanyProfile> companyPage = companyProfileRepository.findAll(pageable);
+
+            // Batch fetch logos
+            List<String> logoKeys = companyPage.getContent().stream()
+                    .map(CompanyProfile::getLogoUrl)
+                    .filter(key -> key != null && !key.isEmpty())
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            Map<String, String> presignedUrlMap = getPresignedUrlsBatch(logoKeys);
+
+            return companyPage.map(profile -> mapToAdminResponse(profile, presignedUrlMap));
+        }
+
+        try {
+            // Convert string to enum
+            CompanyProfile.CompanyStatus companyStatus = CompanyProfile.CompanyStatus.valueOf(status.toUpperCase());
+
+            // Use the dynamic status parameter
+            Page<CompanyProfile> companyPage = companyProfileRepository.findByStatus(companyStatus, pageable);
+
+            // Batch fetch logos
+            List<String> logoKeys = companyPage.getContent().stream()
+                    .map(CompanyProfile::getLogoUrl)
+                    .filter(key -> key != null && !key.isEmpty())
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            Map<String, String> presignedUrlMap = getPresignedUrlsBatch(logoKeys);
+
+            return companyPage.map(profile -> mapToAdminResponse(profile, presignedUrlMap));
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid status value: {}", status);
+            throw new BusinessException(
+                    "Invalid status: " + status + ". Valid values: PENDING, APPROVED, REJECTED, SUSPENDED",
+                    ErrorCode.INVALID_INPUT.getCode(),
+                    HttpStatus.SC_BAD_REQUEST
+            );
+        }
+    }
+
 
     @Transactional(readOnly = true)
     public List<CompanyProfileResponse> getUnverifiedCompanies() {
@@ -217,7 +417,7 @@ public class CompanyProfileService {
     }
 
     @Transactional
-    public CompanyProfileResponse approveCompany(UUID userId) {
+    public void approveCompany(UUID userId) {
         log.info("Approving company profile for user: {}", userId);
 
         CompanyProfile profile = companyProfileRepository.findByUserId(userId)
@@ -232,12 +432,13 @@ public class CompanyProfileService {
         profile = companyProfileRepository.save(profile);
 
         log.info("Company profile approved for user: {}", userId);
-        return mapToResponse(profile);
+//        return mapToAdminResponse(profile);
+//        return "Approved";
     }
 
     @Transactional
-    public CompanyProfileResponse suspendCompany(UUID userId, String reason) {
-        log.info("Suspending company profile for user: {}, reason: {}", userId, reason);
+    public void rejectCompany(UUID userId) {
+        log.info("Approving company profile for user: {}", userId);
 
         CompanyProfile profile = companyProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(
@@ -246,11 +447,65 @@ public class CompanyProfileService {
                         HttpStatus.SC_NOT_FOUND
                 ));
 
-        profile.setStatus(CompanyProfile.CompanyStatus.SUSPENDED);
+        profile.setStatus(CompanyProfile.CompanyStatus.REJECTED);
+//        profile.setIsVerified(false);
+        profile = companyProfileRepository.save(profile);
+
+        log.info("Company profile reject for user: {}", userId);
+//        return mapToAdminResponse(profile);
+//        return "Rejected";
+    }
+
+    @Transactional
+    public void activeCompany(UUID userId) {
+        log.info("Activating company profile for user: {}", userId);
+
+        CompanyProfile profile = companyProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(
+                        "Company profile not found for user: " + userId,
+                        ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                        HttpStatus.SC_NOT_FOUND
+                ));
+
+        if (profile.getStatus() != CompanyProfile.CompanyStatus.APPROVED) {
+            throw new BusinessException(
+                    "Only approved accounts can be activated. Current status: " + profile.getStatus(),
+                    ErrorCode.INVALID_STATUS_TRANSITION.getCode(),
+                    HttpStatus.SC_BAD_REQUEST
+            );
+        }
+
+        profile.setIsVerified(true);
+        profile = companyProfileRepository.save(profile);
+
+        log.info("Company profile activated for user: {}", userId);
+//        return mapToResponse(profile);
+    }
+
+    @Transactional
+    public void suspendCompany(UUID userId) {
+        log.info("Suspending company profile for user: {}", userId);
+
+        CompanyProfile profile = companyProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(
+                        "Company profile not found for user: " + userId,
+                        ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                        HttpStatus.SC_NOT_FOUND
+                ));
+
+        if (profile.getStatus() != CompanyProfile.CompanyStatus.APPROVED) {
+            throw new BusinessException(
+                    "Only approved accounts can be activated. Current status: " + profile.getStatus(),
+                    ErrorCode.INVALID_STATUS_TRANSITION.getCode(),
+                    HttpStatus.SC_BAD_REQUEST
+            );
+        }
+
+        profile.setIsVerified(false);
         profile = companyProfileRepository.save(profile);
 
         log.info("Company profile suspended for user: {}", userId);
-        return mapToResponse(profile);
+//        return mapToResponse(profile);
     }
 
     @Transactional
@@ -291,6 +546,54 @@ public class CompanyProfileService {
                 .build();
     }
 
+    private AdminCompanyProfileResponse mapToAdminResponse(CompanyProfile profile, Map<String, String> presignedUrlMap) {
+        // Get logo URL from map or fallback to single fetch
+        String logoUrl = null;
+        if (profile.getLogoUrl() != null && !profile.getLogoUrl().isEmpty()) {
+            logoUrl = presignedUrlMap.getOrDefault(
+                    profile.getLogoUrl(),
+                    getPresignedUrlFromFileService(profile.getLogoUrl())
+            );
+        }
+
+        return AdminCompanyProfileResponse.builder()
+                .userId(profile.getUserId())
+                .companyName(profile.getCompanyName())
+                .logoUrl(logoUrl)
+                .industry(profile.getIndustry())
+                .companyEmail(profile.getCompanyEmail())
+                .hotlineNumber(profile.getHotlineNumber())
+                .contactPersonName(profile.getContactPersonName())
+                .designation(profile.getDesignation())
+                .status(profile.getStatus().toString())
+                .jobCount(0)
+                .courseCount(0)
+                .activation(profile.getIsVerified())
+                .createdAt(profile.getCreatedAt())
+                .build();
+    }
+
+    private AdminCompanyProfileResponse mapToAdminResponse(CompanyProfile profile) {
+        String logoUrl = getPresignedUrlFromFileService(profile.getLogoUrl());
+
+        return AdminCompanyProfileResponse.builder()
+                .userId(profile.getUserId())
+                .companyName(profile.getCompanyName())
+                .logoUrl(logoUrl)
+                .industry(profile.getIndustry())
+                .companyEmail(profile.getCompanyEmail())
+                .hotlineNumber(profile.getHotlineNumber())
+                .contactPersonName(profile.getContactPersonName())
+                .designation(profile.getDesignation())
+                .status(profile.getStatus().toString())
+                .jobCount(0)
+                .courseCount(0)
+                .activation(profile.getIsVerified())
+                .createdAt(profile.getCreatedAt())
+                .build();
+    }
+
+
     private String getPresignedUrlFromFileService(String fileKey) {
         try {
             Map<String, String> requestBody = Map.of("fileKey", fileKey);
@@ -314,6 +617,36 @@ public class CompanyProfileService {
             log.error("Failed to get presigned URL", e);
             return null;
         }
+    }
+
+    private Map<String, String> getPresignedUrlsBatch(List<String> fileKeys) {
+        Map<String, String> result = new HashMap<>();
+
+        if (fileKeys == null || fileKeys.isEmpty()) {
+            return result;
+        }
+
+        try {
+            // Call file service batch endpoint
+            ApiResponse<Map<String, String>> response = webClientBuilder.build()
+                    .post()
+                    .uri(fileServiceUrl + "/api/v1/files/internal/presigned-urls/batch")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(fileKeys)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<ApiResponse<Map<String, String>>>() {})
+                    .block();
+
+            if (response != null && response.isSuccess() && response.getData() != null) {
+                result.putAll(response.getData());
+            } else {
+                log.warn("Failed to get batch presigned URLs: {}", response != null ? response.getMessage() : "Unknown error");
+            }
+        } catch (Exception e) {
+            log.error("Failed to get batch presigned URLs", e);
+        }
+
+        return result;
     }
 
     @Transactional
@@ -431,6 +764,41 @@ public class CompanyProfileService {
                     HttpStatus.SC_INTERNAL_SERVER_ERROR
             );
         }
+    }
+
+    private CompanyDetailsResponse mapToCompanyDetails(CompanyProfile profile, Map<String, String> presignedUrlMap) {
+        // Get logo URL from map or fallback to single fetch
+        String logoUrl = null;
+//        if (profile.getLogoUrl() != null && !profile.getLogoUrl().isEmpty()) {
+//            logoUrl = presignedUrlMap.getOrDefault(
+//                    profile.getLogoUrl(),
+//                    getPresignedUrlFromFileService(profile.getLogoUrl())
+//            );
+//        }
+        if (profile.getLogoUrl() != null && !profile.getLogoUrl().isEmpty()) {
+            // Try to get from the batch map first
+            if (presignedUrlMap != null && presignedUrlMap.containsKey(profile.getLogoUrl())) {
+                logoUrl = presignedUrlMap.get(profile.getLogoUrl());
+            } else {
+                // Fallback: fetch individually (should rarely happen)
+                log.warn("Logo URL not found in batch map for profile: {}, fetching individually",
+                        profile.getCompanyName());
+                logoUrl = getPresignedUrlFromFileService(profile.getLogoUrl());
+            }
+        }
+
+        return CompanyDetailsResponse.builder()
+                .id(profile.getId())
+                .userId(profile.getUserId())
+                .companyName(profile.getCompanyName())
+                .description(profile.getDescription())
+                .employeeCount(profile.getEmployeeCount())
+                .industry(profile.getIndustry())
+                .companyType(profile.getCompanyType())
+                .location(profile.getLocation())
+                .logoUrl(logoUrl)
+                .website(profile.getWebsite())
+                .build();
     }
 
 }

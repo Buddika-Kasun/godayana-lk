@@ -8,8 +8,8 @@ import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function PostJobPage() {
-    const router = useRouter();
-  
+  const router = useRouter();
+
   return (
     <div className="space-y-2">
       {/* Back Button */}
@@ -23,11 +23,9 @@ export default function PostJobPage() {
         >
           <ArrowLeft size={16} />
         </Button>
-        <h2 className="text-xl font-bold">
-          Post a New Job
-        </h2>
+        <h2 className="text-xl font-bold">Post a New Job</h2>
       </div>
-      
+
       <Card className="bg-primary/4">
         <CardContent className="px-6 pb-6">
           <JobForm />

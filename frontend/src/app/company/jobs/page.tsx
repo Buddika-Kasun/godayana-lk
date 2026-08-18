@@ -28,50 +28,33 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
-import jobEndpoints, { CompanyJobItem, CompanyJobParams, JobCountsResponse } from "@/lib/api/endpoints/jobEndpoints";
+import companyJobEndpoints, {
+  CompanyJobItem,
+  CompanyJobParams,
+  JobCountsResponse,
+} from "@/lib/api/endpoints/company/companyJobEndpoints";
+import { formatDate } from "@/lib/utils/dateUtils";
+import { STATUS_DISPLAY } from "@/types/statusDisplay";
+import { formatLocation } from "@/lib/utils/locationUtils";
 
 // Status mapping: Frontend filter -> Backend status
 const STATUS_MAP = {
   all: undefined,
+  pending: "PENDING",
   active: "APPROVED",
   closed: "CLOSED",
   draft: "DRAFT",
 } as const;
 
-// Backend status -> Frontend display
-const STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
-  PENDING: {
-    label: "Pending",
-    color:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  },
-  APPROVED: {
-    label: "Active",
-    color:
-      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  },
-  REJECTED: {
-    label: "Rejected",
-    color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  },
-  CLOSED: {
-    label: "Closed",
-    color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-  },
-  DRAFT: {
-    label: "Draft",
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  },
-};
 
 export default function CompanyJobs() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<
-    "all" | "active" | "closed" | "draft"
-  >("all");
+    "all" | "active" | "closed" | "draft" | "pending"
+  >("pending");
   const [jobs, setJobs] = useState<CompanyJobItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
+  const [closeJobId, setCloseJobId] = useState<string | null>(null);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [jobCounts, setJobCounts] = useState<JobCountsResponse>({
@@ -87,7 +70,7 @@ export default function CompanyJobs() {
   // Fetch job counts (single API call)
   const fetchJobCounts = async () => {
     try {
-      const response = await jobEndpoints.getJobCounts();
+      const response = await companyJobEndpoints.getJobCounts();
       const apiResponse = response.data;
 
       if (apiResponse.success && apiResponse.data) {
@@ -112,7 +95,7 @@ export default function CompanyJobs() {
         params.status = backendStatus;
       }
 
-      const response = await jobEndpoints.getCompanyJobs(params);
+      const response = await companyJobEndpoints.getCompanyJobs(params);
       const apiResponse = response.data;
 
       if (apiResponse.success && apiResponse.data) {
@@ -128,10 +111,7 @@ export default function CompanyJobs() {
           ? error.message
           : "Failed to load seeker profile data";
       console.error("Error fetching jobs:", errorMessage);
-      toast.error(
-        errorMessage ||
-          "Failed to load jobs. Please try again.",
-      );
+      toast.error(errorMessage || "Failed to load jobs. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -163,30 +143,32 @@ export default function CompanyJobs() {
     setCurrentPage(1);
   };
 
-  const handleDeleteJob = async () => {
-    if (!deleteJobId) return;
+  // const handleDeleteJob = async () => {
+  //   if (!closeJobId) return;
+
+  //   try {
+  //     await jobEndpoints.deleteJob(closeJobId);
+  //     toast.success("Job deleted successfully");
+  //     setCloseJobId(null);
+  //     fetchJobCounts(); // Refresh counts
+  //     fetchJobs(activeFilter, currentPage); // Refresh list
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error instanceof Error
+  //         ? error.message
+  //         : "Failed to load seeker profile data";
+  //     console.error("Error deleting job:", errorMessage);
+  //     toast.error(errorMessage || "Failed to delete job");
+  //   }
+  // };
+
+  const handleCloseJob = async () => {
+    // if (!confirm("Are you sure you want to close this job?")) return;
+    if (!closeJobId) return;
 
     try {
-      await jobEndpoints.deleteJob(deleteJobId);
-      toast.success("Job deleted successfully");
-      setDeleteJobId(null);
-      fetchJobCounts(); // Refresh counts
-      fetchJobs(activeFilter, currentPage); // Refresh list
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to load seeker profile data";
-      console.error("Error deleting job:", errorMessage);
-      toast.error(errorMessage || "Failed to delete job");
-    }
-  };
-
-  const handleCloseJob = async (jobId: string) => {
-    if (!confirm("Are you sure you want to close this job?")) return;
-
-    try {
-      await jobEndpoints.closeJob(jobId);
+      // await jobEndpoints.closeJob(jobId);
+      await companyJobEndpoints.closeJob(closeJobId);
       toast.success("Job closed successfully");
       fetchJobCounts(); // Refresh counts
       fetchJobs(activeFilter, currentPage); // Refresh list
@@ -198,20 +180,6 @@ export default function CompanyJobs() {
       console.error("Error closing job:", errorMessage);
       toast.error(errorMessage || "Failed to close job");
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 1) return "Posted 1 day ago";
-    if (diffDays <= 7) return `Posted ${diffDays} days ago`;
-    if (diffDays <= 30) return `Posted ${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays <= 365)
-      return `Posted ${Math.floor(diffDays / 30)} months ago`;
-    return `Posted ${Math.floor(diffDays / 365)} years ago`;
   };
 
   // if (isLoading && jobs.length === 0) {
@@ -240,16 +208,16 @@ export default function CompanyJobs() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b pb-3">
             <div className="bg-primary/10 p-1 rounded-lg w-full lg:w-fit flex items-center justify-between gap-1 flex-wrap">
               <button
-                onClick={() => handleFilterChange("all")}
+                onClick={() => handleFilterChange("pending")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
-                  activeFilter === "all"
+                  activeFilter === "pending"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                All{" "}
+                Pending{" "}
                 <span className="hidden md:inline-block">
-                  ({jobCounts.all})
+                  ({jobCounts.pending})
                 </span>
               </button>
               <button
@@ -273,9 +241,9 @@ export default function CompanyJobs() {
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                Closed{" "}
+                Inactive{" "}
                 <span className="hidden md:inline-block">
-                  ({jobCounts.closed})
+                  ({jobCounts.closed + jobCounts.rejected})
                 </span>
               </button>
               <button
@@ -304,12 +272,14 @@ export default function CompanyJobs() {
 
           {/* Jobs List */}
           <div className="flex-1 space-y-4">
-            { isLoading ? (
+            {isLoading ? (
               <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
-                <SubLoadingScreen message="Loading your jobs..." fullScreen = {false} />
+                <SubLoadingScreen
+                  message="Loading your jobs..."
+                  fullScreen={false}
+                />
               </div>
-            ) : (
-            jobs.length === 0 ? (
+            ) : jobs.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   {activeFilter === "draft"
@@ -318,7 +288,7 @@ export default function CompanyJobs() {
                       ? "No active jobs found"
                       : activeFilter === "closed"
                         ? "No closed jobs found"
-                        : "No jobs found. Click 'Post a Job' to create your first job posting."}
+                        : "No pending jobs found. Click 'Post a Job' to create job posting."}
                 </p>
                 {activeFilter === "all" && (
                   <Link href="/company/jobs/create">
@@ -339,16 +309,13 @@ export default function CompanyJobs() {
                     className="p-4 border rounded-lg hover:shadow-md transition-shadow"
                   >
                     <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                      {/* Left Section */}
+                      {/* Left Section - Takes remaining space */}
                       <div className="flex-1">
                         <div className="flex items-start justify-between">
                           <div>
                             <h3 className="font-semibold text-lg">
                               {job.jobTitle}
                             </h3>
-                            {/* <p className="text-sm text-muted-foreground">
-                              {job.companyName || "Company"}
-                            </p> */}
                           </div>
                           <Badge className={statusDisplay.color}>
                             {statusDisplay.label}
@@ -368,7 +335,7 @@ export default function CompanyJobs() {
                             <Clock size={14} /> {formatDate(job.createdAt)}
                           </span>
                           <span className="flex items-center gap-1">
-                            <MapPin size={14} /> {job.location || "N/A"}
+                            <MapPin size={14} /> {formatLocation(job.location) || "N/A"}
                           </span>
                           <span className="flex items-center gap-1">
                             <Briefcase size={14} />{" "}
@@ -379,58 +346,105 @@ export default function CompanyJobs() {
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link href={`/company/jobs/${job.id}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1 cursor-pointer"
+                      {/* Right Section - 2 rows on md+ */}
+                      <div className="flex flex-col gap-2 w-full lg:w-auto">
+                        {/* Row 1: Action Buttons */}
+                        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                          <Link
+                            href={`/company/jobs/${job.id}`}
+                            className="flex-1 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0"
                           >
-                            <Eye size={14} />
-                            View
-                          </Button>
-                        </Link>
-                        <Link href={`/company/jobs/edit/${job.id}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1 cursor-pointer"
-                            disabled={
-                              job.status === "APPROVED" ||
-                              job.status === "CLOSED"
-                            }
-                          >
-                            <Edit size={14} />
-                            Edit
-                          </Button>
-                        </Link>
-                        {/* {job.status !== "CLOSED" &&
-                          job.status !== "REJECTED" && (
                             <Button
                               variant="outline"
                               size="sm"
-                              className="gap-1 cursor-pointer text-amber-600 hover:text-amber-700"
-                              onClick={() => handleCloseJob(job.id)}
+                              className="gap-1 cursor-pointer w-full lg:w-auto text-xs sm:text-sm"
                             >
-                              Close
+                              <Eye size={14} />
+                              View
                             </Button>
-                          )} */}
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="gap-1 cursor-pointer"
-                          onClick={() => setDeleteJobId(job.id)}
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </Button>
+                          </Link>
+                          {job.status == "CLOSED" ||
+                          job.status == "REJECTED" ? (
+                            <Link
+                              href={`/company/jobs/edit/${job.id}`}
+                              className="flex-2 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0"
+                            >
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="gap-1 cursor-pointer w-full lg:w-auto text-xs sm:text-sm bg-green-100
+                                text-green-800 hover:bg-green-200"
+                              >
+                                <Edit size={14} />
+                                Re-Open
+                              </Button>
+                            </Link>
+                          ) : (
+                            <>
+                              <Link
+                                href={`/company/jobs/edit/${job.id}`}
+                                className="flex-1 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0"
+                                onClick={(e) => {
+                                  if (job.status === "CLOSED" || job.status === "REJECTED") {
+                                    e.preventDefault();
+                                    toast.error("Cannot edit a closed or rejected job");
+                                  }
+                                }}
+                              >
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 cursor-pointer w-full lg:w-auto text-xs sm:text-sm"
+                                  disabled={job.status === "CLOSED"}
+                                >
+                                  <Edit size={14} />
+                                  Edit
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="gap-1 cursor-pointer flex-1 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0 w-full lg:w-auto text-xs sm:text-sm"
+                                onClick={() => setCloseJobId(job.id)}
+                              >
+                                <Trash2 size={14} />
+                                Close
+                              </Button>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Row 2: View Applications Button */}
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/company/jobs/applications/${job.id}`}
+                            className="w-full"
+                            onClick={(e) => {
+                              if (job.applicationCount! <= 0) {
+                                e.preventDefault();
+                                toast.error(
+                                  "No applications available for this job",
+                                );
+                              }
+                            }}
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 cursor-pointer w-full"
+                              disabled={job.applicationCount! <= 0}
+                            >
+                              <Eye size={14} />
+                              View Applications ({job.applicationCount || 0})
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
                 );
               })
-            ))}
+            )}
           </div>
 
           {/* Pagination */}
@@ -513,16 +527,13 @@ export default function CompanyJobs() {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog
-        open={!!deleteJobId}
-        onOpenChange={() => setDeleteJobId(null)}
-      >
+      <AlertDialog open={!!closeJobId} onOpenChange={() => setCloseJobId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this
-              job posting and remove all associated data.
+              This action cannot be undone. This will permanently close this job
+              posting.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -530,10 +541,10 @@ export default function CompanyJobs() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteJob}
+              onClick={handleCloseJob}
               className="bg-red-600 hover:bg-red-700 cursor-pointer"
             >
-              Delete
+              Close
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

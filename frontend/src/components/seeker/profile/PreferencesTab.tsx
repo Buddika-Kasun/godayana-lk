@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { seekerAPI, SeekerProfileData } from "@/lib/api/endpoints/seekerEndpoints";
+import { seekerProfileAPI, SeekerProfileData } from "@/lib/api/endpoints/seeker/seekerProfileEndpoints";
 import toast from "react-hot-toast";
 
 interface PreferencesTabProps {
@@ -110,7 +110,7 @@ export function PreferencesTab({
       };
 
       // API call to save preferences
-      await seekerAPI.updateSeekerProfile(updateData);
+      await seekerProfileAPI.updateSeekerProfile(updateData);
 
       toast.dismiss(loadingToast);
 

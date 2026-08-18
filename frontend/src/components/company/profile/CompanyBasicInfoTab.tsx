@@ -15,10 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Camera } from "lucide-react";
-import { companyAPI, CompanyProfileData } from "@/lib/api/endpoints/companyEndpoints";
+import { companyProfileAPI, CompanyProfileData } from "@/lib/api/endpoints/company/companyProfileEndpoints";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "@/lib/redux/store";
-import { User } from "@/lib/api/endpoints/authEndpoints";
+import { User } from "@/lib/api/endpoints/public/authEndpoints";
 import { setUser } from "@/lib/redux/slices/authSlice";
 
 interface CompanyBasicInfoTabProps {
@@ -78,7 +78,7 @@ export function CompanyBasicInfoTab({
           : undefined,
       };
 
-      const response = await companyAPI.updateCompanyProfile(updateData);
+      const response = await companyProfileAPI.updateCompanyProfile(updateData);
       const apiResponse = response.data;
 
       if (apiResponse.success && apiResponse.data) {
@@ -138,7 +138,7 @@ export function CompanyBasicInfoTab({
     const loadingToast = toast.loading("Uploading logo...");
 
     try {
-      const response = await companyAPI.uploadLogo(file);
+      const response = await companyProfileAPI.uploadLogo(file);
       const apiResponse = response.data;
 
       toast.dismiss(loadingToast);

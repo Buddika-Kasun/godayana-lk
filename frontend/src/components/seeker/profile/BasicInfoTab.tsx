@@ -14,11 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Camera } from "lucide-react";
-import { seekerAPI, SeekerProfileData } from "@/lib/api/endpoints/seekerEndpoints";
+import { seekerProfileAPI, SeekerProfileData } from "@/lib/api/endpoints/seeker/seekerProfileEndpoints";
 import toast from "react-hot-toast";
 import { fetchCurrentUser } from "@/lib/redux/actions/authActions";
 import { useAppDispatch } from "@/lib/redux/store";
-import { User } from "@/lib/api/endpoints/authEndpoints";
+import { User } from "@/lib/api/endpoints/public/authEndpoints";
 import { setUser } from "@/lib/redux/slices/authSlice";
 
 interface BasicInfoTabProps {
@@ -35,6 +35,7 @@ export function BasicInfoTab({ userData, onSaveComplete }: BasicInfoTabProps) {
     nationality: "",
     gender: "",
     location: "",
+    email: "",
   });
   const [selectKey, setSelectKey] = useState(0);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -50,6 +51,7 @@ export function BasicInfoTab({ userData, onSaveComplete }: BasicInfoTabProps) {
         nationality: userData.nationality || "",
         gender: userData.gender || "",
         location: userData.location || "",
+        email: userData.email || "",
       });
       setSelectKey((prev) => prev + 1);
     }
@@ -66,7 +68,7 @@ export function BasicInfoTab({ userData, onSaveComplete }: BasicInfoTabProps) {
         ...formData,
       };
 
-      const response = await seekerAPI.updateSeekerProfile(updateData);
+      const response = await seekerProfileAPI.updateSeekerProfile(updateData);
       const apiResponse = response.data;
 
       
@@ -121,7 +123,7 @@ export function BasicInfoTab({ userData, onSaveComplete }: BasicInfoTabProps) {
     const loadingToast = toast.loading("Uploading photo...");
 
     try {
-      const response = await seekerAPI.uploadProfileImage(file);
+      const response = await seekerProfileAPI.uploadProfileImage(file);
       const apiResponse = response.data;
       toast.dismiss(loadingToast);
       // toast.success("Photo uploaded successfully");
@@ -220,7 +222,7 @@ export function BasicInfoTab({ userData, onSaveComplete }: BasicInfoTabProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label
               htmlFor="mobileNumber"
@@ -235,6 +237,23 @@ export function BasicInfoTab({ userData, onSaveComplete }: BasicInfoTabProps) {
               placeholder="+94 77 123 4567"
               readOnly
               disabled
+              className="mt-1.5"
+            />
+          </div>
+          <div>
+            <Label
+              htmlFor="mobileNumber"
+              className="text-sm font-semibold text-primary"
+            >
+              E-mail <span className="text-red-500 text-xs">*</span>
+            </Label>
+            <Input
+              id="email"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              placeholder="johndoe@gmail.com"
               className="mt-1.5"
             />
           </div>

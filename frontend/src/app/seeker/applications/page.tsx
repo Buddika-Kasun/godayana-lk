@@ -1,7 +1,7 @@
 // src/app/seeker/applications/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,253 +12,168 @@ import {
   Eye,
   Bookmark,
   BookmarkCheck,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
+import {
+  seekerJobAPI,
+  JobApplicationResponse,
+  JobApplicationCountsResponse,
+  JobApplicationParams,
+} from "@/lib/api/endpoints/seeker/seekerJobEndpoints";
+import { formatDate } from "@/lib/utils/dateUtils";
+import { formatLocation } from "@/lib/utils/locationUtils";
+import { OptimizedAvatar } from "@/components/ui/OptimizedAvatar";
+import { useSavedJobs } from "@/lib/hooks/useSavedJobs";
 
-interface Application {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  appliedDate: string;
-  status:
-    | "pending"
-    | "reviewed"
-    | "shortlisted"
-    | "rejected"
-    | "interview"
-    | "applied";
-  type: string;
-  isSaved?: boolean;
-}
-
-// Mock data - replace with API call
-const allApplications: Application[] = [
-  {
-    id: 1,
-    title: "Senior Software Engineer",
-    company: "Tech Corp",
-    location: "Colombo",
-    appliedDate: "2024-04-20",
-    status: "pending",
-    type: "Full-time",
-    isSaved: true,
+// Status display mapping
+const STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
+  PENDING: {
+    label: "Pending Review",
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
   },
-  {
-    id: 2,
-    title: "Digital Marketing Manager",
-    company: "Creative Agency",
-    location: "Kandy",
-    appliedDate: "2024-04-15",
-    status: "interview",
-    type: "Full-time",
-    isSaved: false,
+  REVIEWED: {
+    label: "Under Review",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   },
-  {
-    id: 3,
-    title: "Construction Worker",
-    company: "Build Masters",
-    location: "Dubai UAE",
-    appliedDate: "2024-04-14",
-    status: "applied",
-    type: "Contract",
-    isSaved: true,
+  SHORTLISTED: {
+    label: "Shortlisted",
+    color:
+      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
   },
-  {
-    id: 4,
-    title: "Accountant",
-    company: "Finance Solutions",
-    location: "Galle",
-    appliedDate: "2024-04-10",
-    status: "rejected",
-    type: "Full-time",
-    isSaved: false,
+  REJECTED: {
+    label: "Rejected",
+    color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   },
-  {
-    id: 5,
-    title: "Frontend Developer",
-    company: "WebTech Solutions",
-    location: "Remote",
-    appliedDate: "2024-04-18",
-    status: "reviewed",
-    type: "Remote",
-    isSaved: true,
+  HIRED: {
+    label: "Hired",
+    color:
+      "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
   },
-  {
-    id: 6,
-    title: "UI/UX Designer",
-    company: "Design Studio",
-    location: "Colombo",
-    appliedDate: "2024-04-12",
-    status: "shortlisted",
-    type: "Full-time",
-    isSaved: false,
+  NOTAPPLIED: {
+    label: "Not Applied",
+    color:
+      "bg-gray-50 text-gray-600 dark:bg-gray-900/50 dark:text-gray-400 border border-gray-200 dark:border-gray-700",
   },
-  {
-    id: 7,
-    title: "Project Manager",
-    company: "Tech Innovations",
-    location: "Kandy",
-    appliedDate: "2024-04-08",
-    status: "pending",
-    type: "Full-time",
-    isSaved: true,
-  },
-  {
-    id: 8,
-    title: "Data Scientist",
-    company: "AI Solutions",
-    location: "Remote",
-    appliedDate: "2024-04-05",
-    status: "interview",
-    type: "Remote",
-    isSaved: false,
-  },
-  {
-    id: 9,
-    title: "Marketing Specialist",
-    company: "Brand Masters",
-    location: "Colombo",
-    appliedDate: "2024-04-03",
-    status: "applied",
-    type: "Full-time",
-    isSaved: true,
-  },
-  {
-    id: 10,
-    title: "Customer Support",
-    company: "Service Hub",
-    location: "Galle",
-    appliedDate: "2024-04-01",
-    status: "rejected",
-    type: "Part-time",
-    isSaved: false,
-  },
-  {
-    id: 11,
-    title: "DevOps Engineer",
-    company: "CloudTech",
-    location: "Remote",
-    appliedDate: "2024-03-28",
-    status: "reviewed",
-    type: "Remote",
-    isSaved: true,
-  },
-  {
-    id: 12,
-    title: "QA Tester",
-    company: "Quality Labs",
-    location: "Colombo",
-    appliedDate: "2024-03-25",
-    status: "shortlisted",
-    type: "Full-time",
-    isSaved: false,
-  },
-];
-
-const getStatusConfig = (status: Application["status"]) => {
-  const config = {
-    pending: {
-      label: "Unlock Review",
-      color:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    },
-    reviewed: {
-      label: "Under Review",
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    },
-    shortlisted: {
-      label: "Shortlisted",
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    },
-    rejected: {
-      label: "Rejected",
-      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-    },
-    interview: {
-      label: "Interview Scheduled",
-      color:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-    },
-    applied: {
-      label: "Applied",
-      color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-    },
-  };
-  return config[status];
 };
+
+// Frontend filter -> Backend status mapping
+const STATUS_MAP = {
+  pending: "PENDING",
+  active: "ACTIVE",
+  rejected: "REJECTED",
+  saved: "SAVED",
+} as const;
 
 export default function SeekerApplications() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<
-   "all" | "active" | "rejected" | "saved"
-  >("all");
-  const [applications, setApplications] =
-    useState<Application[]>(allApplications);
+    "pending" | "active" | "rejected" | "saved"
+  >("pending");
+  const [applications, setApplications] = useState<JobApplicationResponse[]>(
+    [],
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [applicationCounts, setApplicationCounts] =
+    useState<JobApplicationCountsResponse>({
+      all: 0,
+      pending: 0,
+      active: 0,
+      rejected: 0,
+    });
   const itemsPerPage = 10;
 
-  // Filter applications based on status
-  const getFilteredApplications = () => {
-    if (activeFilter === "active") {
-      return applications.filter((app) => app.status !== "rejected");
+  const { toggleSaveJob, isJobSaved, savedJobsCount } = useSavedJobs();
+
+  // Fetch application counts
+  const fetchCounts = async () => {
+    try {
+      const appCountRes = await seekerJobAPI.application.getAppliedJobsCount();
+
+      if (appCountRes.data.success && appCountRes.data.data) {
+        setApplicationCounts(appCountRes.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching counts:", error);
     }
-    if (activeFilter === "rejected") {
-      return applications.filter((app) => app.status === "rejected");
-    }
-    if (activeFilter === "saved") {
-      return applications.filter((app) => app.isSaved === true);
-    }
-    return applications;
   };
 
-  const filteredApplications = getFilteredApplications();
-  const totalItems = filteredApplications.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentApplications = filteredApplications.slice(startIndex, endIndex);
+  // Fetch applications with pagination and filter
+  const fetchApplications = useCallback(
+    async (filter: typeof activeFilter, page: number = 1) => {
+      setIsLoading(true);
+      try {
+        const backendStatus = STATUS_MAP[filter];
+        const params: JobApplicationParams = {
+          page: page - 1,
+          size: itemsPerPage,
+        };
 
-  // Get counts for filters
-  const allCount = applications.length;
-  const activeCount = applications.filter(
-    (app) => app.status !== "rejected",
-  ).length;
-  const rejectedCount = applications.filter(
-    (app) => app.status === "rejected",
-  ).length;
-  const savedCount = applications.filter((app) => app.isSaved === true).length;
+        if (backendStatus) {
+          params.status = backendStatus;
+        }
+
+        const response =
+          await seekerJobAPI.application.getMyApplications(params);
+        const apiResponse = response.data;
+
+        if (apiResponse.success && apiResponse.data) {
+          setApplications(apiResponse.data.content || []);
+          setTotalItems(apiResponse.data.totalElements || 0);
+          setTotalPages(apiResponse.data.totalPages || 0);
+        } else {
+          toast.error(apiResponse.message || "Failed to load applications");
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to load applications";
+        console.error("Error fetching applications:", errorMessage);
+        toast.error(
+          errorMessage || "Failed to load applications. Please try again.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [itemsPerPage],
+  );
+
+  // Initial load and refetch
+  useEffect(() => {
+    fetchCounts();
+    fetchApplications(activeFilter, currentPage);
+  }, [activeFilter, currentPage, fetchApplications]);
+
+  useEffect(() => {
+    setTotalItems(0);
+  }, [activeFilter]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleSaveToggle = (id: number) => {
-    setApplications((prevApps) =>
-      prevApps.map((app) =>
-        app.id === id ? { ...app, isSaved: !app.isSaved } : app,
-      ),
-    );
-    const application = applications.find((app) => app.id === id);
-    if (application?.isSaved) {
-      toast.success("Removed from saved");
-    } else {
-      toast.success("Saved for later");
-    }
+  const handleFilterChange = (filter: typeof activeFilter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const getStatusDisplay = (status: string) => {
+    return STATUS_DISPLAY[status] || STATUS_DISPLAY.NOTAPPLIED;
+  };
 
-    if (diffDays === 1) return "Applied 1 day ago";
-    if (diffDays <= 7) return `Applied ${diffDays} days ago`;
-    if (diffDays <= 30) return `Applied ${Math.floor(diffDays / 7)} weeks ago`;
-    return `Applied ${Math.floor(diffDays / 30)} months ago`;
+  const handleSaveToggle = async (jobId: string, status: boolean) => {
+    await toggleSaveJob(jobId, status);
+    if (activeFilter == "saved") {
+      fetchApplications(activeFilter, currentPage);
+    }
   };
 
   return (
@@ -271,27 +186,25 @@ export default function SeekerApplications() {
               Track all your job applications
             </p>
           </div>
+
           {/* Filter Tabs */}
-          <div className="flex gap-4 mb-6 border-b pb-3">
-            <div className="bg-primary/10 p-1 rounded-lg w-full lg:w-fit flex items-center gap-1 flex-wrap justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b pb-3">
+            <div className="bg-primary/10 p-1 rounded-lg w-full lg:w-fit flex items-center justify-between gap-1 flex-wrap">
               <button
-                onClick={() => {
-                  setActiveFilter("all");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("pending")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
-                  activeFilter === "all"
+                  activeFilter === "pending"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-black dark:hover:text-white"
                 }`}
               >
-                All <span className="hidden md:inline-block">({allCount})</span>
+                Pending{" "}
+                <span className="hidden md:inline-block">
+                  ({applicationCounts.pending})
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setActiveFilter("active");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("active")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   activeFilter === "active"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -299,13 +212,12 @@ export default function SeekerApplications() {
                 }`}
               >
                 Active{" "}
-                <span className="hidden md:inline-block">({activeCount})</span>
+                <span className="hidden md:inline-block">
+                  ({applicationCounts.active})
+                </span>
               </button>
               <button
-                onClick={() => {
-                  setActiveFilter("rejected");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("rejected")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold ${
                   activeFilter === "rejected"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -314,14 +226,11 @@ export default function SeekerApplications() {
               >
                 Rejected{" "}
                 <span className="hidden md:inline-block">
-                  ({rejectedCount})
+                  ({applicationCounts.rejected})
                 </span>
               </button>
               <button
-                onClick={() => {
-                  setActiveFilter("saved");
-                  setCurrentPage(1);
-                }}
+                onClick={() => handleFilterChange("saved")}
                 className={`px-3 lg:px-4 py-1.5 text-sm rounded-md transition-all cursor-pointer font-semibold flex items-center gap-2 ${
                   activeFilter === "saved"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -330,66 +239,23 @@ export default function SeekerApplications() {
               >
                 {/* <BookmarkCheck size={16} /> */}
                 Saved{" "}
-                <span className="hidden md:inline-block">({savedCount})</span>
+                <span className="hidden md:inline-block">
+                  ({savedJobsCount})
+                </span>
               </button>
             </div>
           </div>
 
           {/* Applications List */}
           <div className="flex-1 space-y-4">
-            {currentApplications.map((application) => {
-              const statusConfig = getStatusConfig(application.status);
-              return (
-                <div
-                  key={application.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow gap-4"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-start gap-2">
-                      <button
-                        onClick={() => handleSaveToggle(application.id)}
-                        className="text-muted-foreground hover:text-primary transition-colors cursor-pointer bg-primary/5 hover:bg-primary/10 p-1 rounded"
-                      >
-                        {application.isSaved ? (
-                          <BookmarkCheck size={20} className="text-primary" />
-                        ) : (
-                          <Bookmark size={20} />
-                        )}
-                      </button>
-                      <h3 className="font-semibold text-lg">
-                        {application.title}
-                      </h3>
-                    </div>
-                    <div className="flex flex-wrap gap-4 mt-2  text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Building size={14} /> {application.company}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={14} /> {application.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} />{" "}
-                        {formatDate(application.appliedDate)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={statusConfig.color}>
-                      {statusConfig.label}
-                    </Badge>
-                    <Link href={`/seeker/applications/${application.id}`}>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Eye size={14} />
-                        View Details
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Empty State */}
-            {currentApplications.length === 0 && (
+            {isLoading ? (
+              <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
+                <SubLoadingScreen
+                  message="Loading your applications..."
+                  fullScreen={false}
+                />
+              </div>
+            ) : applications.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   {activeFilter === "saved"
@@ -401,6 +267,90 @@ export default function SeekerApplications() {
                         : "No applications found"}
                 </p>
               </div>
+            ) : (
+              applications.map((application) => {
+                const statusDisplay = getStatusDisplay(application.status);
+                // const isSaved = application.isSaved || false;
+                const isSaved = isJobSaved(application.jobId);
+
+                return (
+                  <div
+                    key={application.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow gap-4 relative overflow-hidden"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-start gap-2">
+                        <button
+                          onClick={() =>
+                            handleSaveToggle(application.jobId, isSaved)
+                          }
+                          className="text-muted-foreground hover:text-primary transition-colors cursor-pointer bg-primary/5 hover:bg-primary/10 p-1 rounded absolute top-0 left-0"
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck size={20} className="text-primary" />
+                          ) : (
+                            <Bookmark size={20} />
+                          )}
+                        </button>
+                        <OptimizedAvatar
+                          src={application.logoUrl}
+                          alt={application.companyName || "Company"}
+                          height={60}
+                          width={60}
+                          fallback={
+                            application.companyName
+                              ? application.companyName.charAt(0)
+                              : "C"
+                          }
+                        />
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {application.jobTitle || "Untitled"}
+                          </h3>
+                          <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Building size={14} />{" "}
+                              {application.companyName || "N/A"}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MapPin size={14} />{" "}
+                              {formatLocation(application.location) || "N/A"}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              {application.appliedAt ? (
+                                <>
+                                  <Clock size={14} />
+                                  {" Applied "}
+                                  {formatDate(application.appliedAt)}
+                                </>
+                              ) : (
+                                <>
+                                  <Clock size={14} />
+                                  {" Saved "}
+                                  {formatDate(application.savedAt)}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-3">
+                      {application.status && (
+                        <Badge className={statusDisplay.color}>
+                          {statusDisplay.label}
+                        </Badge>
+                      )}
+                      <Link href={`/seeker/applications/${application.jobId}`}>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <Eye size={14} />
+                          View Job
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -467,7 +417,11 @@ export default function SeekerApplications() {
               </div>
 
               <div className="text-center text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{" "}
+                Showing{" "}
+                {applications.length > 0
+                  ? (currentPage - 1) * itemsPerPage + 1
+                  : 0}{" "}
+                to {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
                 {totalItems} applications
               </div>
             </div>

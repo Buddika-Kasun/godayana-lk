@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import jobEndpoints, { JobResponse } from "@/lib/api/endpoints/jobEndpoints";
+import companyJobEndpoints, { JobResponse } from "@/lib/api/endpoints/company/companyJobEndpoints";
 import toast from "react-hot-toast";
 
 export default function JobDetailsPage() {
@@ -25,7 +25,7 @@ export default function JobDetailsPage() {
         setError(null);
 
         const jobId = params.id?.toString() || "0";
-        const response = await jobEndpoints.getCompanyJobById(jobId);
+        const response = await companyJobEndpoints.getCompanyJobById(jobId);
         const apiResponse = response.data;
 
         if (apiResponse.success && apiResponse.data) {
@@ -124,7 +124,7 @@ export default function JobDetailsPage() {
       </div>
 
       <div className="bg-primary/4 rounded-4xl p-4 border border-primary/14">
-        <JobDetailsView job={job} />
+        <JobDetailsView job={job} hideButtons={true} />
       </div>
     </div>
   );

@@ -6,17 +6,24 @@ import com.godayana.file.dto.FileUploadResponse;
 import com.godayana.file.entity.UploadedFile;
 import com.godayana.file.repository.UploadedFileRepository;
 import com.godayana.file.validator.FileValidator;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -167,6 +174,52 @@ public class FileService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Download file by key (internal use)
+     */
+    public ResponseEntity<InputStreamResource> downloadFileByKey(String fileKey, HttpServletResponse response)
+            throws Exception {
+
+        log.info("Downloading file by key: {}", fileKey);
+
+        UploadedFile file = fileRepository.findByFileKey(fileKey)
+                .orElseThrow(() -> new BusinessException(
+                        "File not found",
+                        ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                        HttpStatus.SC_NOT_FOUND
+                ));
+
+        return downloadFileFromS3(file, response);
+    }
+
+    private ResponseEntity<InputStreamResource> downloadFileFromS3(UploadedFile file, HttpServletResponse response)
+            throws Exception {
+
+        // Get file from S3
+        InputStream inputStream = s3Service.downloadFile(file.getFileKey());
+
+        if (inputStream == null) {
+            throw new BusinessException(
+                    "File not found in storage",
+                    ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                    HttpStatus.SC_NOT_FOUND
+            );
+        }
+
+        // Set content type
+        String contentType = file.getFileType() != null ? file.getFileType() : "application/octet-stream";
+
+        // Encode filename for proper display
+        String encodedFileName = URLEncoder.encode(file.getFileName(), StandardCharsets.UTF_8)
+                .replaceAll("\\+", "%20");
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName)
+                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(file.getFileSize()))
+                .body(new InputStreamResource(inputStream));
+    }
+
     @Transactional(readOnly = true)
     public List<FileUploadResponse> getFilesByFolder(String userId, String folder) {
         List<UploadedFile> files = fileRepository.findByUploaderIdAndFolderAndStatusNot(
@@ -315,6 +368,121 @@ public class FileService {
 
         // Generate presigned URL
         return s3Service.generatePresignedUrl(file.getFileKey());
+    }
+
+//    @Transactional(readOnly = true)
+//    public Map<String, String> getPresignedUrlsBatch(List<String> fileKeys) {
+//        log.debug("Getting batch presigned URLs for {} files", fileKeys.size());
+//
+//        if (fileKeys == null || fileKeys.isEmpty()) {
+//            return new HashMap<>();
+//        }
+//
+//        // Remove duplicates
+//        List<String> uniqueKeys = fileKeys.stream()
+//                .filter(key -> key != null && !key.isEmpty())
+//                .distinct()
+//                .collect(Collectors.toList());
+//
+//        if (uniqueKeys.isEmpty()) {
+//            return new HashMap<>();
+//        }
+//
+//        Map<String, String> result = new HashMap<>();
+//        List<String> keysToFetch = new ArrayList<>();
+//
+//        // Check cache first
+////        for (String fileKey : uniqueKeys) {
+////            if (presignedUrlCache.containsKey(fileKey)) {
+////                result.put(fileKey, presignedUrlCache.get(fileKey));
+////            } else {
+////                keysToFetch.add(fileKey);
+////            }
+////        }
+//
+////        if (keysToFetch.isEmpty()) {
+////            return result;
+////        }
+//
+//        // Fetch files from database
+//        List<UploadedFile> files = fileRepository.findByFileKeyIn(keysToFetch);
+//        Map<String, UploadedFile> fileMap = files.stream()
+//                .collect(Collectors.toMap(
+//                        UploadedFile::getFileKey,
+//                        file -> file,
+//                        (existing, replacement) -> existing
+//                ));
+//
+//        // Generate presigned URLs for each file
+//        for (String fileKey : keysToFetch) {
+//            UploadedFile file = fileMap.get(fileKey);
+//            if (file != null) {
+//                try {
+//                    String presignedUrl = s3Service.generatePresignedUrl(file.getFileKey());
+//                    result.put(fileKey, presignedUrl);
+////                    presignedUrlCache.put(fileKey, presignedUrl);
+//                } catch (Exception e) {
+//                    log.error("Failed to generate presigned URL for: {}", fileKey, e);
+//                    result.put(fileKey, null);
+//                }
+//            } else {
+//                log.warn("File not found or inactive: {}", fileKey);
+//                result.put(fileKey, null);
+//            }
+//        }
+//
+//        log.debug("Batch presigned URLs generated for {} files", result.size());
+//        return result;
+//    }
+
+    @Transactional(readOnly = true)
+    public Map<String, String> getPresignedUrlsBatch(List<String> fileKeys) {
+        log.debug("Getting batch presigned URLs for {} files", fileKeys.size());
+
+        if (fileKeys == null || fileKeys.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // Remove duplicates
+        List<String> uniqueKeys = fileKeys.stream()
+                .filter(key -> key != null && !key.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (uniqueKeys.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        Map<String, String> result = new HashMap<>();
+
+        // Fetch files from database
+        List<UploadedFile> files = fileRepository.findByFileKeyIn(uniqueKeys);
+        Map<String, UploadedFile> fileMap = files.stream()
+                .collect(Collectors.toMap(
+                        UploadedFile::getFileKey,
+                        file -> file,
+                        (existing, replacement) -> existing
+                ));
+
+        // Generate presigned URLs for each file
+        for (String fileKey : uniqueKeys) {
+            UploadedFile file = fileMap.get(fileKey);
+            if (file != null) {
+                try {
+                    String presignedUrl = s3Service.generatePresignedUrl(file.getFileKey());
+                    result.put(fileKey, presignedUrl);
+                } catch (Exception e) {
+                    log.error("Failed to generate presigned URL for: {}", fileKey, e);
+                    result.put(fileKey, null);
+                }
+            } else {
+                log.warn("File not found or inactive: {}", fileKey);
+                result.put(fileKey, null);
+            }
+        }
+
+        log.debug("Batch presigned URLs generated for {} files", result.size());
+        return result;
     }
 
     public String getPresignedUrlFromUserId(String userId) {

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, Upload, FileText, ExternalLink } from "lucide-react";
-import { seekerAPI, SeekerProfileData } from "@/lib/api/endpoints/seekerEndpoints";
+import { seekerProfileAPI, SeekerProfileData } from "@/lib/api/endpoints/seeker/seekerProfileEndpoints";
 import toast from "react-hot-toast";
 
 interface CareerDetailsTabProps {
@@ -115,7 +115,7 @@ export function CareerDetailsTab({
 
     try {
       // Upload the resume using your API
-      const response = await seekerAPI.uploadResume(file);
+      const response = await seekerProfileAPI.uploadResume(file);
       const apiResponse = response.data;
       
       if (apiResponse.success && apiResponse.data) {
@@ -157,7 +157,7 @@ export function CareerDetailsTab({
         skills: skills,
       };
 
-      await seekerAPI.updateSeekerProfile(updateData);
+      await seekerProfileAPI.updateSeekerProfile(updateData);
       toast.dismiss(loadingToast);
 
       if (onSaveComplete) {
