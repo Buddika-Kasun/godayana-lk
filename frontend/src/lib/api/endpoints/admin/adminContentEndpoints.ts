@@ -50,9 +50,62 @@ export interface PostCountsResponse {
   storyCount: number;
 }
 
+export interface StoryResponse {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  author: string;
+  authorRole: string;
+  authorLocation: string;
+  category: string;
+  likes: number;
+  imageUrl?: string;
+  imageKey?: string;
+  avatarUrl?: string;
+  avatarKey?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StoryRequest {
+  type: string;
+  title: string;
+  description: string;
+  author: string;
+  authorRole: string;
+  authorLocation: string;
+  category: string;
+  imageKey: string;
+  avatarKey: string;
+}
+
+export interface CountryResponse {
+  id: string;
+  name: string;
+  otherCountry?: string;
+  shortDescription: string;
+  description: string;
+  salary: string;
+  visaType: string;
+  imageUrl?: string;
+  imageKey?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CountryRequest {
+  name: string;
+  shortDescription: string;
+  description: string;
+  salary: string;
+  visaType: string;
+  imageKey: string;
+}
+
 // ==================== CONTENT API ====================
 
-const adminContentAPI = {
+const adminVisaContentAPI = {
   getPostCounts: () =>
     api.get<ApiResponse<PostCountsResponse>>("/visa-posts/admin/counts"),
 
@@ -112,10 +165,120 @@ const adminContentAPI = {
   },
 };
 
+const adminStoryContentAPI = {
+  /**
+   * Get all stories
+   */
+  getStories: (params?: PostParams) =>
+    api.get<ApiResponse<PaginatedResponse<StoryResponse>>>("/stories/admin",
+      {
+        params
+      }
+    ),
+
+  /**
+   * Get story by ID
+   */
+  getStoryById: (storyId: string) =>
+    api.get<ApiResponse<StoryResponse>>(`/stories/admin/${storyId}`),
+
+  /**
+   * Create a new story
+   */
+  createStory: (data: StoryRequest) =>
+    api.post<ApiResponse<StoryResponse>>("/stories/admin", data),
+
+  /**
+   * Update a story
+   */
+  updateStory: (storyId: string, data: Partial<StoryRequest>) =>
+    api.put<ApiResponse<StoryResponse>>(`/stories/admin/${storyId}`, data),
+
+  /**
+   * Delete a story
+   */
+  deleteStory: (storyId: string) =>
+    api.delete<ApiResponse<void>>(`/stories/admin/${storyId}`),
+
+  /**
+   * Upload image for story
+   */
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<ApiResponse<ImageUploadResponse>>(
+      "/stories/admin/upload/story-image",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+  },
+
+  /**
+   * Upload avatar for story
+   */
+  uploadAvatar: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<ApiResponse<ImageUploadResponse>>(
+      "/stories/admin/upload/story-avatar",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+  },
+};
+
+export const adminCountryContentAPI = {
+  getCountries: (params?: PostParams) =>
+    api.get<ApiResponse<PaginatedResponse<CountryResponse>>>(
+      "/countries/admin",
+      {
+        params,
+      },
+    ),
+
+  getCountryById: (countryId: string) =>
+    api.get<ApiResponse<CountryResponse>>(`/countries/admin/${countryId}`),
+
+  createCountry: (data: CountryRequest) =>
+    api.post<ApiResponse<CountryResponse>>("/countries/admin", data),
+
+  updateCountry: (countryId: string, data: Partial<CountryRequest>) =>
+    api.put<ApiResponse<CountryResponse>>(
+      `/countries/admin/${countryId}`,
+      data,
+    ),
+
+  deleteCountry: (countryId: string) =>
+    api.delete<ApiResponse<void>>(`/countries/admin/${countryId}`),
+
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<ApiResponse<ImageUploadResponse>>(
+      "/countries/admin/upload/country-image",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+  },
+};
+
+
 export const adminContentEndpoints = {
-  visa: adminContentAPI,
-  county: "",
-  story: "",
+  visa: adminVisaContentAPI,
+  country: adminCountryContentAPI,
+  story: adminStoryContentAPI,
 };
 
 export default adminContentEndpoints;
