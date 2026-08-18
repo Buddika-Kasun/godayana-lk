@@ -18,7 +18,7 @@ RUN addgroup -S spring && adduser -S spring -G spring
 WORKDIR /app
 
 # Copy the built JAR
-COPY --from=builder /app/services/visa-service/target/*.jar app.jar
+COPY --from=builder /app/services/visa_gateway_content-service/target/*.jar app.jar
 
 USER spring:spring
 
