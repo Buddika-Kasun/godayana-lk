@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . .
 
 # Build ONLY this specific service + its dependencies
-RUN mvn clean package -pl services/visa-service -am -DskipTests
+RUN mvn clean package -pl services/visa_gateway_content-service -am -DskipTests
 
 # Stage 2: Run
 FROM eclipse-temurin:17-jre-alpine
