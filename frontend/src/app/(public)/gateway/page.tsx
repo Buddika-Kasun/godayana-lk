@@ -37,6 +37,7 @@ import seekerVisaGatewayEndpoints, {
   GatewayConsultationRequest,
 } from "@/lib/api/endpoints/seeker/seekerVisaGatewayEndpoints";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 // Animation
 const fadeInUp: Variants = {
@@ -261,16 +262,36 @@ export default function GatewayPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-blue-400 via-blue-700 to-blue-900 rounded-b-lg text-center"
+        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90 ">
-          <span className="font-fm-gamunu text-[40px] md:text-5xl">ගොඩයන </span>
-          <span className=""> Gateway</span>
-        </h1>
-        <p className="text-background/80 relative">
-          Your premium structured migration portal. Start your journey with a
-          professional eligibility assessment.
-        </p>
+        {/* Background Image */}
+        <div className="">
+          <Image
+            src="/images/bg_short.PNG"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+            onError={() => console.log("Image failed to load")}
+          />
+          {/* Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white/80 dark:text-primary/80">
+            <span className="font-fm-gamunu text-[40px] md:text-5xl">
+              ගොඩයන{" "}
+            </span>
+            <span className="text-secondary/90">Gateway</span>
+          </h1>
+          <p className="text-white/70">
+            Your premium structured migration portal. Start your journey with a
+            professional eligibility assessment.
+          </p>
+        </div>
       </motion.div>
 
       {/* Landing Section - Show before form */}
@@ -687,10 +708,7 @@ export default function GatewayPage() {
                                 placeholder="e.g., Public University, Private University, etc."
                                 value={formData.universityType}
                                 onChange={(e) =>
-                                  handleChange(
-                                    "universityType",
-                                    e.target.value,
-                                  )
+                                  handleChange("universityType", e.target.value)
                                 }
                               />
                             </div>
@@ -1048,7 +1066,7 @@ export default function GatewayPage() {
                 </div>
 
                 {/* Form */}
-                {submitSuccess && 
+                {submitSuccess && (
                   <div className="p-6 text-center">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <svg
@@ -1072,7 +1090,7 @@ export default function GatewayPage() {
                       Our gateway expert will contact you within 24 hours.
                     </p>
                   </div>
-                }
+                )}
               </div>
             </motion.div>
           </>

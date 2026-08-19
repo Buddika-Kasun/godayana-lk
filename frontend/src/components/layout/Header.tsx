@@ -274,7 +274,8 @@ export function Header() {
           "fixed top-0 w-full max-w-screen overflow-visible z-50 transition-all duration-300",
           scrolled
             ? "bg-background/80 backdrop-blur-md border-b shadow-sm"
-            : "bg-blue-400 dark:bg-background ",
+            // : "bg-blue-400 dark:bg-background ",
+            : "bg-white/40 dark:bg-background/30 ",
         )}
       >
         <nav className="px-4 sm:px-6 lg:px-8">
@@ -301,7 +302,7 @@ export function Header() {
                   >
                     G
                   </motion.span>
-                  <span className="bg-gradient-to-r text-primary bg-clip-text">
+                  <span className="bg-linear-to-r text-primary bg-clip-text">
                     Godayana
                   </span>
                   <span className="text-secondary">.lk</span>
@@ -327,12 +328,14 @@ export function Header() {
                       className={cn(
                         "flex items-center text-sm font-medium transition-colors  rounded-md px-3 py-1",
                         scrolled
-                          ? isActive
+                          ?
+                           isActive
                             ? "text-primary bg-primary/5"
                             : "text-muted-foreground hover:text-primary bg-primary/5"
                           : isActive
-                            ? "text-blue-950 dark:text-primary bg-primary/10 dark:bg-primary/5"
-                            : "text-blue-900 dark:text-muted-foreground hover:text-blue-950 dark:hover:text-primary bg-primary/10 dark:bg-primary/5",
+                            ? "text-blue-800 dark:text-primary bg-primary/15 dark:bg-primary/5"
+                            :                        "text-blue-900 dark:text-muted-foreground hover:text-blue-950 dark:hover:text-primary bg-primary/20 dark:bg-primary/5",
+                              // "text-foreground/70 hover:text-primary bg-primary/10",
                       )}
                     >
                       <item.icon className="h-5 w-5 mr-2 shrink-0" />

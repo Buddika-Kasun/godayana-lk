@@ -106,7 +106,7 @@ export default function JobDetailsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-2 pt-16">
         <div className="pl-8 pt-6 pb-2">
           <Button
             type="button"
@@ -142,7 +142,7 @@ export default function JobDetailsPage() {
 
   if (error || !job) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-2 pt-16">
         <div className="pl-8 pt-6 pb-2">
           <Button
             type="button"
@@ -177,7 +177,7 @@ export default function JobDetailsPage() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 pt-16">
       <div className="pl-8 pt-6 pb-2">
         <Button
           type="button"

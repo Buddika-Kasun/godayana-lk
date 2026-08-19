@@ -413,16 +413,36 @@ export default function VisaPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-blue-400 via-blue-700 to-blue-900 rounded-b-lg text-center"
+        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90 ">
-          <span className="font-fm-gamunu text-[40px] md:text-5xl">ගොඩයන </span>
-          <span className="text-background/90"> Visa</span>
-        </h1>
-        <p className="text-background/80 relative">
-          Your comprehensive guide to global visa processes. We simplify the
-          complex documentation for you.
-        </p>
+        {/* Background Image */}
+        <div className="">
+          <Image
+            src="/images/bg_short.PNG"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+            onError={() => console.log("Image failed to load")}
+          />
+          {/* Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white/80 dark:text-primary/80">
+            <span className="font-fm-gamunu text-[40px] md:text-5xl">
+              ගොඩයන{" "}
+            </span>
+            <span className="text-secondary/90">Visa</span>
+          </h1>
+          <p className="text-white/70">
+            Your comprehensive guide to global visa processes. We simplify the
+            complex documentation for you.
+          </p>
+        </div>
       </motion.div>
 
       {/* Visa Types Cards - Top Section */}
@@ -737,8 +757,8 @@ export default function VisaPage() {
                       {showMorePopup.guide.title}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {showMorePopup.guide.country} • {capitalizeFirstLetter(showMorePopup.guide.type)}{" "}
-                      Visa
+                      {showMorePopup.guide.country} •{" "}
+                      {capitalizeFirstLetter(showMorePopup.guide.type)} Visa
                     </p>
                   </div>
                   <button

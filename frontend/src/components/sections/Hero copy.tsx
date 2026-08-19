@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import type { Variants } from "framer-motion";
 import Image from "next/image";
-import { useTheme } from "next-themes";
 
 // Animation variants
 const containerVariants: Variants = {
@@ -77,26 +76,8 @@ const floatingVariants2: Variants = {
 };
 
 export function Hero() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-
   return (
-    <section className="relative pt-24 md:pt-20 min-h-[calc(100vh-100px)] md:h-[calc(100vh)] overflow-y-hidden overflow-x-hidden w-full">
-      {/* Background Image */}
-      <div className="absolute inset-0 -z-10">
-        <Image
-          // src={isDark ? "/images/bg_dark.PNG" : "/images/bg_light.PNG"}
-          src={"/images/bg_dark.PNG"}
-          alt="Background"
-          fill
-          className="object-cover"
-          priority
-          sizes="100vw"
-        />
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-blue-500/50 dark:bg-blue-950/50" />
-      </div>
-
+    <section className="relative pt-0 md:pt-0 min-h-[calc(100vh-100px)] md:h-[calc(100vh-80px)] overflow-y-hidden overflow-x-hidden w-full bg-gradient-to-r from-blue-900 via-blue-700/80 to-blue-500/80 dark:from-blue-950/70 dark:via-blue-900/60 dark:to-background">
       {/* Background decorative elements with animation */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -141,7 +122,7 @@ export function Hero() {
           className="gap-8 md:gap-12 h-full"
         >
           {/* Left Column - Content */}
-          <div className="px-2 sm:px-0 flex flex-col justify-between h-[calc(100vh-80px)] text-center">
+          <div className="px-2 sm:px-0 flex flex-col justify-between md:h-[calc(100vh-80px)] text-center md:text-left">
             {/* NEW Badge */}
             <div>
               <motion.div variants={itemVariants}>
@@ -171,6 +152,21 @@ export function Hero() {
                   <span className="inline-block font-fm-gamunu text-8xl md:text-9xl">
                     ගොඩයන්න
                   </span>
+                  {/* <motion.svg
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ delay: 1, duration: 0.8, ease: "easeOut" }}
+                    className="absolute -bottom-6 sm:-bottom-8 md:-bottom-10 left-0 w-full h-6 sm:h-8 md:h-10 text-primary/20"
+                    viewBox="0 0 100 10"
+                    preserveAspectRatio="none"
+                  >
+                    <path
+                      d="M0,5 Q25,10 50,5 T100,5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      fill="none"
+                    />
+                  </motion.svg> */}
                 </span>
                 <br />
               </motion.h1>
@@ -180,8 +176,9 @@ export function Hero() {
             </div>
 
             {/* Mobile Image - Shown only below lg breakpoint */}
-            {/* <div className="lg:hidden w-full px-4">
+            <div className="lg:hidden w-full px-4">
               <div className="relative aspect-square max-w-md mx-auto">
+                {/* Decorative circles */}
                 <motion.div
                   animate={{
                     scale: [1, 1.1, 1],
@@ -195,6 +192,7 @@ export function Hero() {
                   className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full blur-3xl"
                 />
 
+                {/* Image placeholder with animation */}
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -210,6 +208,7 @@ export function Hero() {
                   />
                 </motion.div>
 
+                {/* Floating stats - Repositioned for mobile */}
                 <motion.div
                   variants={floatingVariants}
                   initial="initial"
@@ -258,10 +257,19 @@ export function Hero() {
                   </motion.div>
                 </motion.div>
               </div>
-            </div> */}
+            </div>
 
             {/* Description */}
             <div>
+              {/* <motion.p
+                variants={itemVariants}
+                className="text-sm sm:text-base md:text-md xl:text-lg text-white/90 max-w-lg px-4 sm:px-0 text-center md:text-left"
+              >
+                The premier platform connecting Sri Lankan talent with top local
+                companies and global employers. Your career journey starts here.
+              </motion.p> */}
+
+              {/* Bottom Section */}
               {/* Search Form */}
               <motion.div variants={itemVariants} className="px-2 sm:px-0">
                 <motion.div
@@ -304,7 +312,7 @@ export function Hero() {
               {/* Trust Indicators */}
               <motion.div
                 variants={itemVariants}
-                className="flex flex-wrap items-center justify-center md:justify-center md:gap-16 sm:gap-6 text-xs sm:text-sm text-muted-foreground px-2 sm:px-0 pb-4 pt-6 md:pt-0"
+                className="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground px-2 sm:px-0 pb-2 pt-6 md:pt-0"
               >
                 <motion.div
                   whileHover={{ x: 5 }}
@@ -337,6 +345,106 @@ export function Hero() {
               </motion.div>
             </div>
           </div>
+
+          {/* Right Column - Visual/Image - Hidden on mobile, shown on lg */}
+          {/* <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="relative hidden lg:block"
+          >
+            <div className="relative aspect-square max-w-lg mx-auto h-[calc(100vh-80px)]">
+              <motion.div
+                animate={{
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 5, -5, 0],
+                }}
+                transition={{
+                  duration: 10,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                }}
+                className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full blur-3xl"
+              />
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="absolute inset-10 rounded-3xl flex items-center justify-center"
+              >
+                <motion.div
+                  animate={{
+                    y: [0, -10, 0],
+                  }}
+                  transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                  }}
+                  className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 backdrop-blur-sm rounded-3xl border border-primary/20"
+                >
+                  <Image
+                    src="/images/hero.jpg"
+                    alt="Hero"
+                    fill
+                    className="object-cover rounded-3xl"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
+                  />
+                </motion.div>
+              </motion.div>
+
+              <motion.div
+                variants={floatingVariants}
+                initial="initial"
+                animate="animate"
+                className="absolute -left-2 top-16 bg-card border rounded-lg shadow-lg"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2"
+                >
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                    <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-[10px] sm:text-sm text-muted-foreground">
+                      Active Vacancies
+                    </span>
+                    <span className="text-lg sm:text-2xl font-bold text-center">
+                      2,450+
+                    </span>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              <motion.div
+                variants={floatingVariants2}
+                initial="initial"
+                animate="animate"
+                className="absolute -right-6 sm:-right-10 bottom-16 sm:bottom-20 bg-card border rounded-lg shadow-lg"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2"
+                >
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                    <PlaneTakeoff className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-[10px] sm:text-sm text-muted-foreground">
+                      Overseas Jobs
+                    </span>
+                    <span className="text-lg sm:text-2xl font-bold text-center">
+                      840+
+                    </span>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
+          </motion.div> */}
         </motion.div>
       </div>
     </section>

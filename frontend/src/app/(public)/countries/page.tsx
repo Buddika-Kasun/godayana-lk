@@ -178,20 +178,39 @@ export default function GatewayPage() {
   return (
     <div className="bg-background min-h-screen flex flex-col">
       {/* Header */}
-      
       <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-blue-400 via-blue-700 to-blue-900 rounded-b-lg text-center"
+        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90 ">
-          <span className="font-fm-gamunu text-[40px] md:text-5xl">ගොඩයන </span>
-          <span className="text-background/90"> Countries</span>
-        </h1>
-        <p className="text-background/80 relative">
-          Explore global destinations and find the best fit for your future.
-        </p>
+        {/* Background Image */}
+        <div className="">
+          <Image
+            src="/images/bg_short.PNG"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+            onError={() => console.log("Image failed to load")}
+          />
+          {/* Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white/80 dark:text-primary/80">
+            <span className="font-fm-gamunu text-[40px] md:text-5xl">
+              ගොඩයන{" "}
+            </span>
+            <span className="text-secondary/90">Countries</span>
+          </h1>
+          <p className="text-white/70">
+            Explore global destinations and find the best fit for your future.
+          </p>
+        </div>
       </motion.div>
 
       {/* Main Content */}
@@ -201,7 +220,7 @@ export default function GatewayPage() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4"
         >
           {currentCountries.map((country) => (
             <motion.div
