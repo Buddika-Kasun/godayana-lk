@@ -14,7 +14,7 @@ export default function Layout({
         <Header />
         <main
           //className="min-h-screen w-full overflow-x-hidden px-0"
-          className="flex-1 w-full overflow-x-hidden -top-20 relative"
+          className="flex-1 w-full -top-20 relative"
         >
           {children}
         </main>
