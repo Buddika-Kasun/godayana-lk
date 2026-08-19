@@ -52,7 +52,9 @@ export function Trust() {
             {/* Title */}
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-12">
               Why Sri Lankans Trust{" "}
-              <span className="text-primary">Godayana.lk</span>
+              <span className="text-primary">Godayana
+                </span>
+                <span className="text-secondary">.lk</span>
             </h2>
 
             {/* Trust Points */}

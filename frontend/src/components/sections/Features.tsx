@@ -169,7 +169,7 @@ function FeatureCard({
         {/* View More - Only Visible on Hover (Desktop) or Always on Mobile */}
         <div
           className={`
-          absolute inset-0 z-20 flex items-end lg:items-center justify-center
+          absolute inset-0 z-20 flex items-center justify-center
           transition-all duration-300
           ${
             isMobile
@@ -178,11 +178,14 @@ function FeatureCard({
           }
         `}
         >
-          <div className="flex-row items-center transform transition-transform duration-300 group-hover:scale-110 flex p-2 gap-2">
-            <span className="text-white text-lg font-semibold">
-              Visit
-            </span>
+          <div className="flex-row items-center transform transition-transform duration-300 group-hover:scale-110 hidden lg:flex p-2 gap-2">
+            <span className="text-white text-lg font-semibold">Visit</span>
             <ArrowRight className="w-5 md:h-5 md:w-5 font-bold text-white" />
+          </div>
+        </div>
+        <div className="h-full md:hidden inset-0 relative">
+          <div className="absolute top-4 right-4 bg-primary/80 rounded-full p-2">
+            <ArrowRight className="w-6 h-6 font-bold text-white" />
           </div>
         </div>
       </div>
