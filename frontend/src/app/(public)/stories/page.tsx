@@ -272,15 +272,35 @@ export default function StoriesPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-blue-400 via-blue-700 to-blue-900 rounded-b-lg text-center"
+        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90 ">
-          <span className="font-fm-gamunu text-[40px] md:text-5xl">ගොඩයන </span>
-          <span className="text-background/90"> Stories</span>
-        </h1>
-        <p className="text-background/80 relative">
-          Real experiences from job seekers who found their dream careers.
-        </p>
+        {/* Background Image */}
+        <div className="">
+          <Image
+            src="/images/bg_short.PNG"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+            onError={() => console.log("Image failed to load")}
+          />
+          {/* Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white/80 dark:text-primary/80">
+            <span className="font-fm-gamunu text-[40px] md:text-5xl">
+              ගොඩයන{" "}
+            </span>
+            <span className="text-secondary/90">Stories</span>
+          </h1>
+          <p className="text-white/70">
+            Real experiences from job seekers who found their dream careers.
+          </p>
+        </div>
       </motion.div>
 
       {/* Stories Grid */}

@@ -52,6 +52,7 @@ import {
   jobCategories,
   locations,
 } from "@/types/job";
+import Image from "next/image";
 
 // Animation Variants
 const fadeInUp: Variants = {
@@ -333,15 +334,35 @@ export default function JobsPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 px-4 sm:px-6 lg:px-8 border-b relative bg-linear-to-b from-blue-400 via-blue-700 to-blue-900 rounded-b-lg text-center"
+        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 relative text-background/90 ">
-          <span className="font-fm-gamunu text-[40px] md:text-5xl">ගොඩයන </span>
-          Jobs
-        </h1>
-        <p className="text-background/80 relative">
-          Find your dream career locally or globally.
-        </p>
+        {/* Background Image */}
+        <div className="">
+          <Image
+            src="/images/bg_short.PNG"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+            onError={() => console.log("Image failed to load")}
+          />
+          {/* Overlay for better text readability */}
+          <div className="absolute inset-0 bg-linear-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-white/80 dark:text-primary/80">
+            <span className="font-fm-gamunu text-[40px] md:text-5xl">
+              ගොඩයන{" "}
+            </span>
+            <span className="text-secondary/90">Jobs</span>
+          </h1>
+          <p className="text-white/70">
+            Find your dream career locally or globally.
+          </p>
+        </div>
       </motion.div>
 
       {/* Mobile Filter Button - keep as is */}
@@ -1269,12 +1290,12 @@ export default function JobsPage() {
                                     <Building2 className="h-8 w-8 text-primary" />
                                   )}
                                 </motion.div>
-                                  {/* Status badge */}
-                                  {visited && (
-                                    <div className="absolute top-0 left-0 rounded-br-full px-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]">
-                                      {flag}
-                                    </div>
-                                  )}
+                                {/* Status badge */}
+                                {visited && (
+                                  <div className="absolute top-0 left-0 rounded-br-full px-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]">
+                                    {flag}
+                                  </div>
+                                )}
                                 <div className="flex-1">
                                   <h3
                                     className={`text-xl font-bold hover:text-primary transition-colors ${visited ? "text-primary" : ""}`}

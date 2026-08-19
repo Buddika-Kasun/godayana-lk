@@ -13,7 +13,8 @@ export default function Layout({
       >
         <Header />
         <main
-        //className="min-h-screen w-full overflow-x-hidden px-0"
+          //className="min-h-screen w-full overflow-x-hidden px-0"
+          className="flex-1 w-full -top-20 relative"
         >
           {children}
         </main>

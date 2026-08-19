@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const socialLinks = [
   {
@@ -107,7 +108,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="relative from-background to-muted/30 border-t ">
+    <footer className="relative from-background to-muted/30 border-t border-primary/10">
       {/* Scroll to top button */}
       <motion.button
         initial={{ scale: 0 }}
@@ -139,6 +140,20 @@ export function Footer() {
           viewport={{ once: true, margin: "-100px" }}
           className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12"
         >
+          {/* Background Image */}
+          <div className="absolute inset-0 -z-10">
+            <Image
+              // src={isDark ? "/images/bg_dark.PNG" : "/images/bg_light.PNG"}
+              src={"/images/bg_dark.PNG"}
+              alt="Background"
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+            {/* Overlay for better text readability */}
+            <div className="absolute inset-0 bg-linear-to-b from-background to-primary/20" />
+          </div>
           {/* Brand Section */}
           <motion.div
             variants={itemVariants}
@@ -155,11 +170,11 @@ export function Footer() {
                 <span className="bg-gradient-to-r text-primary bg-clip-text">
                   Godayana
                 </span>
-                <span className="text-gray-400">.lk</span>
+                <span className="text-secondary">.lk</span>
               </motion.span>
             </Link>
 
-            <p className="text-muted-foreground leading-relaxed max-w-md mx-auto lg:mx-0">
+            <p className="text-black/60 dark:text-muted-foreground leading-relaxed max-w-md mx-auto lg:mx-0">
               Sri Lanka&apos;s leading platform for global migration, job
               opportunities, and professional growth. Empowering youth to reach
               their global potential.
@@ -180,7 +195,7 @@ export function Footer() {
                   whileHover={{ y: -1, scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   className={cn(
-                    "p-2 rounded-full bg-background text-muted-foreground transition-all duration-75 ease-in-out",
+                    "p-2 rounded-full bg-background/20 dark:bg-primary/20 text-primary/80 transition-all duration-75 ease-in-out",
                     social.color,
                   )}
                   aria-label={social.label}
@@ -204,7 +219,7 @@ export function Footer() {
                 <motion.li key={link.label} variants={itemVariants}>
                   <Link
                     href={link.href}
-                    className="text-muted-foreground hover:text-primary transition-colors inline-block"
+                    className="text-black/60 dark:text-muted-foreground hover:text-primary transition-colors inline-block"
                   >
                     <motion.span whileHover={{ x: 4 }} className="inline-block">
                       {link.label}
@@ -228,7 +243,7 @@ export function Footer() {
                 <motion.li key={link.label} variants={itemVariants}>
                   <Link
                     href={link.href}
-                    className="text-muted-foreground hover:text-primary transition-colors inline-block"
+                    className="text-black/60 dark:text-muted-foreground hover:text-primary transition-colors inline-block"
                   >
                     <motion.span whileHover={{ x: 4 }} className="inline-block">
                       {link.label}
@@ -251,7 +266,7 @@ export function Footer() {
               <ul className="space-y-3">
                 <motion.li
                   whileHover={{ x: 4 }}
-                  className="flex items-center lg:items-start justify-center lg:justify-start space-x-3 text-muted-foreground"
+                  className="flex items-center lg:items-start justify-center lg:justify-start space-x-3 text-black/60 dark:text-muted-foreground"
                 >
                   <Phone className="h-5 w-5 text-primary shrink-0" />
                   <span>
@@ -266,7 +281,7 @@ export function Footer() {
 
                 <motion.li
                   whileHover={{ x: 4 }}
-                  className="flex items-center lg:items-start justify-center lg:justify-start space-x-3 text-muted-foreground"
+                  className="flex items-center lg:items-start justify-center lg:justify-start space-x-3 text-black/60 dark:text-muted-foreground"
                 >
                   <Mail className="h-5 w-5 text-primary shrink-0" />
                   <span>
@@ -281,7 +296,7 @@ export function Footer() {
 
                 <motion.li
                   whileHover={{ x: 4 }}
-                  className="flex items-center lg:items-start justify-center lg:justify-start space-x-3 text-muted-foreground"
+                  className="flex items-center lg:items-start justify-center lg:justify-start space-x-3 text-black/60 dark:text-muted-foreground"
                 >
                   <MapPin className="h-5 w-5 text-primary shrink-0" />
                   <span className="leading-relaxed text-left">
@@ -327,34 +342,34 @@ export function Footer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.6 }}
-          className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
+          className="border-t border-blue-300/60 dark:border-blue-400/60 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
         >
-          <p className="text-sm text-muted-foreground text-center md:text-left">
+          <p className="text-sm text-white/60 text-center md:text-left">
             © {new Date().getFullYear()} Godayana.lk. All rights reserved.
           </p>
 
           <div className="flex flex-wrap justify-center space-x-4 md:space-x-6 text-sm">
             <Link
               href="/privacy"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-white/60 hover:text-primary transition-colors"
             >
               Privacy
             </Link>
             <Link
               href="/terms"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-white/60 hover:text-primary transition-colors"
             >
               Terms
             </Link>
             <Link
               href="/cookies"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-white/60 hover:text-primary transition-colors"
             >
               Cookies
             </Link>
             <Link
               href="/sitemap"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-white/60 hover:text-primary transition-colors"
             >
               Sitemap
             </Link>
