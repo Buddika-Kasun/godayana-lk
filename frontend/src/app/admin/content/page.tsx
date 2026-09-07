@@ -12,10 +12,17 @@ import { StoriesList } from "@/components/admin/content/StoriesList";
 import adminContentEndpoints, {
   PostCountsResponse,
 } from "@/lib/api/endpoints/admin/adminContentEndpoints";
+import { useSearchParams } from "next/navigation";
 
 export default function AdminContentPage() {
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get("type") as
+    | "visas"
+    | "countries"
+    | "stories"
+    | null;
   const [activeTab, setActiveTab] = useState<"visas" | "countries" | "stories">(
-    "visas",
+    initialType || "visas",
   );
   const [postCounts, setPostCounts] = useState<PostCountsResponse>({
     visaCount: 0,
@@ -142,12 +149,8 @@ export default function AdminContentPage() {
           {activeTab === "visas" && (
             <VisaList onCountChange={fetchPostCounts} />
           )}
-          {activeTab === "countries" && (
-            <CountriesList  />
-          )}
-          {activeTab === "stories" && (
-            <StoriesList  />
-          )}
+          {activeTab === "countries" && <CountriesList />}
+          {activeTab === "stories" && <StoriesList />}
         </CardContent>
       </Card>
     </div>

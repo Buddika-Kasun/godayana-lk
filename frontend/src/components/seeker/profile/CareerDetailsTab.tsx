@@ -429,8 +429,8 @@ export function CareerDetailsTab({
               htmlFor="resume"
               className="text-sm font-semibold text-primary"
             >
-              Resume/CV
-            </Label>
+              Resume/CV <span className="text-red-500">*</span>
+          </Label>
 
             {/* Show resume file if exists */}
             {resumeUrl ? (

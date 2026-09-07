@@ -368,7 +368,7 @@ export default function SeekerLayout({
                   className="pl-10 w-64 bg-gray-50 dark:bg-gray-900"
                 />
               </div> */}
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-primary cursor-pointer">
+              <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-primary cursor-pointer opacity-0" disabled>
                 <Bell size={20} />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>

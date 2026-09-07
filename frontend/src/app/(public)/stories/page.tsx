@@ -23,13 +23,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
-import contentEndpoints from "@/lib/api/endpoints/public/publicContentEndpoints";
+import publicContentEndpoints from "@/lib/api/endpoints/public/publicContentEndpoints";
 import { StoryResponse } from "@/lib/api/endpoints/admin/adminContentEndpoints";
 import { formatDate } from "@/lib/utils/dateUtils";
 
 // Animation Variants
 const fadeInUp = {
-  hidden: { opacity: 1, y: -30 },
+  hidden: { opacity: 1, y: -40 },
   visible: {
     opacity: 1,
     y: 0,
@@ -132,7 +132,7 @@ export default function StoriesPage() {
       }
 
       try {
-        const response = await contentEndpoints.story.getStories({
+        const response = await publicContentEndpoints.story.getStories({
           page: page,
           size: pageSize,
         });
@@ -187,7 +187,7 @@ export default function StoriesPage() {
       const isLiked = likedStories.includes(storyId);
 
       if (isLiked) {
-        await contentEndpoints.story.unlikeStory(storyId);
+        await publicContentEndpoints.story.unlikeStory(storyId);
         setLikedStories((prev) => prev.filter((id) => id !== storyId));
         setStories((prev) =>
           prev.map((story) =>
@@ -197,7 +197,7 @@ export default function StoriesPage() {
           ),
         );
       } else {
-        await contentEndpoints.story.likeStory(storyId);
+        await publicContentEndpoints.story.likeStory(storyId);
         setLikedStories((prev) => [...prev, storyId]);
         setStories((prev) =>
           prev.map((story) =>
@@ -272,7 +272,7 @@ export default function StoriesPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
+        className="mb-2 py-8 pb-4 pt-24 xl:pt-28 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
         {/* Background Image */}
         <div className="">
@@ -310,7 +310,7 @@ export default function StoriesPage() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4"
           >
             {renderSkeletons()}
           </motion.div>

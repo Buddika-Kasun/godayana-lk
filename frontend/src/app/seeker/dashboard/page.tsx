@@ -1,7 +1,6 @@
 // src/app/seeker/dashboard/page.tsx
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +12,6 @@ import {
   Calendar,
   Building,
   MapPin,
-  Clock,
-  Briefcase,
-  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -24,85 +20,103 @@ const stats = [
   {
     id: 1,
     label: "Applicants",
-    value: 12,
+    value: 0,
     icon: Users,
     color: "bg-blue-500/10 text-blue-500",
   },
   {
     id: 2,
     label: "Saved Jobs",
-    value: 8,
+    value: 0,
     icon: Bookmark,
     color: "bg-green-500/10 text-green-500",
   },
   {
     id: 3,
     label: "Incentives",
-    value: 2,
+    value: 0,
     icon: Gift,
     color: "bg-yellow-500/10 text-yellow-500",
   },
   {
     id: 4,
     label: "Profile Views",
-    value: 34,
+    value: 0,
     icon: Eye,
     color: "bg-purple-500/10 text-purple-500",
   },
 ];
 
-const recentApplications = [
-  {
-    id: 1,
-    title: "Senior Software Engineer",
-    company: "Tech Corp",
-    location: "Colombo",
-    appliedDate: "2024-04-20",
-    status: "pending",
-  },
-  {
-    id: 2,
-    title: "Digital Marketing Manager",
-    company: "Creative Agency",
-    location: "Kandy",
-    appliedDate: "2024-04-15",
-    status: "applied",
-  },
-  {
-    id: 3,
-    title: "Construction Worker",
-    company: "Build Masters",
-    location: "Dubai UAE",
-    appliedDate: "2024-04-14",
-    status: "applied",
-  },
+interface Application {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  appliedDate: string;
+  status: "pending" | "applied";
+}
+
+const recentApplications: Application[] = [
+  // {
+  //   id: 1,
+  //   title: "Senior Software Engineer",
+  //   company: "Tech Corp",
+  //   location: "Colombo",
+  //   appliedDate: "2024-04-20",
+  //   status: "pending",
+  // },
+  // {
+  //   id: 2,
+  //   title: "Digital Marketing Manager",
+  //   company: "Creative Agency",
+  //   location: "Kandy",
+  //   appliedDate: "2024-04-15",
+  //   status: "applied",
+  // },
+  // {
+  //   id: 3,
+  //   title: "Construction Worker",
+  //   company: "Build Masters",
+  //   location: "Dubai UAE",
+  //   appliedDate: "2024-04-14",
+  //   status: "applied",
+  // },
 ];
 
-const recommendedJobs = [
-  {
-    id: 1,
-    title: "Full Stack Developer",
-    company: "Innovation Hub",
-    location: "Colombo",
-    type: "Full time",
-    salary: "LKR 150,000 - 200,000",
-  },
-  {
-    id: 2,
-    title: "Project Manager",
-    company: "Tech Solutions",
-    location: "Kandy",
-    type: "Full time",
-    salary: "LKR 180,000 - 250,000",
-  },
-  {
-    id: 3,
-    title: "UI/UX Designer",
-    company: "Design Studio",
-    location: "Remote",
-    type: "Remote",
-    salary: "LKR 120,000 - 160,000",
-  },
+interface Job {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  type: "Full time" | "Part time" | "Remote";
+  salary?: string;
+}
+
+const recommendedJobs: Job[] = [
+  // {
+  //   id: 1,
+  //   title: "Full Stack Developer",
+  //   company: "Innovation Hub",
+  //   location: "Colombo",
+  //   type: "Full time",
+  //   salary: "LKR 150,000 - 200,000",
+  // },
+  // {
+  //   id: 2,
+  //   title: "Project Manager",
+  //   company: "Tech Solutions",
+  //   location: "Kandy",
+  //   type: "Full time",
+  //   salary: "LKR 180,000 - 250,000",
+  // },
+  // {
+  //   id: 3,
+  //   title: "UI/UX Designer",
+  //   company: "Design Studio",
+  //   location: "Remote",
+  //   type: "Remote",
+  //   salary: "LKR 120,000 - 160,000",
+  // },
 ];
 
 export default function SeekerDashboard() {
@@ -163,7 +177,7 @@ export default function SeekerDashboard() {
             </Link>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentApplications.map((application) => (
+            {recentApplications.length > 0 && recentApplications.map((application) => (
               <div
                 key={application.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors gap-3"
@@ -217,7 +231,7 @@ export default function SeekerDashboard() {
             </Link>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recommendedJobs.map((job) => (
+            {recommendedJobs.length > 0 && recommendedJobs.map((job) => (
               <div
                 key={job.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors gap-3"

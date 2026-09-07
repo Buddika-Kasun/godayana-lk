@@ -27,7 +27,9 @@ import { countryOptions } from "@/types/visa";
 import adminContentEndpoints, {
   VisaGuideResponse,
 } from "@/lib/api/endpoints/admin/adminContentEndpoints";
-import contentEndpoints from "@/lib/api/endpoints/public/publicContentEndpoints";
+import publicContentEndpoints from "@/lib/api/endpoints/public/publicContentEndpoints";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 // Types
 interface VisaType {
@@ -92,7 +94,7 @@ const visaTypes: VisaType[] = [
 
 // Animation Variants
 const fadeInUp = {
-  hidden: { opacity: 1, y: -30 },
+  hidden: { opacity: 1, y: -40 },
   visible: {
     opacity: 1,
     y: 0,
@@ -173,6 +175,9 @@ export default function VisaPage() {
   const [hasMore, setHasMore] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 6;
+  const { isAuthenticated, isProfileComplete, user } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -211,7 +216,7 @@ export default function VisaPage() {
       }
 
       try {
-        const response = await contentEndpoints.visa.getVisas({
+        const response = await publicContentEndpoints.visa.getVisas({
           page: page,
           size: pageSize,
         });
@@ -273,6 +278,69 @@ export default function VisaPage() {
   };
 
   const openPopup = (visa: VisaType | VisaGuideResponse) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to book a consultation");
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    if (!(user?.role == "seeker" || user?.role == "dev")) {
+      toast.error("Only seekers can book a consultation");
+      return;
+    }
+
+    if (!isProfileComplete) {
+      // Show toast with action buttons
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-3 max-w-sm">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Profile Incomplete</p>
+                <p className="text-sm text-muted-foreground">
+                  Please complete your profile before booking a consultation
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toast.dismiss(t.id)}
+                className="cursor-pointer"
+              >
+                Later
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  router.push(
+                    `/seeker/profile?redirect=${encodeURIComponent(pathname)}&type=visa`,
+                  );
+                }}
+                className="cursor-pointer bg-primary hover:bg-primary/90"
+              >
+                Go to Profile
+              </Button>
+            </div>
+          </div>
+        ),
+        {
+          duration: 10000, // 10 seconds
+          position: "top-center",
+          style: {
+            padding: "16px",
+            minWidth: "300px",
+          },
+        },
+      );
+      return;
+    }
+
     setSelectedVisa(visa);
     setIsPopupOpen(true);
     // Reset form when opening
@@ -413,7 +481,7 @@ export default function VisaPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
+        className="mb-2 py-8 pb-4 pt-24 xl:pt-28 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
         {/* Background Image */}
         <div className="">
@@ -427,7 +495,7 @@ export default function VisaPage() {
             onError={() => console.log("Image failed to load")}
           />
           {/* Overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
+          <div className="absolute inset-0 bg-linear-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
         </div>
 
         {/* Content */}

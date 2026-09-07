@@ -53,10 +53,13 @@ import {
   locations,
 } from "@/types/job";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { usePathname, useRouter } from "next/navigation";
 
 // Animation Variants
 const fadeInUp: Variants = {
-  hidden: { opacity: 1, y: -20 },
+  hidden: { opacity: 1, y: -40 },
   visible: {
     opacity: 1,
     y: 0,
@@ -99,6 +102,61 @@ const slideInRight: Variants = {
   },
 };
 
+const JobCardSkeleton = () => {
+  return (
+    <Card className="relative hover:shadow-lg transition-all duration-300 p-0">
+      <CardContent className="px-4 pt-4 pb-2">
+        <div className="flex flex-col gap-4">
+          {/* Company Logo and Title */}
+          <div className="flex gap-4">
+            <Skeleton className="w-16 h-16 rounded-lg shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+            <div className="hidden md:flex flex-col items-end gap-2">
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-6 w-24" />
+            </div>
+          </div>
+
+          {/* Job Details */}
+          <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4 shrink-0 rounded-full" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4 shrink-0 rounded-full" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4 shrink-0 rounded-full" />
+                <Skeleton className="h-4 w-14" />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col md:flex-row flex-wrap items-center justify-between gap-3 pt-2 border-t">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-9 w-9 rounded-md" />
+                <Skeleton className="h-9 w-9 rounded-md" />
+                <Skeleton className="h-9 w-28 rounded-md" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 type JobType = "all" | "local" | "overseas";
 
 export default function JobsPage() {
@@ -118,6 +176,10 @@ export default function JobsPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  const { isAuthenticated } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const { appliedJobIds } = useAppliedJobs();
 
@@ -324,6 +386,11 @@ export default function JobsPage() {
 
   // Handle save/unsave for a specific job
   const handleToggleSave = async (jobId: string, currentStatus: boolean) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to save jobs");
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
     await toggleSaveJob(jobId, currentStatus);
   };
 
@@ -334,7 +401,7 @@ export default function JobsPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
+        className="mb-2 py-8 pb-4 pt-24 xl:pt-28 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
         {/* Background Image */}
         <div className="">
@@ -1212,12 +1279,24 @@ export default function JobsPage() {
               className="flex-1 overflow-y-auto pr-2 space-y-4 px-2 py-2"
             >
               {isLoading ? (
-                <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
-                  <SubLoadingScreen
-                    message="Loading jobs..."
-                    fullScreen={false}
-                  />
-                </div>
+                // <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
+                //   <SubLoadingScreen
+                //     message="Loading jobs..."
+                //     fullScreen={false}
+                //   />
+                // </div>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <motion.div key={index} variants={itemVariants}>
+                      <JobCardSkeleton />
+                    </motion.div>
+                  ))}
+                </motion.div>
               ) : error ? (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -1273,7 +1352,7 @@ export default function JobsPage() {
                                 <motion.div
                                   whileHover={{ rotate: 5, scale: 1.1 }}
                                   transition={{ duration: 0.2 }}
-                                  className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden"
+                                  className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden"
                                 >
                                   {job.logoUrl ? (
                                     <SquareAvatar

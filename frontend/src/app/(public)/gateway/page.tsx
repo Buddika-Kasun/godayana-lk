@@ -19,6 +19,7 @@ import {
   Heart,
   Users,
   X,
+  AlertCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,10 +39,12 @@ import seekerVisaGatewayEndpoints, {
 } from "@/lib/api/endpoints/seeker/seekerVisaGatewayEndpoints";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { usePathname, useRouter } from "next/navigation";
 
 // Animation
 const fadeInUp: Variants = {
-  hidden: { opacity: 1, y: -30 },
+  hidden: { opacity: 1, y: -40 },
   visible: {
     opacity: 1,
     y: 0,
@@ -123,6 +126,9 @@ export default function GatewayPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const { isAuthenticated, isProfileComplete, user } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Form Data
   const [formData, setFormData] = useState<GatewayConsultationRequest>({
@@ -194,7 +200,6 @@ export default function GatewayPage() {
     setIsSubmitting(true);
 
     try {
-
       const response =
         await seekerVisaGatewayEndpoints.gateway.createConsultation(formData);
 
@@ -204,7 +209,7 @@ export default function GatewayPage() {
 
         setShowForm(false);
         setCurrentStep(1);
-        
+
         openPopup();
 
         // Close popup after 10 seconds on success
@@ -240,19 +245,82 @@ export default function GatewayPage() {
     }
     if (currentStep === 2) {
       return (
-        formData.budget &&
-        formData.familySponsorship &&
-        formData.educationLoan
+        formData.budget && formData.familySponsorship && formData.educationLoan
       );
     }
     if (currentStep === 3) {
       return (
-        formData.hasPassport &&
-        formData.visaRejection &&
-        formData.applyWithin
+        formData.hasPassport && formData.visaRejection && formData.applyWithin
       );
     }
     return true;
+  };
+
+  const handleApplyNowClick = () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to book a consultation");
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    if (!(user?.role == "seeker" || user?.role == "dev")) {
+      toast.error("Only seekers can book a consultation");
+      return;
+    }
+
+    if (!isProfileComplete) {
+      // Show toast with action buttons
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-3 max-w-sm">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Profile Incomplete</p>
+                <p className="text-sm text-muted-foreground">
+                  Please complete your profile before booking a consultation
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toast.dismiss(t.id)}
+                className="cursor-pointer"
+              >
+                Later
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  router.push(
+                    `/seeker/profile?redirect=${encodeURIComponent(pathname)}&type=gateway`,
+                  );
+                }}
+                className="cursor-pointer bg-primary hover:bg-primary/90"
+              >
+                Go to Profile
+              </Button>
+            </div>
+          </div>
+        ),
+        {
+          duration: 10000, // 10 seconds
+          position: "top-center",
+          style: {
+            padding: "16px",
+            minWidth: "300px",
+          },
+        },
+      );
+      return;
+    }
+
+    setShowForm(true);
   };
 
   return (
@@ -262,7 +330,7 @@ export default function GatewayPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
+        className="mb-2 py-8 pb-4 pt-24 xl:pt-28 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
         {/* Background Image */}
         <div className="">
@@ -276,7 +344,7 @@ export default function GatewayPage() {
             onError={() => console.log("Image failed to load")}
           />
           {/* Overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
+          <div className="absolute inset-0 bg-linear-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
         </div>
 
         {/* Content */}
@@ -323,9 +391,9 @@ export default function GatewayPage() {
               </p>
 
               <Button
-                onClick={() => setShowForm(true)}
+                onClick={handleApplyNowClick}
                 size="lg"
-                className="text-lg px-8 py-6 bg-primary hover:bg-primary/90"
+                className="text-lg px-8 py-6 bg-primary hover:bg-primary/90 cursor-pointer"
               >
                 APPLY NOW
                 <ArrowRight className="ml-2 h-5 w-5" />

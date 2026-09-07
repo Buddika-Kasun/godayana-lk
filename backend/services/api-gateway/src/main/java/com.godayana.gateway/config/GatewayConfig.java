@@ -104,6 +104,13 @@ public class GatewayConfig {
         config.setBackoff(Duration.ofSeconds(1), Duration.ofSeconds(10), 2, true);
     }
 
+    /**
+     * No retry for OTP - prevents duplicate emails
+     */
+    private void configureNoRetry(RetryGatewayFilterFactory.RetryConfig config) {
+        config.setRetries(0);  // No retries
+    }
+
     // ============ CIRCUIT BREAKER NAMES ============
 
     private static final String CB_AUTH = "authService";
@@ -144,7 +151,7 @@ public class GatewayConfig {
                 .route("otp-service", r -> r
                         .path("/api/v1/otp/**")
                         .filters(f -> f
-                                .retry(this::configureFastRetry)
+//                                .retry(this::configureNoRetry)
                                 .circuitBreaker(config -> {
                                     config.setName(CB_OTP);
                                     config.setFallbackUri(FALLBACK_OTP);

@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { cn } from "@/lib/utils";
 import { useMobileNav } from "@/context/MobileNavContext";
-import toast from "react-hot-toast";
 import { useAuth } from "@/lib/hooks/useAuth";
 
 // User type definition
@@ -106,8 +105,20 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const prevPathnameRef = useRef(pathname);
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { setIsMobileNavOpen } = useMobileNav();
+  const prevUserRef = useRef(user);
+
+  // Use useEffect with a different pattern - check if user changed from null to object
+  useEffect(() => {
+    // Only run if user changed from null/undefined to a value
+    if (user && !prevUserRef.current) {
+      requestAnimationFrame(() => {
+        setIsDropdownOpen(false);
+      });
+    }
+    prevUserRef.current = user;
+  }, [user]);
 
   // Update context when mobile nav opens/closes
   useEffect(() => {
@@ -166,7 +177,7 @@ export function Header() {
 
   const handleLogout = async () => {
     await logout();
-    toast.success("Logged out successfully");
+    setIsOpen(false);
     router.push("/");
   };
 
@@ -205,7 +216,7 @@ export function Header() {
   const getAvatarContent = () => {
     if (user?.avatar) {
       return (
-        <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
+        <div className="relative w-10 h-10 xl:w-16 xl:h-16 rounded-full overflow-hidden border-2 border-primary/20">
           <Image
             src={user.avatar}
             alt={user.name}
@@ -218,8 +229,8 @@ export function Header() {
 
     if (user?.name) {
       return (
-        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/20">
-          <span className="text-primary font-semibold text-lg">
+        <div className="w-10 h-10 xl:w-16 xl:h-16 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/20">
+          <span className="text-primary font-semibold text-lg xl:text-xl">
             {user.name.charAt(0).toUpperCase()}
           </span>
         </div>
@@ -227,8 +238,8 @@ export function Header() {
     }
 
     return (
-      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/20">
-        <User className="h-5 w-5 text-primary" />
+      <div className="w-10 h-10 xl:w-16 xl:h-16 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/20">
+        <User className="h-5 w-5 xl:w-8 xl:h-8 text-primary" />
       </div>
     );
   };
@@ -274,12 +285,12 @@ export function Header() {
           "fixed top-0 w-full max-w-screen overflow-visible z-50 transition-all duration-300",
           scrolled
             ? "bg-background/80 backdrop-blur-md border-b shadow-sm"
-            // : "bg-blue-400 dark:bg-background ",
-            : "bg-white/40 dark:bg-background/30 ",
+            : // : "bg-blue-400 dark:bg-background ",
+              "bg-white/40 dark:bg-background/30 ",
         )}
       >
         <nav className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="flex items-center justify-between h-16 md:h-20 xl:h-24">
             {/* Logo - Left side */}
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -290,7 +301,7 @@ export function Header() {
                 <motion.div
                   whileHover="hover"
                   initial="initial"
-                  className="text-2xl md:text-3xl font-bold inline-flex items-center"
+                  className="text-2xl md:text-3xl xl:text-5xl font-bold inline-flex items-center"
                 >
                   <motion.span
                     className="bg-primary px-2 py-0.5 rounded-sm mx-2 text-background inline-block"
@@ -311,7 +322,7 @@ export function Header() {
             </motion.div>
 
             {/* Desktop Navigation - Center */}
-            <div className="hidden md:flex items-center justify-end mr-4 flex-1 space-x-1">
+            <div className="hidden md:flex items-center justify-end mr-4 flex-1 space-x-1 xl:space-x-2">
               {navigation.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -326,24 +337,23 @@ export function Header() {
                     <motion.div
                       whileHover={{ y: -2 }}
                       className={cn(
-                        "flex items-center text-sm font-medium transition-colors  rounded-md px-3 py-1",
+                        "flex items-center text-sm font-medium transition-colors  rounded-md px-3 xl:px-4 py-1",
                         scrolled
-                          ?
-                           isActive
+                          ? isActive
                             ? "text-primary bg-primary/5"
                             : "text-muted-foreground hover:text-primary bg-primary/5"
                           : isActive
                             ? "text-blue-800 dark:text-primary bg-primary/15 dark:bg-primary/5"
-                            :                        "text-blue-900 dark:text-muted-foreground hover:text-blue-950 dark:hover:text-primary bg-primary/20 dark:bg-primary/5",
-                              // "text-foreground/70 hover:text-primary bg-primary/10",
+                            : "text-blue-900 dark:text-muted-foreground hover:text-blue-950 dark:hover:text-primary bg-primary/20 dark:bg-primary/5",
+                        // "text-foreground/70 hover:text-primary bg-primary/10",
                       )}
                     >
-                      <item.icon className="h-5 w-5 mr-2 shrink-0" />
+                      <item.icon className="h-5 w-5 xl:h-6 xl:w-6 mr-2 xl:mr-4 shrink-0" />
                       <div className="flex flex-col items-start leading-tight">
-                        <span className="text-[14px] opacity-100 font-bold -mb-1 font-fm-gamunu tracking-wider">
+                        <span className="text-[14px] xl:text-xl opacity-100 font-bold -mb-1 font-fm-gamunu tracking-wider">
                           ගොඩයන
                         </span>
-                        <span className="text-sm font-medium w-full">
+                        <span className="text-sm xl:text-lg font-medium w-full">
                           {item.name}
                         </span>
                       </div>
@@ -363,7 +373,7 @@ export function Header() {
             </div>
 
             {/* Desktop Right Section */}
-            <div className="hidden md:flex items-center justify-end space-x-3 min-w-[180px]">
+            <div className="hidden md:flex items-center justify-end space-x-3 min-w-45">
               <ThemeSwitcher />
 
               {user ? (
@@ -378,7 +388,7 @@ export function Header() {
                     {getAvatarContent()}
                     <ChevronDown
                       className={cn(
-                        "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                        "h-4 w-4 xl:w-6 xl:h-6 text-muted-foreground transition-transform duration-200",
                         isDropdownOpen && "rotate-180",
                       )}
                     />
@@ -392,24 +402,24 @@ export function Header() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-2 w-64 bg-background rounded-lg shadow-lg py-2 border z-[100] overflow-visible"
+                        className="absolute right-0 mt-2 w-64 bg-background rounded-lg shadow-lg py-2 border z-100 overflow-visible"
                         style={{ position: "absolute", top: "100%", right: 0 }}
                       >
                         <div className="px-4 py-3 border-b">
-                          <p className="text-sm font-semibold text-foreground">
+                          <p className="text-sm xl:text-lg font-semibold text-foreground">
                             {user.name}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs xl:text-base text-muted-foreground mt-1">
                             {user.email}
                           </p>
-                          <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          <span className="inline-block mt-1 text-xs xl:text-base bg-primary/10 text-primary px-2 py-0.5 rounded">
                             {getRole()}
                           </span>
                         </div>
 
                         <Link
                           href={getDashboardLink()}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-primary/20 rounded-md mx-2 mt-2 transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 text-sm xl:text-lg text-foreground hover:bg-primary/20 rounded-md mx-2 mt-2 transition-colors"
                           onClick={() => setIsDropdownOpen(false)}
                         >
                           <Building2 size={16} />
@@ -419,7 +429,7 @@ export function Header() {
                         {user.role != "admin" && (
                           <Link
                             href={getProfileLink()}
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-primary/20 rounded-md mx-2 mt-1 mb-2 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 text-sm xl:text-lg text-foreground hover:bg-primary/20 rounded-md mx-2 mt-1 mb-2 transition-colors"
                             onClick={() => setIsDropdownOpen(false)}
                           >
                             <User size={16} />
@@ -431,7 +441,7 @@ export function Header() {
 
                         <button
                           onClick={handleLogout}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-800  transition-colors w-full text-left mx-2 mt-2 rounded-md cursor-pointer"
+                          className="flex items-center gap-2 px-4 py-2 text-sm xl:text-lg text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-800  transition-colors w-full text-left mx-2 mt-2 rounded-md cursor-pointer"
                           style={{ width: "calc(100% - 1rem)" }}
                         >
                           <LogOut size={16} />

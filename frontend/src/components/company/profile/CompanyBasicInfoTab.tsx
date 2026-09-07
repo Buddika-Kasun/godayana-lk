@@ -18,8 +18,9 @@ import { Camera } from "lucide-react";
 import { companyProfileAPI, CompanyProfileData } from "@/lib/api/endpoints/company/companyProfileEndpoints";
 import toast from "react-hot-toast";
 import { useAppDispatch } from "@/lib/redux/store";
-import { User } from "@/lib/api/endpoints/public/authEndpoints";
+// import { User } from "@/lib/api/endpoints/public/authEndpoints";
 import { setUser } from "@/lib/redux/slices/authSlice";
+import { User } from "@/lib/redux/types";
 
 interface CompanyBasicInfoTabProps {
   companyData: CompanyProfileData | null;

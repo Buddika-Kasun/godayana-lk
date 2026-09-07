@@ -10,8 +10,16 @@ import { PreferencesTab } from "@/components/seeker/profile/PreferencesTab";
 import toast from "react-hot-toast";
 import { seekerProfileAPI, SeekerProfileData } from "@/lib/api/endpoints/seeker/seekerProfileEndpoints";
 import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function SeekerProfile() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
+  const type = searchParams.get("type") || "job";
+
   const [activeTab, setActiveTab] = useState("basic");
   const [user, setUser] = useState<SeekerProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,6 +66,31 @@ export default function SeekerProfile() {
     }
   };
 
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      job: "Job",
+      course: "Course",
+      visa: "Visa",
+      gateway: "Gateway",
+    };
+    return labels[type] || "Back";
+  };
+
+  const handleBack = () => {
+    if (redirect) {
+      router.push(redirect);
+    } else {
+      router.back();
+    }
+  };
+
+  const handleBackWithRefresh = () => {
+    if (redirect) {
+      const url = new URL(redirect, window.location.origin);
+      window.location.href = url.toString();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="relative">
@@ -71,65 +104,76 @@ export default function SeekerProfile() {
   return (
     <div className="relative">
       <Card className="bg-primary/4 min-h-[calc(100vh-150px)]">
-          <CardContent className="">
-            {/* Header */}
-            <div className="mb-6">
-              <p className="text-sm text-muted-foreground mt-1">
-                Manage your personal information and preferences
-              </p>
-            </div>
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
+        <CardContent className="">
+          {redirect && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBackWithRefresh}
+              className="gap-2 cursor-pointer shrink-0 mb-4"
             >
-              <div className="bg-primary/10 p-1 rounded-lg w-fit">
-                <TabsList className="grid grid-cols-3 p-0 bg-transparent">
-                  <TabsTrigger
-                    value="basic"
-                    className="data-[state=active]:bg-primary dark:data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:text-background cursor-pointer text-sm font-semibold py-0 px-3 lg:px-4"
-                  >
-                    Basic
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="career"
-                    className="data-[state=active]:bg-primary dark:data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:text-background cursor-pointer text-sm font-semibold py-0 px-3 lg:px-4"
-                  >
-                    Career
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="preferences"
-                    className="data-[state=active]:bg-primary dark:data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:text-background cursor-pointer text-sm font-semibold py-0 px-3 lg:px-4"
-                  >
-                    Preferences
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+              <ArrowLeft className="h-4 w-4" />
+              Back to {getTypeLabel(type)}
+            </Button>
+          )}
+          {/* Header */}
+          <div className="mb-6">
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your personal information and preferences
+            </p>
+          </div>
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <div className="bg-primary/10 p-1 rounded-lg w-fit">
+              <TabsList className="grid grid-cols-3 p-0 bg-transparent">
+                <TabsTrigger
+                  value="basic"
+                  className="data-[state=active]:bg-primary dark:data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:text-background cursor-pointer text-sm font-semibold py-0 px-3 lg:px-4"
+                >
+                  Basic
+                </TabsTrigger>
+                <TabsTrigger
+                  value="career"
+                  className="data-[state=active]:bg-primary dark:data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:text-background cursor-pointer text-sm font-semibold py-0 px-3 lg:px-4"
+                >
+                  Career
+                </TabsTrigger>
+                <TabsTrigger
+                  value="preferences"
+                  className="data-[state=active]:bg-primary dark:data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:text-background cursor-pointer text-sm font-semibold py-0 px-3 lg:px-4"
+                >
+                  Preferences
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-              <div className="border-b mb-2"></div>
+            <div className="border-b mb-2"></div>
 
-              <TabsContent value="basic">
-                <BasicInfoTab
-                  userData={user}
-                  onSaveComplete={handleSaveComplete}
-                />
-              </TabsContent>
-
-              <TabsContent value="career">
-                <CareerDetailsTab 
-                userData={user} 
+            <TabsContent value="basic">
+              <BasicInfoTab
+                userData={user}
                 onSaveComplete={handleSaveComplete}
-                />
-              </TabsContent>
+              />
+            </TabsContent>
 
-              <TabsContent value="preferences">
-                <PreferencesTab 
-                userData={user} 
+            <TabsContent value="career">
+              <CareerDetailsTab
+                userData={user}
                 onSaveComplete={handleSaveComplete}
-                />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
+              />
+            </TabsContent>
+
+            <TabsContent value="preferences">
+              <PreferencesTab
+                userData={user}
+                onSaveComplete={handleSaveComplete}
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
       </Card>
     </div>
   );

@@ -38,6 +38,7 @@ import courseEndpoints, {
 import { formatDate } from "@/lib/utils/dateUtils";
 import { formatPrice } from "@/lib/utils/priceUtils";
 import { formatLocation } from "@/lib/utils/locationUtils";
+import { useSearchParams } from "next/navigation";
 
 // Status mapping: Frontend filter -> Backend status
 const STATUS_MAP = {
@@ -89,9 +90,17 @@ const ENROLL_TYPE_DISPLAY: Record<string, { label: string; color: string }> = {
 
 export default function CompanyCourses() {
   const [currentPage, setCurrentPage] = useState(1);
+  const searchParams = useSearchParams();
+  const initialStatus = searchParams.get("status") as
+    | "all"
+    | "active"
+    | "closed"
+    | "draft"
+    | "pending"
+    | null;
   const [activeFilter, setActiveFilter] = useState<
     "all" | "active" | "closed" | "draft" | "pending"
-  >("pending");
+  >(initialStatus || "pending");
   const [courses, setCourses] = useState<CompanyCourseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [closeCourseId, setCloseCourseId] = useState<string | null>(null);
@@ -382,9 +391,8 @@ export default function CompanyCourses() {
                               View
                             </Button>
                           </Link>
-                          {course.status == "CLOSED" 
-                          || course.status == "REJECTED" 
-                          ? (
+                          {course.status == "CLOSED" ||
+                          course.status == "REJECTED" ? (
                             <Link
                               href={`/company/courses/edit/${course.id}`}
                               className="flex-2 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0"
@@ -424,8 +432,7 @@ export default function CompanyCourses() {
                                 Close
                               </Button>
                             </>
-                          ) 
-                        }
+                          )}
                         </div>
 
                         {/* Row 2: View Leads Button */}

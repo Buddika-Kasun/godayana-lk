@@ -10,6 +10,9 @@ import {
   Award,
   Calculator,
   ArrowRight,
+  CheckCircle,
+  Users,
+  Globe,
 } from "lucide-react";
 
 const trustPoints = [
@@ -52,9 +55,8 @@ export function Trust() {
             {/* Title */}
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-12">
               Why Sri Lankans Trust{" "}
-              <span className="text-primary">Godayana
-                </span>
-                <span className="text-secondary">.lk</span>
+              <span className="text-primary">Godayana</span>
+              <span className="text-secondary">.lk</span>
             </h2>
 
             {/* Trust Points */}
@@ -141,22 +143,18 @@ export function Trust() {
             </div>
 
             {/* Cost Calculator Card - Hidden on mobile, shown on desktop */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.4, duration: 0.6 }}
               className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20 hidden md:block"
             >
-              {/* Glassmorphism Card */}
               <div className="relative">
-                {/* Background with blur */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/60 to-white/40 dark:from-gray-900/80 dark:to-gray-900/60 rounded-2xl backdrop-blur-xs" />
 
-                {/* Border overlay */}
                 <div className="absolute inset-0 rounded-2xl border border-white/60 dark:border-gray-700/30 shadow-xl" />
 
-                {/* Content */}
                 <div className="relative p-6">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
@@ -177,6 +175,52 @@ export function Trust() {
                         <span>Try Now</span>
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div> */}
+
+            {/* Trust Badge - Hidden on mobile, shown on desktop */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20 hidden md:block"
+            >
+              {/* Glassmorphism Card */}
+              <div className="relative">
+                {/* Background with blur */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/60 to-white/40 dark:from-gray-900/80 dark:to-gray-900/60 rounded-2xl backdrop-blur-xs" />
+
+                {/* Border overlay */}
+                <div className="absolute inset-0 rounded-2xl border border-white/60 dark:border-gray-700/30 shadow-xl" />
+
+                {/* Content */}
+                <div className="relative p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
+                      <Globe className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2 text-foreground">
+                        Start Your Global Journey Today
+                      </h3>
+                      {/* <p className="text-muted-foreground text-sm mb-4">
+                        Explore opportunities in 15+ countries with our
+                        comprehensive guides and expert support.
+                      </p> */}
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
+                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                          <CheckCircle className="h-4 w-4" />
+                          Trusted by 10,000+ Sri Lankans
+                        </span>
+                        <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                          <Users className="h-4 w-4" />
+                          500+ Success Stories
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

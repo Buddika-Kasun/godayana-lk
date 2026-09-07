@@ -87,17 +87,17 @@ export function ThemeSwitcher() {
       <Button
         variant="ghost"
         size="icon"
-        className="rounded-full w-9 h-9 opacity-0"
+        className="rounded-full w-9 h-9 xl:w-12 xl:h-12 opacity-0"
       >
-        <Sun className="h-4 w-4" />
+        <Sun className="h-4 w-4 xl:h-7! xl:w-7!" />
       </Button>
     );
   }
 
   const getIcon = () => {
-    if (theme === "light") return <Sun className="h-4 w-4" />;
-    if (theme === "dark") return <Moon className="h-4 w-4" />;
-    return <Laptop className="h-4 w-4" />;
+    if (theme === "light") return <Sun className="h-4 w-4 xl:h-7! xl:w-7!" />;
+    if (theme === "dark") return <Moon className="h-4 w-4 xl:h-7! xl:w-7!" />;
+    return <Laptop className="h-4 w-4 xl:h-7! xl:w-7!" />;
   };
 
   return (
@@ -106,7 +106,7 @@ export function ThemeSwitcher() {
         <Button
           variant="ghost"
           size="icon"
-          className={`rounded-full w-9 h-9 relative flex-shrink-0 text-blue-800 dark:text-muted-foreground hover:text-blue-900 dark:hover:text-primary cursor-pointer hover:bg-primary/10 ${scrolled ? "text-muted-foreground hover:text-primary" : "text-blue-900 dark:text-muted-foreground hover:text-blue-950 dark:hover:text-primary"}`}
+          className={`rounded-full w-9 h-9 xl:h-14 xl:w-14 relative shrink-0 text-blue-800 dark:text-muted-foreground hover:text-blue-900 dark:hover:text-primary cursor-pointer hover:bg-primary/10 overflow-hidden ${scrolled ? "text-muted-foreground hover:text-primary" : "text-blue-900 dark:text-muted-foreground hover:text-blue-950 dark:hover:text-primary"}`}
           aria-label="Toggle theme"
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -129,8 +129,8 @@ export function ThemeSwitcher() {
           onClick={() => handleThemeChange("light")}
           className="cursor-pointer"
         >
-          <Sun className="mr-2 h-4 w-4" />
-          <span>Light</span>
+          <Sun className="mr-2 h-4 w-4 xl:h-6! xl:w-6!" />
+          <span className="xl:text-lg">Light</span>
           {theme === "light" && (
             <motion.div
               layoutId="theme-indicator"
@@ -143,8 +143,8 @@ export function ThemeSwitcher() {
           onClick={() => handleThemeChange("dark")}
           className="cursor-pointer"
         >
-          <Moon className="mr-2 h-4 w-4" />
-          <span>Dark</span>
+          <Moon className="mr-2 h-4 w-4 xl:h-6! xl:w-6!" />
+          <span className="xl:text-lg">Dark</span>
           {theme === "dark" && (
             <motion.div
               layoutId="theme-indicator"
@@ -157,8 +157,8 @@ export function ThemeSwitcher() {
           onClick={() => handleThemeChange("system")}
           className="cursor-pointer"
         >
-          <Laptop className="mr-2 h-4 w-4" />
-          <span>System</span>
+          <Laptop className="mr-2 h-4 w-4 xl:h-6! xl:w-6!" />
+          <span className="xl:text-lg">System</span>
           {theme === "system" && (
             <motion.div
               layoutId="theme-indicator"

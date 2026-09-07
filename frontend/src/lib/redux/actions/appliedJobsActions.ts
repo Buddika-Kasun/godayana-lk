@@ -139,6 +139,6 @@ export const clearAppliedJobs = createAsyncThunk(
   "appliedJobs/clearAppliedJobs",
   async (_, { dispatch }) => {
     dispatch(setAppliedJobIds([]));
-    toast.success("Applied jobs cleared");
+    // toast.success("Applied jobs cleared");
   },
 );

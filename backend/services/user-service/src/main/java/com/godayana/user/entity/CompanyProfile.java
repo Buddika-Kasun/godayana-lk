@@ -80,6 +80,9 @@ public class CompanyProfile {
     @Column(name = "is_verified")
     private Boolean isVerified = false;
 
+    @Column(name = "is_profile_Complete")
+    private Boolean isProfileComplete = false;
+
     @Column(name = "cv_delivery_terms")
     private Boolean cvDeliveryTerms;
 

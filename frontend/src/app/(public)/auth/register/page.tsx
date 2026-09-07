@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Eye,
@@ -15,7 +15,10 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { authAPI, RegisterRequest } from "@/lib/api/endpoints/public/authEndpoints";
+import {
+  authAPI,
+  RegisterRequest,
+} from "@/lib/api/endpoints/public/authEndpoints";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
@@ -29,6 +32,148 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [registrationData, setRegistrationData] = useState<RegisterRequest>({});
+
+  // OTP Timer states
+  const [otpTimer, setOtpTimer] = useState(0); // 30 seconds countdown
+  const [resendCooldown, setResendCooldown] = useState(0); // 1 minutes cooldown
+  const [isResendDisabled, setIsResendDisabled] = useState(true);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const cooldownRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Start OTP timer when modal opens
+  useEffect(() => {
+    if (showOtpModal) {
+      startOtpTimer();
+    } else {
+      // Reset timers when modal closes
+      setOtpTimer(0);
+      setResendCooldown(0);
+      setIsResendDisabled(true);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      if (cooldownRef.current) {
+        clearInterval(cooldownRef.current);
+        cooldownRef.current = null;
+      }
+    }
+  }, [showOtpModal]);
+
+  const startOtpTimer = () => {
+    // Reset timer
+    setOtpTimer(30);
+    setIsResendDisabled(true);
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    timerRef.current = setInterval(() => {
+      setOtpTimer((prev) => {
+        if (prev <= 1) {
+          // Timer expired - enable resend
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          setIsResendDisabled(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const startCooldown = () => {
+    // Start 1 minute cooldown after resend
+    setResendCooldown(60); // 1 minutes
+    setIsResendDisabled(true);
+
+    if (cooldownRef.current) {
+      clearInterval(cooldownRef.current);
+      cooldownRef.current = null;
+    }
+
+    cooldownRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownRef.current) {
+            clearInterval(cooldownRef.current);
+            cooldownRef.current = null;
+          }
+          // Enable resend after cooldown
+          setIsResendDisabled(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Update resendOtp function to start cooldown
+  const resendOtp = async () => {
+    if (isResendDisabled || isLoading) return;
+
+    setIsLoading(true);
+    const loadingToast = toast.loading("Sending verification code...");
+
+    try {
+      // Clean phone number to +94 format
+      let cleanPhone = formData.phone;
+      if (cleanPhone.startsWith("0")) {
+        cleanPhone = "+94" + cleanPhone.substring(1);
+      }
+
+      // Prepare registration data
+      const userData: RegisterRequest = {
+        role: role,
+        ...(role === "seeker"
+          ? {
+              fullName: formData.fullName,
+            }
+          : {
+              companyName: formData.companyName,
+              contactPerson: formData.contactPerson,
+              designation: formData.designation,
+              email: formData.email,
+            }),
+        phone: cleanPhone,
+        password: formData.password,
+      };
+
+      setRegistrationData(userData);
+
+      // Send OTP
+      await sendOtp(userData);
+
+      toast.dismiss(loadingToast);
+      toast.success(`Verification code sent successfully`);
+
+      // Start 5 minute cooldown
+      startCooldown();
+      // Reset the 1 minute timer
+      setOtpTimer(60);
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to send verification code";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add this useEffect
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -303,7 +448,7 @@ export default function RegisterPage() {
 
         toast.dismiss(loadingToast);
         toast.success(`Verification code sent to ${contactInfo}`, {
-          duration: 2000,
+          duration: 5000,
         });
         setShowOtpModal(true);
       } catch (error) {
@@ -385,7 +530,9 @@ export default function RegisterPage() {
       // Redirect after toast
       setTimeout(() => {
         toast.dismiss(successToastId);
-        router.push("/auth/login");
+        // router.push("/auth/login");
+        const url = new URL("/auth/login", window.location.origin);
+        window.location.href = url.toString();
       }, 2000);
     } catch (error) {
       toast.dismiss(verifyingToast);
@@ -400,58 +547,58 @@ export default function RegisterPage() {
     }
   };
 
-  const resendOtp = async () => {
-    setIsLoading(true);
-    const loadingToast = toast.loading("Sending verification code...");
+  // const resendOtp = async () => {
+  //   setIsLoading(true);
+  //   const loadingToast = toast.loading("Sending verification code...");
 
-    try {
-      // Clean phone number to +94 format
-      let cleanPhone = formData.phone;
-      if (cleanPhone.startsWith("0")) {
-        cleanPhone = "+94" + cleanPhone.substring(1);
-      }
+  //   try {
+  //     // Clean phone number to +94 format
+  //     let cleanPhone = formData.phone;
+  //     if (cleanPhone.startsWith("0")) {
+  //       cleanPhone = "+94" + cleanPhone.substring(1);
+  //     }
 
-      // Prepare registration data
-      const userData: RegisterRequest = {
-        role: role,
-        ...(role === "seeker"
-          ? {
-              fullName: formData.fullName,
-              // email: formData.email || undefined,
-            }
-          : {
-              companyName: formData.companyName,
-              contactPerson: formData.contactPerson,
-              designation: formData.designation,
-              email: formData.email,
-            }),
-        phone: cleanPhone,
-        password: formData.password,
-      };
+  //     // Prepare registration data
+  //     const userData: RegisterRequest = {
+  //       role: role,
+  //       ...(role === "seeker"
+  //         ? {
+  //             fullName: formData.fullName,
+  //             // email: formData.email || undefined,
+  //           }
+  //         : {
+  //             companyName: formData.companyName,
+  //             contactPerson: formData.contactPerson,
+  //             designation: formData.designation,
+  //             email: formData.email,
+  //           }),
+  //       phone: cleanPhone,
+  //       password: formData.password,
+  //     };
 
-      setRegistrationData(userData);
+  //     setRegistrationData(userData);
 
-      // Send OTP based on role
-      const contactInfo = role === "seeker" ? cleanPhone : formData.email;
+  //     // Send OTP based on role
+  //     const contactInfo = role === "seeker" ? cleanPhone : formData.email;
 
-      await sendOtp(userData);
+  //     await sendOtp(userData);
 
-      toast.dismiss(loadingToast);
-      toast.success(`Verification code sent to ${contactInfo}`);
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to send verification code";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     toast.dismiss(loadingToast);
+  //     toast.success(`Verification code sent to ${contactInfo}`);
+  //   } catch (error) {
+  //     toast.dismiss(loadingToast);
+  //     const errorMessage =
+  //       error instanceof Error
+  //         ? error.message
+  //         : "Failed to send verification code";
+  //     toast.error(errorMessage);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   return (
-    <div className="pt-10 pb-20 bg-primary/10 flex flex-col items-center justify-center p-4 min-h-screen">
+    <div className="pt-22 pb-20 bg-primary/10 flex flex-col items-center justify-center p-4 min-h-screen">
       {/* Registration Card */}
       <div className="w-full max-w-md bg-background rounded-2xl shadow-2xl p-8">
         <div className="text-center mb-6">
@@ -842,18 +989,22 @@ export default function RegisterPage() {
         <div className="mt-6 text-center border-t border-primary pt-6">
           <p className="text-gray-400 text-sm">
             Already have an account?{" "}
-            <Link
-              href="/auth/login"
-              className="text-primary font-bold hover:underline"
+            <button
+              onClick={() => {
+                // router.push("/auth/login");
+                const url = new URL("/auth/login", window.location.origin);
+                window.location.href = url.toString();
+              }}
+              className="text-primary font-bold hover:underline cursor-pointer"
             >
               Login here
-            </Link>
+            </button>
           </p>
         </div>
       </div>
 
       {/* OTP Modal */}
-      {showOtpModal && (
+      {/* {showOtpModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-in zoom-in-95 duration-200">
             <button
@@ -916,6 +1067,115 @@ export default function RegisterPage() {
               >
                 Resend OTP
               </button>
+            </div>
+          </div>
+        </div>
+      )} */}
+      {/* OTP Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => {
+                setShowOtpModal(false);
+                setOtp(["", "", "", ""]);
+                setErrors({});
+                // Reset timers
+                setOtpTimer(0);
+                setResendCooldown(0);
+                setIsResendDisabled(true);
+                if (timerRef.current) {
+                  clearInterval(timerRef.current);
+                  timerRef.current = null;
+                }
+                if (cooldownRef.current) {
+                  clearInterval(cooldownRef.current);
+                  cooldownRef.current = null;
+                }
+              }}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-primary">Verify OTP</h3>
+              <p className="text-sm text-gray-500 mt-2">
+                We&apos;ve sent a verification code to
+                <br />
+                <span className="font-semibold text-primary">
+                  {role === "seeker" ? formData.phone : formData.email}
+                </span>
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-3 mb-6">
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  id={`otp-${index}`}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                  className="w-14 h-14 text-center text-2xl font-bold bg-primary/20 border border-primary/50 rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-primary"
+                  autoFocus={index === 0}
+                />
+              ))}
+            </div>
+
+            {errors.otp && (
+              <p className="text-red-500 text-sm text-center mb-4">
+                {errors.otp}
+              </p>
+            )}
+
+            <button
+              onClick={handleVerifyOtp}
+              disabled={isLoading}
+              className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 cursor-pointer transform active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Verifying..." : "Verify & Register"}
+            </button>
+
+            {/* Resend OTP with Timer */}
+            <div className="text-center mt-4">
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={resendOtp}
+                  disabled={isResendDisabled || isLoading}
+                  className={`text-sm transition-colors ${
+                    isResendDisabled || isLoading
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-primary hover:underline cursor-pointer"
+                  }`}
+                >
+                  Resend OTP
+                </button>
+                {isResendDisabled && (
+                  <>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-sm text-gray-500">
+                      {otpTimer > 0 ? (
+                        <>Wait {otpTimer}s</>
+                      ) : resendCooldown > 0 ? (
+                        <>
+                          Cooldown: {Math.floor(resendCooldown / 60)}:
+                          {String(resendCooldown % 60).padStart(2, "0")}
+                        </>
+                      ) : null}
+                    </span>
+                  </>
+                )}
+              </div>
+              {resendCooldown > 0 && otpTimer === 0 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Please wait {Math.floor(resendCooldown / 60)}:
+                  {String(resendCooldown % 60).padStart(2, "0")} before trying
+                  again
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -107,7 +107,7 @@ export function CompanyContactDetailsTab({
               htmlFor="companyEmail"
               className="text-sm font-semibold text-primary"
             >
-              Company Email 
+              Company Email
               {/* <span className="text-red-500">*</span> */}
             </Label>
             <div className="relative mt-1.5">
@@ -134,7 +134,7 @@ export function CompanyContactDetailsTab({
               htmlFor="hotlineNumber"
               className="text-sm font-semibold text-primary"
             >
-              Hotline Number
+              Hotline Number <span className="text-red-500">*</span>
             </Label>
             <div className="relative mt-1.5">
               <Phone
@@ -147,6 +147,7 @@ export function CompanyContactDetailsTab({
                 onChange={(e) =>
                   setFormData({ ...formData, hotlineNumber: e.target.value })
                 }
+                required
                 placeholder="+94 00 XXXX XXXX"
                 className="pl-10"
               />

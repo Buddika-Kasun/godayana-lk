@@ -31,6 +31,7 @@ export interface SeekerProfileData {
   preferredJobCategories?: string[]; // or array of category objects
   shareCv?: boolean;
   isActive?: boolean;
+  isProfileComplete?: boolean;
   createdAt?: string; // or Date
   updatedAt?: string; // or Date
 }

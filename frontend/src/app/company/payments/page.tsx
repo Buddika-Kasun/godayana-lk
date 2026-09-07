@@ -11,6 +11,7 @@ import {
   CheckCircle,
   FileText,
   Building2,
+  Construction,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -145,7 +146,23 @@ export default function CompanyPayments() {
   };
 
   return (
-    <div className="space-y-6">
+    // <div className="space-y-6">
+    <div className="relative">
+      {/* Coming Soon Overlay */}
+      <div className="absolute inset-0 backdrop-blur-xs z-10 rounded-xl flex flex-col items-center pt-20 ">
+        <div className="text-center max-w-md px-6 py-8 rounded-lg shadow-lg bg-background/80  border">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Construction className="h-10 w-10 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
+          <p className="text-muted-foreground mb-4">
+            We&apos;re working hard to bring you a seamless payment experience.
+          </p>
+          <Badge variant="outline" className="px-3 py-1 text-sm">
+            Under Development
+          </Badge>
+        </div>
+      </div>
       <Card className="bg-primary/4 min-h-[calc(100vh-7rem)] flex flex-col">
         <CardContent className="flex-1 flex flex-col">
           {/* Header */}

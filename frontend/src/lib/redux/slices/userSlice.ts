@@ -1,5 +1,6 @@
 // src/lib/redux/slices/userSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { clearAppliedCourseIds } from "./appliedCoursesSlice";
 
 interface UserProfile {
   id: string;
@@ -49,6 +50,13 @@ const userSlice = createSlice({
       state.savedJobs = [];
       state.isLoading = false;
     },
+    clearJobData: (state) => {
+      state.applications = [];
+      state.savedJobs = [];
+    },
+    clearApplicationData: (state) => {
+      state.applications = [];
+    }
   },
 });
 
@@ -58,5 +66,7 @@ export const {
   setSavedJobs,
   setLoading,
   clearUserData,
+  clearJobData,
+  clearApplicationData,
 } = userSlice.actions;
 export default userSlice.reducer;

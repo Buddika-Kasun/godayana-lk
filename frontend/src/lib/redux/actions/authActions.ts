@@ -1,11 +1,15 @@
 // src/lib/redux/actions/authActions.ts
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { setUser, setLoading, setError, logout } from "../slices/authSlice";
-import { clearUserData } from "../slices/userSlice";
+import { clearApplicationData, clearJobData, clearUserData } from "../slices/userSlice";
 import { authAPI } from "@/lib/api/endpoints/public/authEndpoints";
 import { axiosClient } from "@/lib/api/axios";
 import { LoginCredentials, User } from "../types";
 import { AxiosError } from "axios";
+import { clearAppliedJobs } from "./appliedJobsActions";
+import { clearAppliedCourses } from "./appliedCoursesActions";
+import { clearSavedJobs } from "../slices/savedJobsSlice";
+import { clearSavedCourses } from "../slices/savedCoursesSlice";
 
 // Helper to extract error message properly
 const getErrorMessage = (error: unknown): string => {
@@ -88,14 +92,18 @@ export const loginUser = createAsyncThunk(
           avatar: user.avatar,
           status: user.status,
           isActive: user.isActive,
+          isProfileComplete: user.isProfileComplete,
         };
 
-        // console.log("User: ", mappedUser);
+        console.log("mapped User: ", mappedUser);
+        console.log("User: ", user);
 
         axiosClient.setTokens(accessToken, refreshToken);
         dispatch(setUser(mappedUser));
+        // Fetch user profile after login - wait for it to complete
+        // await dispatch(fetchCurrentUser()).unwrap();
 
-        return user;
+        return mappedUser;
       } else {
         throw new Error(apiResponse.message || "Login failed");
       }
@@ -142,9 +150,11 @@ export const fetchCurrentUser = createAsyncThunk(
           avatar: user.avatar,
           status: user.status,
           isActive: user.isActive,
+          isProfileComplete: user.isProfileComplete,
         };
 
         dispatch(setUser(mappedUser));
+        
         return mappedUser;
       } else {
         throw new Error(apiResponse.message || "Fetch user failed");
@@ -165,6 +175,19 @@ export const fetchCurrentUser = createAsyncThunk(
   },
 );
 
+// Helper function to clear visited data from localStorage
+const clearVisitedData = () => {
+  try {
+    // Clear visited jobs
+    localStorage.removeItem("visited_jobs");
+    // Clear visited courses
+    localStorage.removeItem("visited_courses");
+    console.log("Visited data cleared successfully");
+  } catch (error) {
+    console.error("Error clearing visited data:", error);
+  }
+};
+
 // Logout user
 export const logoutUser = createAsyncThunk(
   "auth/logout",
@@ -177,6 +200,15 @@ export const logoutUser = createAsyncThunk(
       axiosClient.clearTokens();
       dispatch(logout());
       dispatch(clearUserData());
+      dispatch(clearJobData());
+      dispatch(clearApplicationData());
+      dispatch(clearAppliedJobs());
+      dispatch(clearAppliedCourses());
+      dispatch(clearSavedJobs());
+      dispatch(clearSavedCourses());
+
+      // Clear visited data from localStorage
+      // clearVisitedData();
     }
   },
 );

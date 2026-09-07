@@ -61,10 +61,13 @@ import { useAppliedCourses } from "@/lib/hooks/useAppliedCourses";
 import { SquareAvatar } from "@/components/ui/SquareAvatar";
 import { formatPrice } from "@/lib/utils/priceUtils";
 import { useVisitedCourses } from "@/lib/hooks/useVisitedCourses";
+import { Skeleton } from "@/components/ui/skeleton";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 // Animation Variants
 const fadeInUp: Variants = {
-  hidden: { opacity: 1, y: -30 },
+  hidden: { opacity: 1, y: -40 },
   visible: {
     opacity: 1,
     y: 0,
@@ -107,6 +110,90 @@ const slideInRight: Variants = {
   },
 };
 
+const CourseCardSkeleton = () => {
+  return (
+    <Card className="h-full overflow-hidden pt-0 group">
+      {/* Course Header Skeleton */}
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 border-b">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+          <div className="flex-1 min-w-0 space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        </div>
+      </div>
+
+      <CardContent className="px-5 flex flex-col h-full">
+        <div className="flex-1 space-y-3">
+          {/* Course Fee */}
+          <div className="flex items-center justify-center mb-2">
+            <Skeleton className="h-7 w-24" />
+          </div>
+
+          {/* Migration Paths */}
+          <div className="mb-4">
+            <Skeleton className="h-4 w-28 mb-2" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+            </div>
+          </div>
+
+          {/* Requirements */}
+          <div className="mb-4">
+            <Skeleton className="h-4 w-24 mb-2" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+          </div>
+
+          {/* Additional Details */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-3 w-14" />
+            </div>
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="mt-auto space-y-2">
+          <div className="flex items-center justify-between border-t pt-2">
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-full rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md shrink-0" />
+            <Skeleton className="h-9 w-9 rounded-md shrink-0" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export default function CoursesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -122,6 +209,9 @@ export default function CoursesPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const coursesContainerRef = useRef<HTMLDivElement>(null);
   const coursesPerPage = 15; // 3x5 grid
@@ -285,6 +375,11 @@ export default function CoursesPage() {
 
   // Handle save/unsave for a specific course
   const handleToggleSave = async (courseId: string, currentStatus: boolean) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to save courses");
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
     await toggleSaveCourse(courseId, currentStatus);
   };
 
@@ -310,7 +405,7 @@ export default function CoursesPage() {
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        className="mb-2 py-8 pb-4 pt-24 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
+        className="mb-2 py-8 pb-4 pt-24 xl:pt-28 sm:px-6 lg:px-8 border-b relative rounded-b-3xl text-center overflow-hidden"
       >
         {/* Background Image */}
         <div className="">
@@ -324,7 +419,7 @@ export default function CoursesPage() {
             onError={() => console.log("Image failed to load")}
           />
           {/* Overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
+          <div className="absolute inset-0 bg-linear-to-b from-blue-600/80 via-blue-600/50 to-blue-600/40 dark:from-blue-950/80 dark:via-blue-900/70 dark:to-blue-950/60" />
         </div>
 
         {/* Content */}
@@ -946,12 +1041,24 @@ export default function CoursesPage() {
               className="flex-1 overflow-y-auto pr-2 space-y-4 px-2 py-2"
             >
               {isLoading ? (
-                <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
-                  <SubLoadingScreen
-                    message="Loading courses..."
-                    fullScreen={false}
-                  />
-                </div>
+                // <div className="min-h-100 md:min-h-70 flex flex-col justify-center">
+                //   <SubLoadingScreen
+                //     message="Loading courses..."
+                //     fullScreen={false}
+                //   />
+                // </div>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <motion.div key={index} variants={itemVariants}>
+                      <CourseCardSkeleton />
+                    </motion.div>
+                  ))}
+                </motion.div>
               ) : error ? (
                 <motion.div
                   initial={{ opacity: 0 }}

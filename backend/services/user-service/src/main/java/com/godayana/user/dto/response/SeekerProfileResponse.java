@@ -41,6 +41,7 @@ public class SeekerProfileResponse {
     private String[] preferredJobCategories;
     private Boolean shareCv;
     private Boolean isActive;
+    private Boolean isProfileComplete;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

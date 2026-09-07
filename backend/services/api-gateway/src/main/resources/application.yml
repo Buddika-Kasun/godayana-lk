@@ -14,7 +14,7 @@ spring:
     gateway:
       httpclient:
         connect-timeout: ${CONNECT_TIMEOUT:10000}
-        response-timeout: ${RESPONSE_TIMEOUT:60s}
+        response-timeout: ${RESPONSE_TIMEOUT:120s}
         pool:
           max-connections: ${MAX_CONNECTIONS:500}
           max-connections-per-route: ${MAX_CONNECTIONS_PER_ROUTE:100}
@@ -99,7 +99,7 @@ resilience4j:
         wait-duration-in-open-state: 10s
       otpService:
         base-config: default
-        wait-duration-in-open-state: 10s
+        wait-duration-in-open-state: 30s
       userService:
         base-config: default
         wait-duration-in-open-state: 20s
@@ -119,9 +119,9 @@ resilience4j:
         timeout-duration: 30s
     instances:
       authService:
-        timeout-duration: 10s
+        timeout-duration: 30s
       otpService:
-        timeout-duration: 10s
+        timeout-duration: 120s
       userService:
         timeout-duration: 30s
       jobService:
@@ -148,8 +148,8 @@ resilience4j:
         max-attempts: 2
         wait-duration: 500ms
       otpService:
-        max-attempts: 2
-        wait-duration: 500ms
+        max-attempts: 1
+        wait-duration: 2s
       userService:
         max-attempts: 3
         wait-duration: 1s

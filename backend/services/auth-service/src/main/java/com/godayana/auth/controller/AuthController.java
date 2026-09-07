@@ -64,4 +64,12 @@ public class AuthController {
         authService.updateName(userId, name);
         return ApiResponse.success(null);
     }
+
+    @PostMapping("/internal/update-profile-completion/{userId}")
+    public ApiResponse<Void> updateIsProfileComplete(
+            @PathVariable("userId") String userId
+    ) {
+        authService.updateIsProfileComplete(userId);
+        return ApiResponse.success(null);
+    }
 }

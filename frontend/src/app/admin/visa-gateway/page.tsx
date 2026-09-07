@@ -16,10 +16,15 @@ import adminVisaGatewayEndpoints, {
 } from "@/lib/api/endpoints/admin/adminVisaGatewayEndpoints";
 import toast from "react-hot-toast";
 import { SubLoadingScreen } from "@/components/ui/SubLoadingScreen";
+import { useSearchParams } from "next/navigation";
 
 export default function AdminVisaGateway() {
+  const searchParams = useSearchParams();
+      const initialType = searchParams.get("type") as "visa" | "gateway" | null;
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeFilter, setActiveFilter] = useState<"visa" | "gateway">("visa");
+  const [activeFilter, setActiveFilter] = useState<"visa" | "gateway">(
+    initialType || "visa"
+  );
   const [applications, setApplications] = useState<CountryCountResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalItems, setTotalItems] = useState(0);

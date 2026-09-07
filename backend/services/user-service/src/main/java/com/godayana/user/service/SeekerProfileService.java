@@ -247,6 +247,16 @@ public class SeekerProfileService {
 
         profile = seekerProfileRepository.save(profile);
 
+        // Check if profile is complete and update the flag
+        boolean isComplete = isProfileComplete(profile);
+
+        if (!profile.getIsProfileComplete() && isComplete) {
+            profile.setIsProfileComplete(true);
+            profile = seekerProfileRepository.save(profile);
+
+            isCompleteProfileUpdate(userId.toString());
+        }
+
 //        webClientBuilder.build()
 //                .post()
 //                .uri(authServiceUrl + "/api/v1/auth/internal/update-name/" + userId + "?name=" + URLEncoder.encode(profile.getFullName(), StandardCharsets.UTF_8))
@@ -469,6 +479,16 @@ public class SeekerProfileService {
                 .block();
     }
 
+    private void isCompleteProfileUpdate(String userId) {
+        webClientBuilder.build()
+                .post()
+                .uri(authServiceUrl + "/api/v1/auth/internal/update-profile-completion/" + userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .block();
+    }
+
     @Transactional
     public void deleteProfile(UUID userId) {
         log.info("Deleting seeker profile for user: {}", userId);
@@ -479,6 +499,28 @@ public class SeekerProfileService {
     public void updateShareCvStatus(UUID userId, Boolean shareCv) {
         log.info("Updating share CV status for user: {} to {}", userId, shareCv);
         seekerProfileRepository.updateShareCvStatus(userId, shareCv);
+    }
+
+    /**
+     * Check if the profile is complete based on required fields
+     * Required fields: fullName, location, email, nationality, employmentStatus,
+     *                  education, studyField, experienceYears, resumeUrl
+     */
+    private boolean isProfileComplete(SeekerProfile profile) {
+        return isNotEmpty(profile.getFullName())
+                && isNotEmpty(profile.getLocation())
+                && isNotEmpty(profile.getEmail())
+                && isNotEmpty(profile.getNationality())
+                && isNotEmpty(profile.getEmploymentStatus())
+                && isNotEmpty(profile.getEducation())
+                && isNotEmpty(profile.getStudyField())
+                && profile.getExperienceYears() != null
+                && profile.getExperienceYears() >= 0
+                && isNotEmpty(profile.getResumeUrl());
+    }
+
+    private boolean isNotEmpty(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     private SeekerProfileResponse mapToResponse(SeekerProfile profile) {
@@ -512,6 +554,7 @@ public class SeekerProfileService {
                 .preferredJobCategories(profile.getPreferredJobCategories())
                 .shareCv(profile.getShareCv())
                 .isActive(profile.getIsActive())
+                .isProfileComplete(profile.getIsProfileComplete())
                 .createdAt(profile.getCreatedAt())
                 .updatedAt(profile.getUpdatedAt())
                 .build();

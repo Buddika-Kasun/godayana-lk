@@ -5,6 +5,7 @@ import { AuthState, User } from "../types";
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
+  isProfileComplete: false,
   isLoading: false,
   error: null,
   accessToken: null,
@@ -25,8 +26,16 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
+      state.isProfileComplete = action.payload?.isProfileComplete || false;
       state.isLoading = false;
       state.error = null;
+    },
+    updateProfileComplete: (state, action: PayloadAction<boolean>) => {
+      state.isProfileComplete = action.payload;
+      if (state.user) {
+        console.log("Updating user profile complete status:", action.payload);
+        state.user.isProfileComplete = action.payload;
+      }
     },
     setTokens: (
       state,
@@ -75,6 +84,7 @@ export const {
   setLoading,
   setRefreshing,
   setUser,
+  updateProfileComplete,
   setTokens,
   setAccessToken,
   setError,

@@ -2,11 +2,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { JobDetailsView } from "@/components/jobs/JobDetailsView";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { JobResponse } from "@/lib/api/endpoints/company/companyJobEndpoints";
 import toast from "react-hot-toast";
@@ -14,6 +14,7 @@ import { publicJobAPI } from "@/lib/api/endpoints/public/publicJobEndpoints";
 import { useVisitedJobs } from "@/lib/hooks/useVisitedJobs";
 import { useSavedJobs } from "@/lib/hooks/useSavedJobs";
 import { useAppliedJobs } from "@/lib/hooks/useAppliedJobs";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 export default function JobDetailsPage() {
   const router = useRouter();
@@ -24,6 +25,8 @@ export default function JobDetailsPage() {
   const [tempViseted, setTempVisited] = useState<boolean>(false);
   const hasFetched = useRef(false);
   const hasMarkedVisited = useRef(false);
+  const { isAuthenticated, isProfileComplete, user } = useAuth();
+  const pathname = usePathname();
 
   const jobId = params.id?.toString() || "0";
 
@@ -97,16 +100,88 @@ export default function JobDetailsPage() {
 
   // Handle save/unsave
   const handleSaveJob = async (jobId: string, status: boolean) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to save jobs");
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
     await toggleSaveJob(jobId, status);
   };
 
   const handleApply = async (jobId: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to apply for jobs");
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    if (!(user?.role == "seeker" || user?.role == "dev")) {
+      toast.error("Only seekers can apply for jobs");
+      return;
+    }
+
+    if (!isProfileComplete) {
+      // Show toast with action buttons
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-3 max-w-sm">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Profile Incomplete</p>
+                <p className="text-sm text-muted-foreground">
+                  Please complete your profile before applying for jobs
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toast.dismiss(t.id)}
+                className="cursor-pointer"
+              >
+                Later
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  router.push(
+                    `/seeker/profile?redirect=${encodeURIComponent(pathname)}&type=job`,
+                  );
+                }}
+                className="cursor-pointer bg-primary hover:bg-primary/90"
+              >
+                Go to Profile
+              </Button>
+            </div>
+          </div>
+        ),
+        {
+          duration: 10000, // 10 seconds
+          position: "top-center",
+          style: {
+            padding: "16px",
+            minWidth: "300px",
+          },
+        },
+      );
+      return;
+    }
+
     await applyJob(jobId);
   };
 
+  console.log("User is complete profile:", isProfileComplete);
+  console.log("User isCompleteProfile:", user?.isProfileComplete);
+  console.log("User role:", user?.role);
+
   if (loading) {
     return (
-      <div className="space-y-2 pt-16">
+      <div className="space-y-2 pt-16 xl:pt-24">
         <div className="pl-8 pt-6 pb-2">
           <Button
             type="button"
@@ -142,7 +217,7 @@ export default function JobDetailsPage() {
 
   if (error || !job) {
     return (
-      <div className="space-y-2 pt-16">
+      <div className="space-y-2 pt-16 xl:pt-24">
         <div className="pl-8 pt-6 pb-2">
           <Button
             type="button"
@@ -177,7 +252,7 @@ export default function JobDetailsPage() {
   }
 
   return (
-    <div className="space-y-2 pt-16">
+    <div className="space-y-2 pt-16 xl:pt-24">
       <div className="pl-8 pt-6 pb-2">
         <Button
           type="button"
