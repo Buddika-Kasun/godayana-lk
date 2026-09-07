@@ -142,8 +142,16 @@ export default function LoginClient() {
 
         setTimeout(() => {
           toast.dismiss(toastId);
-          router.push(redirectTo);
+          // router.push(redirectTo);
+          const url = new URL(redirectTo, window.location.origin);
+          // url.searchParams.set("login_success", "true");
+          // router.push(url.toString());
+          window.location.href = url.toString();
         }, 1000);
+
+        // const url = new URL(redirectTo, window.location.origin);
+        // url.searchParams.set("login_success", "true");
+        // window.location.href = url.toString();
       } catch (error) {
         // setIsloading(false);
         toast.dismiss(loadingToast);
@@ -161,6 +169,14 @@ export default function LoginClient() {
     }
   };
 
+  const gotoRegister = () => {
+    const url = new URL("/auth/register", window.location.origin);
+    if (redirectTo) {
+      url.searchParams.set("redirect", redirectTo);
+    }
+    window.location.href = url.toString();
+  };
+
   const getIdentifierIcon = () => {
     if (formData.identifier.includes("@")) {
       return <Mail size={18} />;
@@ -173,7 +189,7 @@ export default function LoginClient() {
   return (
     <>
       <Toaster />
-      <div className="pt-10 pb-20 bg-primary/10 flex flex-col items-center justify-center p-4 min-h-screen">
+      <div className="pt-22 pb-20 bg-primary/10 flex flex-col items-center justify-center p-4 min-h-screen">
         <div className="w-full max-w-md bg-background rounded-2xl shadow-2xl p-8 animate-in fade-in zoom-in-95 duration-300">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-primary">Welcome Back</h2>
@@ -281,12 +297,12 @@ export default function LoginClient() {
           <div className="mt-8 text-center border-t border-primary/20 pt-6">
             <p className="text-gray-400 text-sm">
               Don&apos;t have an account?{" "}
-              <Link
-                href="/auth/register"
-                className="text-primary font-bold hover:underline"
+              <button
+                onClick={gotoRegister}
+                className="text-primary font-bold hover:underline cursor-pointer"
               >
                 Create Account
-              </Link>
+              </button>
             </p>
           </div>
         </div>

@@ -136,6 +136,6 @@ export const clearAppliedCourses = createAsyncThunk(
   "appliedCourses/clearAppliedCourses",
   async (_, { dispatch }) => {
     dispatch(setAppliedCourseIds([]));
-    toast.success("Applied courses cleared");
+    // toast.success("Applied courses cleared");
   },
 );

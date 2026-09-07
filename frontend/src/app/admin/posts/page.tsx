@@ -42,6 +42,7 @@ import {
   CompanyCourseCountsResponse,
 } from "@/lib/api/endpoints/admin/adminCompanyCourseEndpoint";
 import { OptimizedAvatar } from "@/components/ui/OptimizedAvatar";
+import { useSearchParams } from "next/navigation";
 
 // Helper functions
 const formatDate = (dateString: string) => {
@@ -71,9 +72,11 @@ const formatLocation = (location?: string) => {
 };
 
 export default function AdminPosts() {
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get("type") as "jobs" | "courses" | null;
   const [currentPage, setCurrentPage] = useState(1);
   const [postTypeFilter, setPostTypeFilter] = useState<"jobs" | "courses">(
-    "jobs",
+    initialType || "jobs",
   );
   const [statusFilter, setStatusFilter] = useState<
     "pending" | "approved" | "rejected"
@@ -481,7 +484,9 @@ export default function AdminPosts() {
                   }
                 />
                 <div>
-                  <h3 className="font-semibold text-lg">{course.courseTitle}</h3>
+                  <h3 className="font-semibold text-lg">
+                    {course.courseTitle}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     {course.companyName}
                   </p>

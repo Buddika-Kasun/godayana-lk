@@ -133,7 +133,13 @@ export default function CompanyLayout({
   }
 
   const getTitle = () => {
+    switch (parentPath) {
+      case "/company/plans":
+        return "Plans Management";
+    }
+
     const currentItem = navItems.find((item) => item.href === parentPath);
+
     switch (currentItem?.name) {
       case "Dashboard":
         return (
@@ -372,7 +378,10 @@ export default function CompanyLayout({
                   className="pl-10 w-64 bg-gray-50 dark:bg-gray-900"
                 />
               </div> */}
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-primary">
+              <button
+                className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-primary opacity-0"
+                disabled
+              >
                 <Bell size={20} />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>

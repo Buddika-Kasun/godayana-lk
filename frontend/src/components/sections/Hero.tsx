@@ -81,7 +81,7 @@ export function Hero() {
   const isDark = resolvedTheme === "dark";
 
   return (
-    <section className="relative pt-24 md:pt-20 min-h-[calc(100vh-100px)] md:h-[calc(100vh)] overflow-y-hidden overflow-x-hidden w-full">
+    <section className="relative pt-24 md:pt-20 xl:pt-24 min-h-[calc(100vh-100px)] md:h-[calc(100vh)] overflow-y-hidden overflow-x-hidden w-full">
       {/* Background Image */}
       <div className="absolute inset-0 -z-10">
         <Image
@@ -147,7 +147,7 @@ export function Hero() {
               <motion.div variants={itemVariants}>
                 <Badge
                   variant="secondary"
-                  className="bg-blue-100/30 dark:bg-blue-950 text-white dark:text-primary border border-blue-200 dark:border-blue-900 px-3 sm:px-4 py-1.5 sm:py-2 mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
+                  className="bg-blue-100/30 dark:bg-blue-950 text-white dark:text-primary border border-blue-200 dark:border-blue-900 px-3 sm:px-4 py-1.5 sm:py-2 mt-3 sm:mt-4 text-[8px] sm:text-[10px] xl:text-[14px] xl:py-3 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
                 >
                   <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-100/80 dark:bg-primary rounded-full mr-1 shrink-0"></span>
                   <span className="truncate">
@@ -160,7 +160,7 @@ export function Hero() {
             {/* Main Heading */}
             <div>
               <motion.h1
-                className="text-7xl sm:text-5xl md:text-6xl lg:text-[90px] xl:text-8xl text-center font-bold font-sinhala md:pl-8 pt-12 md:pt-0"
+                className="text-7xl sm:text-5xl md:text-6xl lg:text-[90px] xl:text-9xl text-center font-bold font-sinhala md:pl-8 pt-12 md:pt-0"
                 style={{ lineHeight: "0.5", letterSpacing: "0.01em" }}
               >
                 <span className="inline-block text-white font-fm-gamunu">
@@ -168,13 +168,13 @@ export function Hero() {
                 </span>{" "}
                 <br />
                 <span className="text-secondary relative whitespace-nowrap">
-                  <span className="inline-block font-fm-gamunu text-8xl md:text-9xl">
+                  <span className="inline-block font-fm-gamunu text-8xl md:text-9xl xl:text-[12rem]">
                     ගොඩයන්න
                   </span>
                 </span>
                 <br />
               </motion.h1>
-              <div className="text-center text-lg md:pl-8 text-white/80">
+              <div className="text-center text-lg xl:text-2xl md:pl-8 text-white/80">
                 Powering Careers. Connecting Talent.
               </div>
             </div>
@@ -273,15 +273,15 @@ export function Hero() {
                     <Input
                       type="text"
                       placeholder="Job title or keywords"
-                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-sm sm:text-base"
+                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-sm sm:text-base xl:text-xl"
                     />
                   </div>
                   <div className="w-full sm:w-48 cursor-pointer">
                     <Select>
-                      <SelectTrigger className="w-full text-sm sm:text-base">
+                      <SelectTrigger className="w-full text-sm sm:text-base xl:text-xl">
                         <SelectValue placeholder="Select Location" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="xl:text-lg">
                         <SelectItem value="colombo">Local</SelectItem>
                         <SelectItem value="overseas">Overseas</SelectItem>
                       </SelectContent>
@@ -292,7 +292,7 @@ export function Hero() {
                     whileTap={{ scale: 0.95 }}
                     className="w-full sm:w-auto"
                   >
-                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 sm:px-8 w-full sm:w-auto cursor-pointer text-sm sm:text-base">
+                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 sm:px-8 w-full sm:w-auto cursor-pointer text-sm sm:text-base xl:text-xl xl:py-4">
                       Search Jobs
                     </Button>
                   </motion.div>
@@ -304,7 +304,7 @@ export function Hero() {
               {/* Trust Indicators */}
               <motion.div
                 variants={itemVariants}
-                className="flex flex-wrap items-center justify-center md:justify-center md:gap-16 sm:gap-6 text-xs sm:text-sm text-muted-foreground px-2 sm:px-0 pb-4 pt-6 md:pt-0"
+                className="flex flex-wrap items-center justify-center md:justify-center md:gap-16 sm:gap-6 text-xs sm:text-sm xl:text-lg text-muted-foreground px-2 sm:px-0 pb-4 pt-6 xl:pb-8 md:pt-0"
               >
                 <motion.div
                   whileHover={{ x: 5 }}
@@ -328,7 +328,7 @@ export function Hero() {
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                   >
-                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0 text-white/80" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 shrink-0 text-white/80" />
                   </motion.div>
                   <span className="whitespace-nowrap text-white/80">
                     Daily Updates

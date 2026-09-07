@@ -898,6 +898,7 @@ export function JobForm({
               }
               className="mt-1.5"
               required
+              disabled={isEditing}
             />
           </div>
         </div>

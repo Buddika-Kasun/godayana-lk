@@ -3,6 +3,7 @@ import { Features } from '@/components/sections/Features'
 import { Trust } from '@/components/sections/Trust'
 import { SuccessStories } from '@/components/sections/SuccessStories'
 import { Mission } from '@/components/sections/Mission';
+import { Pricing } from '@/components/sections/Pricing';
 
 export default function HomePage() {
   return (
@@ -17,6 +18,9 @@ export default function HomePage() {
       <Trust />
 
       <Mission />
+
+      {/* Pricing Section */}
+      <Pricing />
 
       {/* Success Stories Section */}
       {/* <SuccessStories /> */}

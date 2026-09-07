@@ -1,12 +1,13 @@
-import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { ReduxProvider } from "@/lib/redux/Provider";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ToastListener } from "@/components/providers/ToastListener";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -76,7 +77,10 @@ export const metadata: Metadata = {
 };
 
 // This runs on the server and WILL show in Railway logs
-console.log('🔗 SERVER - NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+console.log(
+  "🔗 SERVER - NEXT_PUBLIC_API_URL:",
+  process.env.NEXT_PUBLIC_API_URL,
+);
 
 export default function RootLayout({
   children,
@@ -104,10 +108,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ReduxProvider>
-            <AuthProvider>
-              {children}
-              <Toaster />
-            </AuthProvider>
+            <AuthProvider>{children}</AuthProvider>
+            {/* <ToastListener /> */}
+            <Toaster />
           </ReduxProvider>
         </ThemeProvider>
       </body>

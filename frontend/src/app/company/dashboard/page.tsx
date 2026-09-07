@@ -3,18 +3,17 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Briefcase,
   Users,
   Eye,
-  TrendingUp,
   Calendar,
-  Building,
   PlusCircle,
   FileText,
   Settings,
   File,
+  BadgeDollarSign,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,91 +22,106 @@ const stats = [
   {
     id: 1,
     label: "Active Jobs",
-    value: 8,
+    value: 0,
     icon: Briefcase,
     color: "bg-blue-500/10 text-blue-500",
   },
   {
     id: 2,
     label: "Active Courses",
-    value: 4,
+    value: 0,
     icon: File,
     color: "bg-green-500/10 text-green-500",
   },
   {
     id: 3,
     label: "Profile Views",
-    value: 1234,
+    value: 0,
     icon: Eye,
     color: "bg-purple-500/10 text-purple-500",
   },
   {
     id: 4,
-    label: "Response Rate",
-    value: "92%",
-    icon: TrendingUp,
+    label: "Current Plan",
+    value: "None",
+    icon: CreditCard,
     color: "bg-yellow-500/10 text-yellow-500",
   },
 ];
 
-const activeJobs = [
-  {
-    id: 1,
-    title: "Senior Software Engineer",
-    applications: 45,
-    views: 320,
-    postedDate: "2024-04-20",
-  },
-  {
-    id: 2,
-    title: "Digital Marketing Manager",
-    applications: 28,
-    views: 210,
-    postedDate: "2024-04-15",
-  },
-  {
-    id: 3,
-    title: "Construction Worker",
-    applications: 52,
-    views: 410,
-    postedDate: "2024-04-18",
-  },
+interface Job {
+  id: number;
+  title: string;
+  applications: number;
+  views: number;
+  postedDate: string;
+}
+
+const activeJobs: Job[] = [
+  // {
+  //   id: 1,
+  //   title: "Senior Software Engineer",
+  //   applications: 0,
+  //   views: 0,
+  //   postedDate: "2024-04-20",
+  // },
+  // {
+  //   id: 2,
+  //   title: "Digital Marketing Manager",
+  //   applications: 0,
+  //   views: 0,
+  //   postedDate: "2024-04-15",
+  // },
+  // {
+  //   id: 3,
+  //   title: "Construction Worker",
+  //   applications: 0,
+  //   views: 0,
+  //   postedDate: "2024-04-18",
+  // },
 ];
 
 const quickActions = [
   {
+    title: "View Plans",
+    description: "Check available plans",
+    icon: BadgeDollarSign,
+    href: "/company/plans",
+    color: "text-green-500",
+  },
+  {
     title: "Post a Job",
     description: "Create new job posting",
     icon: PlusCircle,
-    href: "/company/jobs/post",
+    href: "/company/jobs/create",
     color: "text-primary",
   },
   {
     title: "Review Applications",
-    description: "45 pending applications",
+    description: "0 pending applications",
     icon: FileText,
-    href: "/company/applications",
+    href: "/company/jobs?status=active",
     color: "text-blue-500",
   },
   {
     title: "Post a Course",
     description: "Create new course posting",
     icon: PlusCircle,
-    href: "/company/jobs/post",
+    href: "/company/courses/create",
     color: "text-primary",
   },
   {
     title: "Review Leads",
-    description: "45 pending leads",
+    description: "0 pending leads",
     icon: FileText,
-    href: "/company/applications",
+    href: "/company/courses?status=active",
     color: "text-blue-500",
   },
   {
     title: "Manage Profile",
     description: "Edit profile details",
     icon: Settings,
-    href: "/company/jobs",
+    href: "/company/profile",
     color: "text-purple-500",
   },
 ];

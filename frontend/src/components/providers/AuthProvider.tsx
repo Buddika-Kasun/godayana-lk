@@ -12,14 +12,23 @@ import { fetchAppliedCourseIds } from "@/lib/redux/actions/appliedCoursesActions
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, isLoading, user } = useAppSelector(
+    (state) => state.auth,
+  );
   const [isInitialized, setIsInitialized] = useState(false);
   const hasInitialized = useRef(false);
+  const userFetched = useRef(false);
+
+  // Track if data has been fetched after login
   const savedJobsFetched = useRef(false);
   const savedCoursesFetched = useRef(false);
   const appliedJobsFetched = useRef(false);
   const appliedCoursesFetched = useRef(false);
 
+  // Track previous auth state to detect login
+  const prevIsAuthenticated = useRef(false);
+
+  // Initial auth setup
   useEffect(() => {
     // Prevent double initialization
     if (hasInitialized.current) return;
@@ -33,11 +42,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const accessToken = axiosClient.getAccessToken();
 
         if (accessToken) {
-          // Token exists, fetch user from API
-          try {
-            await dispatch(fetchCurrentUser()).unwrap();
-          } catch (error) {
-            console.error("Failed to fetch user:", error);
+          // Only fetch user if not already fetched and user data is not available
+          if (!userFetched.current && !user) {
+            userFetched.current = true;
+            try {
+              await dispatch(fetchCurrentUser()).unwrap();
+            } catch (error) {
+              console.error("Failed to fetch user:", error);
+              userFetched.current = false;
+            }
+          } else if (user) {
+            // User already exists in state, mark as fetched
+            userFetched.current = true;
           }
         }
       } catch (error) {
@@ -48,101 +64,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initAuth();
-  }, [dispatch]);
+  }, [dispatch, user]);
 
-  // Fetch saved jobs only when authenticated and initialized
+  // Detect login and fetch data
   useEffect(() => {
-    if (isAuthenticated && isInitialized && !savedJobsFetched.current) {
-      savedJobsFetched.current = true;
-      dispatch(fetchSavedJobs({ page: 0, size: 100 }))
-        .unwrap()
-        .then(() => {
-          console.log("Saved jobs fetched successfully on refresh");
-        })
-        .catch((error) => {
-          console.error("Failed to fetch saved jobs:", error);
-          // Retry once if failed
-          setTimeout(() => {
-            dispatch(fetchSavedJobs({ page: 0, size: 100 })).catch(
-              console.error,
-            );
-          }, 2000);
-        });
-    }
-  }, [isAuthenticated, isInitialized, dispatch]);
+    // When authentication becomes true and user data is available
+    if (isAuthenticated && user && isInitialized) {
+      // Check if this is a new login (state changed from false to true)
+      if (!prevIsAuthenticated.current) {
+        // Reset all fetch flags on new login
+        savedJobsFetched.current = false;
+        savedCoursesFetched.current = false;
+        appliedJobsFetched.current = false;
+        appliedCoursesFetched.current = false;
+      }
+      prevIsAuthenticated.current = true;
 
-  // Fetch saved courses only when authenticated and initialized
-  useEffect(() => {
-    if (isAuthenticated && isInitialized && !savedCoursesFetched.current) {
-      savedCoursesFetched.current = true;
-      dispatch(fetchSavedCourses({ page: 0, size: 100 }))
-        .unwrap()
-        .then(() => {
-          console.log("Saved courses fetched successfully on refresh");
-        })
-        .catch((error) => {
-          console.error("Failed to fetch saved courses:", error);
-          // Retry once if failed
-          setTimeout(() => {
-            dispatch(fetchSavedCourses({ page: 0, size: 100 })).catch(
-              console.error,
-            );
-          }, 2000);
-        });
-    }
-  }, [isAuthenticated, isInitialized, dispatch]);
+      // Fetch saved jobs
+      if (!savedJobsFetched.current) {
+        savedJobsFetched.current = true;
+        dispatch(fetchSavedJobs({ page: 0, size: 100 }))
+          .unwrap()
+          .then(() => {
+            console.log("Saved jobs fetched successfully");
+          })
+          .catch((error) => {
+            console.error("Failed to fetch saved jobs:", error);
+          });
+      }
 
-  // Fetch applied job IDs only when authenticated and initialized
-  useEffect(() => {
-    if (isAuthenticated && isInitialized && !appliedJobsFetched.current) {
-      appliedJobsFetched.current = true;
-      dispatch(fetchAppliedJobIds({ page: 0, size: 100 }))
-        .unwrap()
-        .then(() => {
-          console.log("Applied job IDs fetched successfully on refresh");
-        })
-        .catch((error) => {
-          console.error("Failed to fetch applied job IDs:", error);
-          // Retry once if failed
-          setTimeout(() => {
-            dispatch(fetchAppliedJobIds({ page: 0, size: 100 })).catch(
-              console.error,
-            );
-          }, 2000);
-        });
-    }
-  }, [isAuthenticated, isInitialized, dispatch]);
+      // Fetch saved courses
+      if (!savedCoursesFetched.current) {
+        savedCoursesFetched.current = true;
+        dispatch(fetchSavedCourses({ page: 0, size: 100 }))
+          .unwrap()
+          .then(() => {
+            console.log("Saved courses fetched successfully");
+          })
+          .catch((error) => {
+            console.error("Failed to fetch saved courses:", error);
+          });
+      }
 
-  // Fetch applied course IDs only when authenticated and initialized
-  useEffect(() => {
-    if (isAuthenticated && isInitialized && !appliedCoursesFetched.current) {
-      appliedCoursesFetched.current = true;
-      dispatch(fetchAppliedCourseIds({ page: 0, size: 100 }))
-        .unwrap()
-        .then(() => {
-          console.log("Applied course IDs fetched successfully on refresh");
-        })
-        .catch((error) => {
-          console.error("Failed to fetch applied course IDs:", error);
-          // Retry once if failed
-          setTimeout(() => {
-            dispatch(fetchAppliedCourseIds({ page: 0, size: 100 })).catch(
-              console.error,
-            );
-          }, 2000);
-        });
+      // Fetch applied job IDs
+      if (!appliedJobsFetched.current) {
+        appliedJobsFetched.current = true;
+        dispatch(fetchAppliedJobIds({ page: 0, size: 100 }))
+          .unwrap()
+          .then(() => {
+            console.log("Applied job IDs fetched successfully");
+          })
+          .catch((error) => {
+            console.error("Failed to fetch applied job IDs:", error);
+          });
+      }
+
+      // Fetch applied course IDs
+      if (!appliedCoursesFetched.current) {
+        appliedCoursesFetched.current = true;
+        dispatch(fetchAppliedCourseIds({ page: 0, size: 100 }))
+          .unwrap()
+          .then(() => {
+            console.log("Applied course IDs fetched successfully");
+          })
+          .catch((error) => {
+            console.error("Failed to fetch applied course IDs:", error);
+          });
+      }
+    } else if (!isAuthenticated) {
+      // Reset flags when logged out
+      prevIsAuthenticated.current = false;
+      savedJobsFetched.current = false;
+      savedCoursesFetched.current = false;
+      appliedJobsFetched.current = false;
+      appliedCoursesFetched.current = false;
     }
-  }, [isAuthenticated, isInitialized, dispatch]);
+  }, [isAuthenticated, user, isInitialized, dispatch]);
 
   // Listen for auth logout events
   useEffect(() => {
     const handleAuthLogout = () => {
       setIsInitialized(false);
       hasInitialized.current = false;
+      userFetched.current = false;
       savedJobsFetched.current = false;
       savedCoursesFetched.current = false;
       appliedJobsFetched.current = false;
       appliedCoursesFetched.current = false;
+      prevIsAuthenticated.current = false;
       window.location.href = "/auth/login";
     };
 

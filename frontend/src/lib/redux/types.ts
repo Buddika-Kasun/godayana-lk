@@ -8,6 +8,7 @@ export interface User {
   avatar?: string;
   status?: string;
   isActive?: boolean;
+  isProfileComplete?: boolean;
 }
 
 export interface LoginCredentials {
@@ -23,6 +24,7 @@ export interface RegisterData extends User {
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isProfileComplete: boolean;
   isLoading: boolean;
   error: string | null;
   accessToken: string | null;

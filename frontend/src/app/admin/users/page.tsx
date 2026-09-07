@@ -75,6 +75,7 @@ import {
 } from "@/lib/api/endpoints/admin/adminSeekerProfileEndpoint";
 import { STATUS_DISPLAY } from "@/types/statusDisplay";
 import { OptimizedAvatar } from "@/components/ui/OptimizedAvatar";
+import { useSearchParams } from "next/navigation";
 
 // Helper functions
 const formatDate = (dateString: string) => {
@@ -154,9 +155,15 @@ const experienceOptions: Record<string, string> = {
 };
 
 export default function AdminUsers() {
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get("type") as
+    | "companies"
+    | "seekers"
+    | null;
+
   const [currentPage, setCurrentPage] = useState(1);
   const [userTypeFilter, setUserTypeFilter] = useState<"companies" | "seekers">(
-    "companies",
+    initialType || "companies",
   );
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "suspended"
@@ -724,7 +731,8 @@ export default function AdminUsers() {
     <div className="space-y-4">
       {seekers.map((seeker) => {
         const statusDisplay =
-          STATUS_DISPLAY[seeker.activation ? "ACTIVE" : "SUSPENDED"] || STATUS_DISPLAY.ACTIVE;
+          STATUS_DISPLAY[seeker.activation ? "ACTIVE" : "SUSPENDED"] ||
+          STATUS_DISPLAY.ACTIVE;
         return (
           <div
             key={seeker.userId}

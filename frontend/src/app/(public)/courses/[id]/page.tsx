@@ -2,10 +2,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { CourseDetailsView } from "@/components/courses/CourseDetailsView";
@@ -14,6 +14,7 @@ import publicCourseEndpoints from "@/lib/api/endpoints/public/publicCourseEndpoi
 import { useVisitedCourses } from "@/lib/hooks/useVisitedCourses";
 import { useSavedCourses } from "@/lib/hooks/useSavedCourses";
 import { useAppliedCourses } from "@/lib/hooks/useAppliedCourses";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 export default function CourseDetailsPage() {
   const router = useRouter();
@@ -41,6 +42,9 @@ export default function CourseDetailsPage() {
 
   const isSaved = savedCourseIds.includes(courseId);
 
+  const { isAuthenticated, isProfileComplete, user } = useAuth();
+  const pathname = usePathname();
+
   useEffect(() => {
     setTempVisited(isCourseVisited(courseId) || isSaved);
   }, [isCourseVisited, courseId, isSaved]);
@@ -55,9 +59,7 @@ export default function CourseDetailsPage() {
       setError(null);
 
       const isVisited =
-        isCourseVisited(courseId) ||
-        isCourseApplied(courseId) ||
-        false;
+        isCourseVisited(courseId) || isCourseApplied(courseId) || false;
 
       const response = await publicCourseEndpoints.getCourseById(courseId, {
         isVisited,
@@ -105,16 +107,84 @@ export default function CourseDetailsPage() {
 
   // Handle save/unsave
   const handleSaveCourse = async (courseId: string, status: boolean) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to save courses");
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
     await toggleSaveCourse(courseId, status);
   };
 
   const handleEnroll = async (courseId: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to enroll courses");
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    if (!(user?.role == "seeker" || user?.role == "dev")) {
+      toast.error("Only seekers can enroll for courses");
+      return;
+    }
+
+    if (!isProfileComplete) {
+      // Show toast with action buttons
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-3 max-w-sm">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Profile Incomplete</p>
+                <p className="text-sm text-muted-foreground">
+                  Please complete your profile before applying for courses
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toast.dismiss(t.id)}
+                className="cursor-pointer"
+              >
+                Later
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  router.push(
+                    `/seeker/profile?redirect=${encodeURIComponent(pathname)}&type=course`,
+                  );
+                }}
+                className="cursor-pointer bg-primary hover:bg-primary/90"
+              >
+                Go to Profile
+              </Button>
+            </div>
+          </div>
+        ),
+        {
+          duration: 10000, // 10 seconds
+          position: "top-center",
+          style: {
+            padding: "16px",
+            minWidth: "300px",
+          },
+        },
+      );
+      return;
+    }
+
     await applyCourse(courseId);
   };
 
   if (loading) {
     return (
-      <div className="space-y-2 pt-16">
+      <div className="space-y-2 pt-16 xl:pt-24">
         <div className="pl-8 pt-6 pb-2">
           <Button
             type="button"
@@ -150,7 +220,7 @@ export default function CourseDetailsPage() {
 
   if (error || !course) {
     return (
-      <div className="space-y-2 pt-16">
+      <div className="space-y-2 pt-16 xl:pt-24">
         <div className="pl-8 pt-6 pb-2">
           <Button
             type="button"
@@ -185,7 +255,7 @@ export default function CourseDetailsPage() {
   }
 
   return (
-    <div className="space-y-2 pt-16">
+    <div className="space-y-2 pt-16 xl:pt-24">
       <div className="pl-8 pt-6 pb-2">
         <Button
           type="button"

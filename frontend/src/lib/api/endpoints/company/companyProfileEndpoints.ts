@@ -25,6 +25,7 @@ export interface CompanyProfileData {
   jobPostingTerms?: boolean;
   cvDeliveryTerms?: boolean;
   isVerified?: boolean;
+  isProfileComplete?: boolean;
   status?: string;
   createdAt?: string;
   updatedAt?: string;

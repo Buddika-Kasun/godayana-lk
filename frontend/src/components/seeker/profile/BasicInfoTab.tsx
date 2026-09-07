@@ -16,10 +16,9 @@ import {
 import { Camera } from "lucide-react";
 import { seekerProfileAPI, SeekerProfileData } from "@/lib/api/endpoints/seeker/seekerProfileEndpoints";
 import toast from "react-hot-toast";
-import { fetchCurrentUser } from "@/lib/redux/actions/authActions";
 import { useAppDispatch } from "@/lib/redux/store";
-import { User } from "@/lib/api/endpoints/public/authEndpoints";
 import { setUser } from "@/lib/redux/slices/authSlice";
+import { User } from "@/lib/redux/types";
 
 interface BasicInfoTabProps {
   userData: SeekerProfileData | null;

@@ -36,6 +36,7 @@ import companyJobEndpoints, {
 import { formatDate } from "@/lib/utils/dateUtils";
 import { STATUS_DISPLAY } from "@/types/statusDisplay";
 import { formatLocation } from "@/lib/utils/locationUtils";
+import { useSearchParams } from "next/navigation";
 
 // Status mapping: Frontend filter -> Backend status
 const STATUS_MAP = {
@@ -46,12 +47,19 @@ const STATUS_MAP = {
   draft: "DRAFT",
 } as const;
 
-
 export default function CompanyJobs() {
+  const searchParams = useSearchParams();
+  const initialStatus = searchParams.get("status") as
+    | "all"
+    | "active"
+    | "closed"
+    | "draft"
+    | "pending"
+    | null;
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<
     "all" | "active" | "closed" | "draft" | "pending"
-  >("pending");
+  >(initialStatus || "pending");
   const [jobs, setJobs] = useState<CompanyJobItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [closeJobId, setCloseJobId] = useState<string | null>(null);
@@ -335,7 +343,8 @@ export default function CompanyJobs() {
                             <Clock size={14} /> {formatDate(job.createdAt)}
                           </span>
                           <span className="flex items-center gap-1">
-                            <MapPin size={14} /> {formatLocation(job.location) || "N/A"}
+                            <MapPin size={14} />{" "}
+                            {formatLocation(job.location) || "N/A"}
                           </span>
                           <span className="flex items-center gap-1">
                             <Briefcase size={14} />{" "}
@@ -385,9 +394,14 @@ export default function CompanyJobs() {
                                 href={`/company/jobs/edit/${job.id}`}
                                 className="flex-1 lg:flex-none min-w-[calc(33.333%-0.5rem)] lg:min-w-0"
                                 onClick={(e) => {
-                                  if (job.status === "CLOSED" || job.status === "REJECTED") {
+                                  if (
+                                    job.status === "CLOSED" ||
+                                    job.status === "REJECTED"
+                                  ) {
                                     e.preventDefault();
-                                    toast.error("Cannot edit a closed or rejected job");
+                                    toast.error(
+                                      "Cannot edit a closed or rejected job",
+                                    );
                                   }
                                 }}
                               >

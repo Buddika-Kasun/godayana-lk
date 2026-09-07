@@ -1,6 +1,7 @@
 // src/lib/api/authEndpoints.ts
 import { ApiResponse } from "@/types/apiResponse";
 import { api } from "../../axios";
+import { User } from "@/lib/redux/types";
 
 export interface RegisterRequest {
   role?: "seeker" | "company" | "admin";
@@ -28,6 +29,7 @@ export interface UserData {
   avatar?: string;
   status?: string;
   isActive?: boolean;
+  isProfileComplete?: boolean;
 }
 
 // Login data interface
@@ -43,16 +45,16 @@ export interface RefreshTokenResponse {
   refreshToken?: string;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: "seeker" | "company" | "admin" | "dev";
-  avatar?: string;
-  status?: string;
-  isActive?: boolean;
-}
+// export interface User {
+//   id: string;
+//   name: string;
+//   email: string;
+//   phone: string;
+//   role: "seeker" | "company" | "admin" | "dev";
+//   avatar?: string;
+//   status?: string;
+//   isActive?: boolean;
+// }
 
 // Mock user data for development
 // const MOCK_USER = {

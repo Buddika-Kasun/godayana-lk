@@ -12,6 +12,7 @@ import {
   FileText,
   Clock,
   Briefcase,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -30,6 +31,7 @@ import adminContentEndpoints, {
   PostParams,
   VisaGuideResponse,
 } from "@/lib/api/endpoints/admin/adminContentEndpoints";
+import { formatDate } from "@/lib/utils/dateUtils";
 
 const visaTypeOptions = [
   { value: "STUDENT", label: "Student Visa" },
@@ -175,6 +177,12 @@ export function VisaList({ onCountChange }: VisaListProps) {
                   <span className="flex items-center gap-1">
                     <Briefcase size={14} /> {visa.cost}
                   </span>
+                  {visa.createdAt && (
+                    <span className="flex items-center gap-1">
+                      <Calendar size={14} className="text-muted-foreground" />
+                      {formatDate(visa.createdAt!)}
+                    </span>
+                  )}
                 </div>
               </div>
 

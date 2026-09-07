@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export function Mission() {
   return (
-    <section className="py-16 md:py-24 bg-linear-to-t from-background/20 via-background-cold/50 to-background-cold overflow-x-hidden">
+    <section className="py-16 md:py-24 bg-muted/30 overflow-x-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -12,7 +12,7 @@ export function Mission() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12 md:mb-16"
+          className="text-center mb-4"
         >
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
             Our <span className="text-primary">Mission</span>

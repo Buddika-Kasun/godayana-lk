@@ -1,7 +1,7 @@
 // src/lib/api/endpoints/public/publicContentEndpoints.ts
 import { ApiResponse, PaginatedResponse } from "@/types/apiResponse";
 import { api } from "../../axios";
-import { StoryResponse } from "../admin/adminContentEndpoints";
+import { CountryResponse, StoryResponse } from "../admin/adminContentEndpoints";
 
 // ==================== TYPES ====================
 
@@ -79,10 +79,29 @@ const storyContentAPI = {
     api.delete<ApiResponse<void>>(`/stories/${storyId}/like`),
 };
 
-const contentEndpoints = {
+const countryContentAPI = {
+  /**
+   * Get all visa guides
+   */
+  getCountries: (params?: PostParams) =>
+    api.get<ApiResponse<PaginatedResponse<CountryResponse>>>(
+      "/countries/public",
+      {
+        params,
+      },
+    ),
+
+  /**
+   * Get visa guide by ID
+   */
+  getCountryById: (countryId: string) =>
+    api.get<ApiResponse<CountryResponse>>(`/countries/public/${countryId}`),
+};
+
+const publicContentEndpoints = {
   visa: visaContentAPI,
-  county: "",
+  country: countryContentAPI,
   story: storyContentAPI,
 };
 
-export default contentEndpoints;
+export default publicContentEndpoints;
