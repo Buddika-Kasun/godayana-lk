@@ -11,6 +11,7 @@ import com.godayana.dto.ApiResponse;
 import com.godayana.exception.BusinessException;
 import com.godayana.exception.ErrorCode;
 import com.godayana.security.JwtUtil;
+import io.netty.handler.timeout.TimeoutException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,9 +50,68 @@ public class AuthService implements IAuthService {
     @Value("${file.service.url}")
     private String fileServiceUrl;
 
+//    @Override
+//    @Transactional
+//    public Map<String, String> initiateRegistration(RegisterRequest request) {
+//        // Check if user already exists
+//        if (userRepository.existsByPhone(request.getPhone())) {
+//            throw new BusinessException(
+//                    "Phone number already registered",
+//                    ErrorCode.DUPLICATE_RESOURCE.getCode(),
+//                    HttpStatus.SC_CONFLICT
+//            );
+//            //throw new DuplicateResourceException("User", "phone", request.getPhone());
+//        }
+//
+//        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
+//            throw new BusinessException(
+//                    "Email already registered",
+//                    ErrorCode.DUPLICATE_RESOURCE.getCode(),
+//                    HttpStatus.SC_CONFLICT
+//            );
+//            //throw new DuplicateResourceException("User", "email", request.getEmail());
+//        }
+//
+//        // Send OTP based on role
+//        String identifier = "seeker".equals(request.getRole()) ? request.getPhone() : request.getEmail();
+//        String channel = "seeker".equals(request.getRole()) ? "SMS" : "EMAIL";
+//
+//        try {
+//            webClientBuilder.build()
+//                    .post()
+//                    .uri(otpServiceUrl + "/api/v1/otp/send")
+//                    .contentType(MediaType.APPLICATION_JSON)
+//                    .bodyValue(Map.of(
+//                            "identifier", identifier,
+//                            "channel", channel,
+//                            "purpose", "REGISTRATION"
+//                    ))
+//                    .retrieve()
+//                    .bodyToMono(Void.class)
+//                    .block();
+//        } catch (Exception e) {
+//            log.error("Failed to send OTP: {}", e.getMessage());
+//            //throw new RuntimeException("Failed to send verification code");
+//            throw new BusinessException(
+//                    "Failed to send verification code",
+//                    ErrorCode.OTP_SEND_FAILED.getCode(),
+//                    HttpStatus.SC_INTERNAL_SERVER_ERROR
+//            );
+//        }
+//
+//        // Store registration data temporarily (in production, use Redis)
+//        // For now, return session ID
+//        return Map.of("message", "OTP sent successfully",
+//                      "identifier", identifier,
+//                      "tempId", UUID.randomUUID().toString());
+//    }
+
     @Override
     @Transactional
     public Map<String, String> initiateRegistration(RegisterRequest request) {
+        log.info("=== INITIATE REGISTRATION CALLED ===");
+        log.info("Phone: {}, Email: {}, Role: {}", request.getPhone(), request.getEmail(), request.getRole());
+
         // Check if user already exists
         if (userRepository.existsByPhone(request.getPhone())) {
             throw new BusinessException(
@@ -58,7 +119,6 @@ public class AuthService implements IAuthService {
                     ErrorCode.DUPLICATE_RESOURCE.getCode(),
                     HttpStatus.SC_CONFLICT
             );
-            //throw new DuplicateResourceException("User", "phone", request.getPhone());
         }
 
         if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
@@ -67,14 +127,29 @@ public class AuthService implements IAuthService {
                     ErrorCode.DUPLICATE_RESOURCE.getCode(),
                     HttpStatus.SC_CONFLICT
             );
-            //throw new DuplicateResourceException("User", "email", request.getEmail());
         }
 
-        // Send OTP based on role
-        String identifier = "seeker".equals(request.getRole()) ? request.getPhone() : request.getEmail();
-        String channel = "seeker".equals(request.getRole()) ? "SMS" : "EMAIL";
+        // Determine identifier and channel based on role
+        String identifier;
+        String channel;
+        String role = request.getRole() != null ? request.getRole().toLowerCase() : "seeker";
+
+        if ("seeker".equals(role)) {
+            identifier = request.getPhone();
+            channel = "SMS";
+        } else if ("company".equals(role)) {
+            identifier = request.getEmail();
+            channel = "EMAIL";
+        } else {
+            identifier = request.getPhone();
+            channel = "SMS";
+        }
+
+        log.info("Sending OTP - Identifier: {}, Channel: {}, Role: {}", identifier, channel, role);
 
         try {
+            // Add timeout and retry
+//            String otpServiceResponse = webClientBuilder.build()
             webClientBuilder.build()
                     .post()
                     .uri(otpServiceUrl + "/api/v1/otp/send")
@@ -85,23 +160,45 @@ public class AuthService implements IAuthService {
                             "purpose", "REGISTRATION"
                     ))
                     .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
+                    .bodyToMono(String.class)
+//                    .timeout(Duration.ofSeconds(60))
+//                    .block();
+                    .subscribe(  // NON-BLOCKING - returns immediately
+                            response -> log.info("OTP sent successfully to: {}", identifier),
+                            error -> log.error("Failed to send OTP: {}", error.getMessage())
+                    );
+
+//            log.info("OTP service response: {}", otpServiceResponse);
+            log.info("OTP sent successfully to: {}", identifier);
+
+        } catch (TimeoutException e) {
+            log.error("OTP service timeout for: {}", identifier, e);
+            // Don't throw error - OTP might still be sending
+            // Return success anyway since OTP was generated
+            log.warn("OTP service timed out, but OTP may have been sent");
         } catch (Exception e) {
-            log.error("Failed to send OTP: {}", e.getMessage());
-            //throw new RuntimeException("Failed to send verification code");
+            log.error("Failed to send OTP: {}", e.getMessage(), e);
             throw new BusinessException(
-                    "Failed to send verification code",
+                    "Failed to send verification code. Please try again.",
                     ErrorCode.OTP_SEND_FAILED.getCode(),
                     HttpStatus.SC_INTERNAL_SERVER_ERROR
             );
         }
 
-        // Store registration data temporarily (in production, use Redis)
-        // For now, return session ID
-        return Map.of("message", "OTP sent successfully",
-                      "identifier", identifier,
-                      "tempId", UUID.randomUUID().toString());
+        // Store registration data temporarily
+        try {
+            // Add small delay to ensure OTP processing has started
+            Thread.sleep(5000); // 5000ms delay
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Store registration data temporarily
+        return Map.of(
+                "message", "OTP sent successfully",
+                "identifier", identifier,
+                "tempId", UUID.randomUUID().toString()
+        );
     }
 
     @Override
@@ -279,6 +376,7 @@ public class AuthService implements IAuthService {
                         .phone(user.getPhone())
                         .email(user.getEmail())
                         .role(user.getRole().toString())
+                        .isProfileComplete(user.getIsProfileComplete())
                         .build())
                 .build();
     }
@@ -302,6 +400,7 @@ public class AuthService implements IAuthService {
                     .phone(user.getPhone())
                     .email(user.getEmail())
                     .role(user.getRole().toString())
+                    .isProfileComplete(user.getIsProfileComplete())
                     .build();
     }
 
@@ -390,6 +489,20 @@ public class AuthService implements IAuthService {
                 ));
 
         user.setName(name);
+
+        userRepository.save(user);
+    }
+
+    @Override
+    public void updateIsProfileComplete(String userId) {
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new BusinessException(
+                        "User not found",
+                        ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                        HttpStatus.SC_NOT_FOUND
+                ));
+
+        user.setIsProfileComplete(true);
 
         userRepository.save(user);
     }

@@ -29,5 +29,6 @@ public class LoginResponse {
         private String role;
         private String status;
         private Boolean isActive;
+        private Boolean isProfileComplete;
     }
 }

@@ -15,4 +15,5 @@ public interface IAuthService {
     LoginResponse refreshToken(String refreshToken);
     void logout(String userId, String refreshToken);
     void updateName(String userId, String name);
+    void updateIsProfileComplete(String userId);
 }

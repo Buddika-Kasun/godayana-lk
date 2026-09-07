@@ -392,6 +392,17 @@ public class CompanyProfileService {
 
         profile = companyProfileRepository.save(profile);
 
+        // Check if profile is complete and update the flag
+        // Check if profile is complete and update the flag
+        boolean isComplete = isProfileComplete(profile);
+
+        if (!profile.getIsProfileComplete() && isComplete) {
+            profile.setIsProfileComplete(true);
+            profile = companyProfileRepository.save(profile);
+
+            isCompleteProfileUpdate(userId.toString());
+        }
+
 //        webClientBuilder.build()
 //                .post()
 //                .uri(authServiceUrl + "/api/v1/auth/internal/update-name/" + userId + "?name=" + URLEncoder.encode(profile.getCompanyName(), StandardCharsets.UTF_8))
@@ -410,6 +421,16 @@ public class CompanyProfileService {
         webClientBuilder.build()
                 .post()
                 .uri(authServiceUrl + "/api/v1/auth/internal/update-name/" + userId + "?name=" + URLEncoder.encode(name, StandardCharsets.UTF_8))
+                .contentType(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .block();
+    }
+
+    private void isCompleteProfileUpdate(String userId) {
+        webClientBuilder.build()
+                .post()
+                .uri(authServiceUrl + "/api/v1/auth/internal/update-profile-completion/" + userId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Void.class)
@@ -514,6 +535,25 @@ public class CompanyProfileService {
         companyProfileRepository.deleteByUserId(userId);
     }
 
+    /**
+     * Check if the company profile is complete based on required fields
+     * Required fields: companyName, industry, location, hotlineNumber,
+     *                  contactPersonName, designation, cvDeliveryEmail
+     */
+    private boolean isProfileComplete(CompanyProfile profile) {
+        return isNotEmpty(profile.getCompanyName())
+                && isNotEmpty(profile.getIndustry())
+                && isNotEmpty(profile.getLocation())
+                && isNotEmpty(profile.getHotlineNumber())
+                && isNotEmpty(profile.getContactPersonName())
+                && isNotEmpty(profile.getDesignation())
+                && isNotEmpty(profile.getCvDeliveryEmail());
+    }
+
+    private boolean isNotEmpty(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
     private CompanyProfileResponse mapToResponse(CompanyProfile profile) {
         String logoUrl = getPresignedUrlFromFileService(profile.getLogoUrl());
 
@@ -538,6 +578,7 @@ public class CompanyProfileService {
                 .designation(profile.getDesignation())
                 .cvDeliveryEmail(profile.getCvDeliveryEmail())
                 .isVerified(profile.getIsVerified())
+                .isProfileComplete(profile.getIsProfileComplete())
                 .cvDeliveryTerms(profile.getCvDeliveryTerms())
                 .jobPostingTerms(profile.getJobPostingTerms())
                 .status(profile.getStatus().toString())

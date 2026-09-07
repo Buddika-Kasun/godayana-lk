@@ -11,6 +11,7 @@ import com.godayana.visa_gateway_content.dto.response.PostCountResponse;
 import com.godayana.visa_gateway_content.dto.response.PostImageUploadResponse;
 import com.godayana.visa_gateway_content.dto.response.VisaPostResponse;
 import com.godayana.visa_gateway_content.entity.VisaPost;
+import com.godayana.visa_gateway_content.repository.CountryRepository;
 import com.godayana.visa_gateway_content.repository.StoryRepository;
 import com.godayana.visa_gateway_content.repository.VisaPostRepository;
 import com.godayana.visa_gateway_content.service.interfaces.IVisaPostService;
@@ -41,6 +42,7 @@ public class VisaPostServiceImpl implements IVisaPostService {
 
     private final VisaPostRepository visaPostRepository;
     private final StoryRepository storyRepository;
+    private final CountryRepository countryRepository;
 
     private final WebClient.Builder webClientBuilder;
 
@@ -138,7 +140,7 @@ public class VisaPostServiceImpl implements IVisaPostService {
     public PostCountResponse countActivePosts() {
         long visaCount = visaPostRepository.countActivePosts();
         long storyCount = storyRepository.count();
-        long countryCount = 0;
+        long countryCount = countryRepository.count();
 
         return PostCountResponse.builder()
                 .visaCount(visaCount)

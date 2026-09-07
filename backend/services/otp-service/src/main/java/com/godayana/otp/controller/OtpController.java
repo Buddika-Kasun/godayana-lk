@@ -3,6 +3,7 @@ package com.godayana.otp.controller;
 import com.godayana.dto.ApiResponse;
 import com.godayana.otp.dto.SendOtpRequest;
 import com.godayana.otp.dto.VerifyOtpRequest;
+import com.godayana.otp.service.EsmsService;
 import com.godayana.otp.service.OtpService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.Map;
 public class OtpController {
 
     private final OtpService otpService;
+    private final EsmsService esmsService;
 
     @PostMapping("/send")
     public ApiResponse<Map<String, String>> sendOtp(@Valid @RequestBody SendOtpRequest request) {
@@ -27,5 +29,17 @@ public class OtpController {
     public ApiResponse<Map<String, Boolean>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         boolean isValid = otpService.verifyOtp(request);
         return ApiResponse.success(Map.of("verified", isValid));
+    }
+
+    // Add to your controller
+    @GetMapping("/esms/test")
+    public String testEsms() {
+        return esmsService.getServiceStatus();
+    }
+
+    @GetMapping("/esms/test-credentials")
+    public ApiResponse<Map<String, Object>> testEsmsCredentials() {
+        Map<String, Object> result = esmsService.testCredentials();
+        return ApiResponse.success(result);
     }
 }

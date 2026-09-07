@@ -33,6 +33,7 @@ public class CompanyProfileResponse {
     private String designation;
     private String cvDeliveryEmail;
     private Boolean isVerified;
+    private Boolean isProfileComplete;
     private Boolean jobPostingTerms;
     private Boolean cvDeliveryTerms;
     private String status;
