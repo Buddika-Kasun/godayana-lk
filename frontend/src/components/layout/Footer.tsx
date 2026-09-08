@@ -147,7 +147,16 @@ export function Footer() {
               src={"/images/bg_dark.PNG"}
               alt="Background"
               fill
-              className="object-cover"
+              className="object-cover hidden md:block"
+              priority
+              sizes="100vw"
+            />
+            <Image
+              // src={isDark ? "/images/bg_dark.PNG" : "/images/bg_light.PNG"}
+              src={"/images/sm_bg_footer.PNG"}
+              alt="Background"
+              fill
+              className="object-cover md:hidden"
               priority
               sizes="100vw"
             />

@@ -41,7 +41,7 @@ const trustPoints = [
 
 export function Trust() {
   return (
-    <section className="py-16 md:py-24 bg-background overflow-x-hidden">
+    <section className="py-16 md:py-24 bg-background overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Content */}
@@ -70,7 +70,7 @@ export function Trust() {
                   transition={{ delay: index * 0.1 }}
                   className="flex gap-4"
                 >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
                     <point.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -112,7 +112,7 @@ export function Trust() {
                   priority
                 />
                 {/* Dark overlay for better text readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
               </div>
 
               {/* Floating Stats Card */}
@@ -192,7 +192,7 @@ export function Trust() {
               {/* Glassmorphism Card */}
               <div className="relative">
                 {/* Background with blur */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/60 to-white/40 dark:from-gray-900/80 dark:to-gray-900/60 rounded-2xl backdrop-blur-xs" />
+                <div className="absolute inset-0 bg-linear-to-br from-white/60 to-white/40 dark:from-gray-900/80 dark:to-gray-900/60 rounded-2xl backdrop-blur-xs" />
 
                 {/* Border overlay */}
                 <div className="absolute inset-0 rounded-2xl border border-white/60 dark:border-gray-700/30 shadow-xl" />
@@ -200,7 +200,7 @@ export function Trust() {
                 {/* Content */}
                 <div className="relative p-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0 backdrop-blur-sm">
                       <Globe className="h-6 w-6 text-primary" />
                     </div>
                     <div className="flex-1">
@@ -212,10 +212,10 @@ export function Trust() {
                         comprehensive guides and expert support.
                       </p> */}
                       <div className="flex flex-wrap items-center gap-4 text-sm">
-                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                        {/* <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                           <CheckCircle className="h-4 w-4" />
                           Trusted by 10,000+ Sri Lankans
-                        </span>
+                        </span> */}
                         <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                           <Users className="h-4 w-4" />
                           500+ Success Stories
@@ -240,13 +240,13 @@ export function Trust() {
           {/* Glassmorphism Card */}
           <div className="relative">
             {/* Background with blur */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/60 to-white/40 dark:from-gray-900/80 dark:to-gray-900/60 rounded-2xl backdrop-blur-xs" />
+            <div className="absolute inset-0 bg-linear-to-br from-white/60 to-white/40 dark:from-gray-900/80 dark:to-gray-900/60 rounded-2xl backdrop-blur-xs" />
 
             {/* Border overlay */}
-            <div className="absolute inset-0 rounded-2xl border border-white/60 dark:border-gray-700/30 shadow-xl" />
+            {/* <div className="absolute inset-0 rounded-2xl border border-white/60 dark:border-gray-700/30 shadow-xl" /> */}
 
             {/* Content */}
-            <div className="relative p-6">
+            {/* <div className="relative p-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
                   <Calculator className="h-6 w-6 text-primary" />
@@ -268,7 +268,51 @@ export function Trust() {
                   </Link>
                 </div>
               </div>
-            </div>
+            </div> */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20 md:hidden"
+            >
+              {/* Glassmorphism Card */}
+              <div className="relative">
+                {/* Background with blur */}
+                <div className="absolute inset-0 bg-linear-to-br from-white/60 to-white/40 dark:from-gray-900/80 dark:to-gray-900/60 rounded-2xl backdrop-blur-xs" />
+
+                {/* Border overlay */}
+                <div className="absolute inset-0 rounded-2xl border border-white/60 dark:border-gray-700/30 shadow-xl" />
+
+                {/* Content */}
+                <div className="relative p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0 backdrop-blur-sm">
+                      <Globe className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2 text-foreground">
+                        Start Your Global Journey Today
+                      </h3>
+                      {/* <p className="text-muted-foreground text-sm mb-4">
+                        Explore opportunities in 15+ countries with our
+                        comprehensive guides and expert support.
+                      </p> */}
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
+                        {/* <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                          <CheckCircle className="h-4 w-4" />
+                          Trusted by 10,000+ Sri Lankans
+                        </span> */}
+                        <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                          <Users className="h-4 w-4" />
+                          500+ Success Stories
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </motion.div>
       </div>
