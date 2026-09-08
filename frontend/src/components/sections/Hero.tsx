@@ -117,7 +117,15 @@ export function Hero() {
           src={"/images/bg_dark.PNG"}
           alt="Background"
           fill
-          className="object-cover"
+          className="object-cover hidden md:block"
+          priority
+          sizes="100vw"
+        />
+        <Image
+          src={"/images/sm_bg_header.PNG"}
+          alt="Background"
+          fill
+          className="object-cover md:hidden"
           priority
           sizes="100vw"
         />
@@ -236,11 +244,11 @@ export function Hero() {
                       </SelectTrigger>
                       <SelectContent className="xl:text-lg">
                         <SelectItem value="all">All Locations</SelectItem>
+                        <SelectItem value="overseas">Overseas</SelectItem>
+                        <SelectItem value="remote">Remote</SelectItem>
                         <SelectItem value="colombo">Colombo</SelectItem>
                         <SelectItem value="kandy">Kandy</SelectItem>
                         <SelectItem value="galle">Galle</SelectItem>
-                        <SelectItem value="overseas">Overseas</SelectItem>
-                        <SelectItem value="remote">Remote</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

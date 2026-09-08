@@ -55,7 +55,7 @@ import {
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // Animation Variants
 const fadeInUp: Variants = {
@@ -260,8 +260,80 @@ export default function JobsPage() {
     setCurrentPage(1);
   }, [filters, jobType]);
 
+  // Add this inside the component, after the state declarations
+  const searchParams = useSearchParams();
+
+  interface FilterParams {
+    keyword?: string;
+    location?: string;
+  }
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const keyword = searchParams.get("keyword");
+    const location = searchParams.get("location");
+
+    const newFilters: FilterParams = {};
+
+    if (keyword) {
+      newFilters.keyword = keyword;
+    }
+
+    if (location) {
+      // Check if location is "overseas" to set jobType
+      if (location.toLowerCase() === "overseas") {
+        setJobType("overseas");
+      } else if (location.toLowerCase() === "local") {
+        setJobType("local");
+      } else {
+        // For specific locations, set the location filter
+        const locationExists = locations.some(
+          (l) => l.value === location || l.label === location,
+        );
+        if (locationExists) {
+          newFilters.location = location;
+        } else {
+          // Try to find by label
+          const found = locations.find((l) => l.label === location);
+          if (found) {
+            newFilters.location = found.value;
+          }
+        }
+      }
+    }
+
+    if (Object.keys(newFilters).length > 0) {
+      setFilters((prev) => ({ ...prev, ...newFilters }));
+    }
+  }, [searchParams]);
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+
+    // If changing location, update the URL
+    if (key === "location") {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value && value !== "All Locations") {
+        params.set("location", value);
+      } else {
+        params.delete("location");
+      }
+      const newUrl = `${pathname}?${params.toString()}`;
+      router.replace(newUrl, { scroll: false });
+    }
+  };
+
+  // Update the keyword search to update URL
+  const handleKeywordSearch = (value: string) => {
+    setFilters((prev) => ({ ...prev, keyword: value }));
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set("keyword", value);
+    } else {
+      params.delete("keyword");
+    }
+    const newUrl = `${pathname}?${params.toString()}`;
+    router.replace(newUrl, { scroll: false });
   };
 
   const clearFilters = () => {
@@ -273,6 +345,8 @@ export default function JobsPage() {
       experience: "",
     });
     setCurrentPage(1);
+    // Clear URL params
+    router.replace(pathname, { scroll: false });
   };
 
   const handleJobTypeChange = (type: JobType) => {
@@ -315,8 +389,28 @@ export default function JobsPage() {
     }
   };
 
+  // const handleApplyFilters = () => {
+  //   setCurrentPage(1);
+  //   setTimeout(scrollToTop, 100);
+  // };
   const handleApplyFilters = () => {
     setCurrentPage(1);
+    // Update URL with current filters
+    const params = new URLSearchParams();
+    if (filters.keyword) params.set("keyword", filters.keyword);
+    if (filters.location && filters.location !== "All Locations")
+      params.set("location", filters.location);
+    if (filters.category && filters.category !== "All Categories")
+      params.set("category", filters.category);
+    if (filters.type && filters.type !== "All Types")
+      params.set("type", filters.type);
+    if (filters.experience && filters.experience !== "All Levels")
+      params.set("experience", filters.experience);
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    router.replace(newUrl, { scroll: false });
+
     setTimeout(scrollToTop, 100);
   };
 
@@ -586,10 +680,11 @@ export default function JobsPage() {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Job title or company..."
+                        placeholder="Job title or keywords"
                         value={filters.keyword}
                         onChange={(e) =>
-                          handleFilterChange("keyword", e.target.value)
+                          // handleFilterChange("keyword", e.target.value)
+                          handleKeywordSearch(e.target.value)
                         }
                         className="pl-9 w-full"
                       />

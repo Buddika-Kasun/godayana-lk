@@ -40,6 +40,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/api/v1/visa/public/**",
             "/api/v1/visa-posts/public/**",
             "/api/v1/stories/public/**",
+            "/api/v1/countries/public/**",
             "/api/v1/auth/register/initiate",
             "/api/v1/auth/register/verify",
             "/api/v1/files/public/**",
